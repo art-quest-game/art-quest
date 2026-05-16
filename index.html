@@ -104,7 +104,8 @@ canvas { display:block; image-rendering:pixelated; }
 .mem-card.flipped .mem-card-inner { transform:rotateY(180deg); }
 .mem-card.matched .mem-card-inner { transform:rotateY(180deg); }
 .mem-face,.mem-back { position:absolute; inset:0; backface-visibility:hidden; border-radius:10px; overflow:hidden; display:flex; align-items:center; justify-content:center; }
-.mem-face { background:linear-gradient(135deg,#3d1b69,#1a0a2e); border:2px solid #6b21a8; font-size:2.2rem; }
+.mem-face { background:#0f0720; border:2px solid #6b21a8; }
+.mem-face img { width:100%; height:100%; object-fit:cover; border-radius:8px; }
 .mem-back { background:#0f0720; border:2px solid #ffd70050; transform:rotateY(180deg); flex-direction:column; }
 .mem-back img { width:100%; height:75%; object-fit:cover; }
 .mem-back-title { color:#ffd700; font-size:.65rem; text-align:center; padding:3px 4px; font-weight:700; }
@@ -406,6 +407,13 @@ document.getElementById('popup-overlay').addEventListener('click', e => {
 // Enter 키 → 입장하기 클릭
 document.addEventListener('keydown', e => {
   if (e.key !== 'Enter') return;
+  // 타자연습 시작화면에서 Enter → 게임 시작
+  if (document.getElementById('typing-screen').classList.contains('active') &&
+      !ts.active &&
+      document.getElementById('typing-start-overlay').style.display !== 'none') {
+    startTyping();
+    return;
+  }
   if (document.getElementById('popup-overlay').classList.contains('active'))
     document.getElementById('popup-enter').click();
   else if (document.getElementById('art-detail-overlay').classList.contains('active'))
@@ -656,7 +664,7 @@ function startMemory() {
   grid.innerHTML = pairs.map((art, i) => `
     <div class="mem-card" id="mc-${i}" onclick="flipCard(${i})">
       <div class="mem-card-inner">
-        <div class="mem-face">🖼️</div>
+        <div class="mem-face"><img src="card-back.jpg" alt="card back" onerror="this.style.display='none'"></div>
         <div class="mem-back">
           <img src="${art.url}" alt="${art.title}" crossorigin="anonymous" referrerpolicy="no-referrer" onerror="this.style.display='none'">
           <div class="mem-back-title">${art.title}</div>
@@ -899,6 +907,7 @@ function startTyping() {
   typingInput.focus();
 
   stopTyping();
+  ts.active = true; // stopTyping()이 false로 리셋하므로 반드시 이후에 재설정
   ts.interval = setInterval(() => {
     ts.timeLeft--;
     timerEl.textContent = ts.timeLeft;
