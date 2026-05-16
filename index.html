@@ -1,0 +1,1144 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>명화 퀘스트</title>
+<style>
+* { margin:0; padding:0; box-sizing:border-box; }
+body { background:#1a0a2e; display:flex; justify-content:center; align-items:center; height:100vh; overflow:hidden; font-family:'Segoe UI',sans-serif; }
+canvas { display:block; image-rendering:pixelated; }
+
+/* HUD */
+#hud { position:fixed; top:12px; left:50%; transform:translateX(-50%); display:flex; gap:14px; z-index:50; pointer-events:none; }
+.hud-chip { background:linear-gradient(135deg,#2d1b69cc,#1a0a2ecc); border:2px solid #ffd700; border-radius:24px; padding:6px 18px; color:#ffd700; font-size:.93rem; font-weight:700; text-shadow:0 0 8px #ffd700aa; }
+
+/* Hint */
+#hint { position:fixed; bottom:22px; left:50%; transform:translateX(-50%); background:rgba(45,27,105,.88); border:2px solid #a855f7; border-radius:24px; padding:8px 22px; color:#e2c4ff; font-size:.88rem; z-index:50; opacity:0; transition:opacity .3s; pointer-events:none; }
+#hint.visible { opacity:1; }
+
+/* Building popup */
+#popup-overlay { display:none; position:fixed; inset:0; background:rgba(0,0,0,.72); z-index:100; justify-content:center; align-items:center; }
+#popup-overlay.active { display:flex; }
+#popup-box { background:linear-gradient(135deg,#2d1b69,#1a0a2e 60%,#3d1060); border:3px solid #ffd700; border-radius:16px; padding:34px 42px; max-width:460px; width:90%; text-align:center; box-shadow:0 0 40px #a855f780,0 0 80px #ffd70040; }
+#popup-box h2 { font-size:1.7rem; color:#ffd700; text-shadow:0 0 12px #ffd700aa; margin-bottom:10px; }
+.popup-icon { font-size:3.2rem; margin-bottom:12px; }
+#popup-box p { color:#e2c4ff; font-size:.97rem; line-height:1.6; margin-bottom:22px; }
+.popup-btn { background:linear-gradient(90deg,#ffd700,#ff9900); color:#1a0a2e; border:none; border-radius:8px; padding:11px 30px; font-size:.97rem; font-weight:700; cursor:pointer; margin:4px 6px; transition:transform .1s; box-shadow:0 4px 14px #ffd70055; }
+.popup-btn:hover { transform:translateY(-2px); }
+.popup-btn.close-btn { background:linear-gradient(90deg,#6b21a8,#9333ea); color:#fff; }
+
+/* Coin toast */
+#coin-toast { position:fixed; top:68px; left:50%; transform:translateX(-50%); background:linear-gradient(90deg,#ffd700,#ff9900); color:#1a0a2e; font-weight:700; font-size:1.05rem; padding:9px 26px; border-radius:24px; z-index:500; opacity:0; transition:opacity .3s; pointer-events:none; box-shadow:0 4px 20px #ffd70066; }
+#coin-toast.show { opacity:1; }
+
+/* Mini-game common */
+.mini-screen { display:none; position:fixed; inset:0; background:rgba(10,5,25,.97); z-index:200; flex-direction:column; align-items:center; overflow-y:auto; }
+.mini-screen.active { display:flex; }
+.mini-header { width:100%; max-width:920px; display:flex; justify-content:space-between; align-items:center; padding:16px 22px 12px; border-bottom:2px solid #ffd70050; flex-shrink:0; }
+.mini-header h2 { color:#ffd700; font-size:1.45rem; text-shadow:0 0 12px #ffd700aa; }
+.close-mini { background:linear-gradient(90deg,#6b21a8,#9333ea); color:#fff; border:none; border-radius:8px; padding:8px 16px; font-size:.9rem; cursor:pointer; font-weight:700; }
+.close-mini:hover { opacity:.85; }
+
+/* Gallery */
+#gallery-tabs { display:flex; gap:10px; margin:14px 0 0; flex-wrap:wrap; justify-content:center; flex-shrink:0; }
+.tab-btn { background:#2d1b69; border:2px solid #ffd70050; border-radius:20px; color:#e2c4ff; padding:7px 18px; font-size:.88rem; cursor:pointer; transition:all .2s; }
+.tab-btn:hover,.tab-btn.active { background:linear-gradient(90deg,#ffd700,#ff9900); color:#1a0a2e; border-color:#ffd700; font-weight:700; }
+#gallery-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(185px,1fr)); gap:14px; padding:16px 22px 30px; width:100%; max-width:920px; }
+.art-card { background:linear-gradient(135deg,#2d1b69,#1a0a2e); border:2px solid #ffd70030; border-radius:12px; overflow:hidden; cursor:pointer; position:relative; transition:transform .2s,border-color .2s,box-shadow .2s; min-width:150px; min-height:200px; }
+.art-card:hover { transform:translateY(-4px); border-color:#ffd700; box-shadow:0 8px 24px #ffd70040; }
+.art-card-img { width:100%; height:150px; object-fit:cover; display:block; background:#0f0720; }
+.art-card-fallback { width:100%; height:150px; background:#1a0a2e; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:6px; }
+.art-card-fallback span { color:#a78bfa; font-size:.78rem; text-align:center; padding:0 8px; }
+.art-card-info { padding:9px 12px; }
+.art-card-title { color:#ffd700; font-weight:700; font-size:.86rem; }
+.art-card-artist { color:#a78bfa; font-size:.76rem; margin-top:2px; }
+.art-card-viewed { position:absolute; top:7px; right:7px; background:#22c55e; color:#fff; border-radius:50%; width:23px; height:23px; display:flex; align-items:center; justify-content:center; font-size:.8rem; }
+
+/* Art detail */
+#art-detail-overlay { display:none; position:fixed; inset:0; background:rgba(0,0,0,.82); z-index:300; justify-content:center; align-items:center; padding:18px; }
+#art-detail-overlay.active { display:flex; }
+#art-detail-box { background:linear-gradient(135deg,#2d1b69,#1a0a2e 60%,#3d1060); border:3px solid #ffd700; border-radius:16px; max-width:540px; width:100%; overflow:hidden; box-shadow:0 0 60px #ffd70040; }
+#art-detail-box img { width:100%; max-height:270px; object-fit:contain; background:#0a0515; display:block; }
+#art-detail-fallback { width:100%; height:160px; background:#0a0515; display:none; align-items:center; justify-content:center; color:#a78bfa; font-size:1rem; text-align:center; padding:20px; }
+#art-detail-content { padding:16px 20px 20px; }
+#art-detail-title { color:#ffd700; font-size:1.25rem; font-weight:700; margin-bottom:4px; }
+#art-detail-meta { color:#a78bfa; font-size:.8rem; margin-bottom:10px; }
+#art-detail-desc { color:#e2c4ff; font-size:.88rem; line-height:1.72; margin-bottom:16px; }
+.art-detail-btns { display:flex; gap:10px; flex-wrap:wrap; }
+#art-appreciate-btn { background:linear-gradient(90deg,#ffd700,#ff9900); color:#1a0a2e; border:none; border-radius:8px; padding:9px 20px; font-size:.9rem; font-weight:700; cursor:pointer; transition:transform .1s; }
+#art-appreciate-btn:hover { transform:scale(1.04); }
+#art-appreciate-btn:disabled { background:#3a3a3a; color:#666; cursor:default; transform:none; }
+#art-close-btn { background:linear-gradient(90deg,#6b21a8,#9333ea); color:#fff; border:none; border-radius:8px; padding:9px 18px; font-size:.9rem; cursor:pointer; }
+
+/* Quiz */
+#quiz-inner { width:100%; max-width:720px; padding:20px 22px 40px; }
+#quiz-progress-bar { background:#2d1b69; border-radius:12px; height:10px; margin:16px 0; overflow:hidden; }
+#quiz-progress-fill { background:linear-gradient(90deg,#ffd700,#ff9900); height:100%; border-radius:12px; transition:width .4s; }
+#quiz-score-row { display:flex; justify-content:space-between; color:#a78bfa; font-size:.85rem; margin-bottom:18px; }
+#quiz-question-box { background:#0f0720; border:2px solid #6b21a8; border-radius:14px; padding:20px 22px; margin-bottom:18px; color:#e2c4ff; font-size:1.05rem; line-height:1.65; min-height:72px; }
+.quiz-choices { display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-bottom:14px; }
+.quiz-choice { background:#2d1b69; border:2px solid #6b21a8; border-radius:10px; padding:12px 16px; color:#e2c4ff; font-size:.92rem; cursor:pointer; text-align:left; transition:all .2s; }
+.quiz-choice:hover:not(:disabled) { border-color:#ffd700; color:#ffd700; background:#3d1b80; }
+.quiz-choice.correct { background:#14532d; border-color:#22c55e; color:#4ade80; }
+.quiz-choice.wrong { background:#450a0a; border-color:#ef4444; color:#f87171; }
+.quiz-choice:disabled { cursor:default; }
+#quiz-explanation { background:#1e1040; border:2px solid #a855f7; border-radius:10px; padding:14px 18px; color:#e2c4ff; font-size:.88rem; line-height:1.65; margin-bottom:16px; display:none; }
+#quiz-next-btn { background:linear-gradient(90deg,#ffd700,#ff9900); color:#1a0a2e; border:none; border-radius:8px; padding:11px 28px; font-size:.97rem; font-weight:700; cursor:pointer; display:none; }
+#quiz-result-box { background:linear-gradient(135deg,#2d1b69,#1a0a2e 60%,#3d1060); border:3px solid #ffd700; border-radius:16px; padding:30px 34px; text-align:center; box-shadow:0 0 50px #ffd70040; }
+#quiz-result-box h3 { color:#ffd700; font-size:1.5rem; margin-bottom:18px; }
+.quiz-result-stats { display:flex; justify-content:center; gap:18px; flex-wrap:wrap; margin-bottom:22px; }
+.qr-stat { background:#0f0720; border:2px solid #a855f7; border-radius:12px; padding:12px 20px; min-width:105px; text-align:center; }
+.qr-label { color:#a78bfa; font-size:.76rem; margin-bottom:5px; }
+.qr-value { color:#ffd700; font-size:1.75rem; font-weight:700; }
+#quiz-retry-btn { background:linear-gradient(90deg,#ffd700,#ff9900); color:#1a0a2e; border:none; border-radius:8px; padding:11px 26px; font-size:.95rem; font-weight:700; cursor:pointer; margin-right:8px; }
+#quiz-exit-btn { background:linear-gradient(90deg,#6b21a8,#9333ea); color:#fff; border:none; border-radius:8px; padding:11px 22px; font-size:.95rem; cursor:pointer; }
+
+/* Memory card */
+#memory-inner { width:100%; max-width:700px; padding:14px 18px 36px; }
+#memory-info-row { display:flex; justify-content:space-between; align-items:center; margin-bottom:14px; flex-wrap:wrap; gap:8px; }
+.mem-info-chip { background:#2d1b69; border:2px solid #a855f7; border-radius:16px; padding:6px 16px; color:#ffd700; font-size:.88rem; font-weight:700; }
+#memory-grid { display:grid; grid-template-columns:repeat(4,1fr); gap:10px; }
+.mem-card { aspect-ratio:3/4; cursor:pointer; perspective:600px; }
+.mem-card-inner { width:100%; height:100%; position:relative; transform-style:preserve-3d; transition:transform .45s; }
+.mem-card.flipped .mem-card-inner { transform:rotateY(180deg); }
+.mem-card.matched .mem-card-inner { transform:rotateY(180deg); }
+.mem-face,.mem-back { position:absolute; inset:0; backface-visibility:hidden; border-radius:10px; overflow:hidden; display:flex; align-items:center; justify-content:center; }
+.mem-face { background:linear-gradient(135deg,#3d1b69,#1a0a2e); border:2px solid #6b21a8; font-size:2.2rem; }
+.mem-back { background:#0f0720; border:2px solid #ffd70050; transform:rotateY(180deg); flex-direction:column; }
+.mem-back img { width:100%; height:75%; object-fit:cover; }
+.mem-back-title { color:#ffd700; font-size:.65rem; text-align:center; padding:3px 4px; font-weight:700; }
+.mem-card.matched .mem-face { border-color:#22c55e; background:#052e16; }
+#memory-complete-box { background:linear-gradient(135deg,#2d1b69,#1a0a2e 60%,#3d1060); border:3px solid #ffd700; border-radius:16px; padding:28px 32px; text-align:center; margin-top:16px; }
+#memory-complete-box h3 { color:#ffd700; font-size:1.45rem; margin-bottom:16px; }
+
+/* Coloring studio */
+#coloring-inner { width:100%; max-width:900px; padding:10px 18px 36px; display:flex; flex-direction:column; align-items:center; }
+#coloring-painting-tabs { display:flex; gap:8px; margin:12px 0; flex-wrap:wrap; justify-content:center; }
+.ptab { background:#2d1b69; border:2px solid #ffd70050; border-radius:16px; color:#e2c4ff; padding:6px 14px; font-size:.82rem; cursor:pointer; transition:all .2s; }
+.ptab:hover,.ptab.active { background:linear-gradient(90deg,#ffd700,#ff9900); color:#1a0a2e; border-color:#ffd700; font-weight:700; }
+#coloring-workspace { display:flex; gap:14px; align-items:flex-start; width:100%; justify-content:center; flex-wrap:wrap; }
+#coloring-svg-area { background:#fff; border-radius:12px; border:3px solid #ffd70060; overflow:hidden; flex-shrink:0; max-width:100%; }
+#coloring-svg-area svg { display:block; max-width:400px; width:100%; height:auto; cursor:crosshair; }
+.cr { transition:fill .18s; }
+.cr:hover { opacity:.85; }
+#coloring-palette-panel { display:flex; flex-direction:column; align-items:center; gap:10px; }
+#coloring-palette { display:grid; grid-template-columns:repeat(4,1fr); gap:8px; }
+.pal-color { width:36px; height:36px; border-radius:50%; border:3px solid transparent; cursor:pointer; transition:transform .15s,border-color .15s; }
+.pal-color:hover { transform:scale(1.15); }
+.pal-color.selected { border-color:#fff; transform:scale(1.2); box-shadow:0 0 10px rgba(255,255,255,.6); }
+#coloring-cur-color { width:60px; height:60px; border-radius:50%; border:3px solid #ffd700; box-shadow:0 0 14px #ffd70066; }
+#coloring-status { color:#a78bfa; font-size:.82rem; margin-top:6px; text-align:center; }
+#coloring-done-btn { background:linear-gradient(90deg,#ffd700,#ff9900); color:#1a0a2e; border:none; border-radius:8px; padding:10px 22px; font-size:.9rem; font-weight:700; cursor:pointer; margin-top:8px; display:none; }
+
+/* Typing */
+#typing-inner { width:100%; max-width:760px; padding:0 18px 40px; }
+#typing-start-overlay { display:flex; flex-direction:column; align-items:center; gap:16px; padding:44px 0; }
+#typing-start-overlay h3 { color:#ffd700; font-size:1.45rem; }
+#typing-start-overlay p { color:#e2c4ff; font-size:.93rem; text-align:center; line-height:1.7; }
+#typing-start-btn { background:linear-gradient(90deg,#ffd700,#ff9900); color:#1a0a2e; border:none; border-radius:10px; padding:13px 42px; font-size:1.05rem; font-weight:700; cursor:pointer; transition:transform .1s; }
+#typing-start-btn:hover { transform:scale(1.04); }
+#typing-top-row { display:flex; justify-content:center; align-items:center; gap:22px; margin:20px 0 14px; flex-wrap:wrap; }
+#typing-timer { width:78px; height:78px; background:linear-gradient(135deg,#2d1b69,#1a0a2e); border:3px solid #ffd700; border-radius:50%; display:flex; align-items:center; justify-content:center; color:#ffd700; font-size:1.9rem; font-weight:700; text-shadow:0 0 10px #ffd700aa; box-shadow:0 0 18px #ffd70040; flex-shrink:0; transition:border-color .3s,color .3s; }
+#typing-timer.urgent { border-color:#ef4444; color:#ef4444; text-shadow:0 0 10px #ef4444aa; box-shadow:0 0 18px #ef444440; animation:tpulse .8s infinite; }
+@keyframes tpulse { 0%,100%{transform:scale(1)}50%{transform:scale(1.07)} }
+.typing-stat-row { display:flex; gap:12px; }
+.t-stat { background:#2d1b69; border:2px solid #a855f7; border-radius:12px; padding:7px 16px; text-align:center; min-width:92px; }
+.t-stat-label { color:#a78bfa; font-size:.7rem; }
+.t-stat-value { color:#ffd700; font-size:1.05rem; font-weight:700; }
+#typing-sentence-box { background:#0f0720; border:2px solid #6b21a8; border-radius:12px; padding:18px 22px; margin-bottom:14px; font-size:1.3rem; line-height:2.1; min-height:80px; letter-spacing:.04em; word-break:break-all; }
+.c-ok  { color:#4ade80; }
+.c-err { color:#f87171; background:#450a0a; border-radius:2px; }
+.c-cur { color:#ffd700; border-bottom:2px solid #ffd700; }
+.c-dim { color:#374151; }
+#typing-input { width:100%; background:#1a0a2e; border:2px solid #a855f7; border-radius:10px; color:#fff; font-size:1.05rem; padding:12px 16px; outline:none; transition:border-color .2s; }
+#typing-input:focus { border-color:#ffd700; }
+#typing-progress { margin-top:9px; color:#6b7280; font-size:.85rem; text-align:center; }
+#typing-result-box { background:linear-gradient(135deg,#2d1b69,#1a0a2e 60%,#3d1060); border:3px solid #ffd700; border-radius:16px; padding:28px 32px; text-align:center; box-shadow:0 0 50px #ffd70040; margin-top:20px; }
+#typing-result-box h3 { color:#ffd700; font-size:1.5rem; margin-bottom:20px; }
+.t-result-stats { display:flex; justify-content:center; gap:16px; flex-wrap:wrap; margin-bottom:20px; }
+.tr-stat { background:#0f0720; border:2px solid #a855f7; border-radius:12px; padding:12px 20px; min-width:105px; }
+.tr-label { color:#a78bfa; font-size:.75rem; margin-bottom:5px; }
+.tr-value { color:#ffd700; font-size:1.8rem; font-weight:700; }
+#typing-retry-btn { background:linear-gradient(90deg,#ffd700,#ff9900); color:#1a0a2e; border:none; border-radius:8px; padding:11px 26px; font-size:.95rem; font-weight:700; cursor:pointer; margin-right:8px; }
+#typing-exit-btn { background:linear-gradient(90deg,#6b21a8,#9333ea); color:#fff; border:none; border-radius:8px; padding:11px 22px; font-size:.95rem; cursor:pointer; }
+</style>
+</head>
+<body>
+<div id="game-container"></div>
+
+<div id="hud">
+  <div class="hud-chip">⭐ Lv.<span id="hud-level">1</span></div>
+  <div class="hud-chip">🪙 <span id="hud-coins">0</span></div>
+  <div class="hud-chip">🖼️ <span id="hud-artworks">0</span>/50</div>
+</div>
+<div id="hint">Space / Enter 키로 입장</div>
+<div id="coin-toast"></div>
+
+<!-- Building popup -->
+<div id="popup-overlay">
+  <div id="popup-box">
+    <div class="popup-icon" id="popup-icon">🏛️</div>
+    <h2 id="popup-title">건물 이름</h2>
+    <p id="popup-desc">설명 텍스트</p>
+    <div>
+      <button class="popup-btn" id="popup-enter">입장하기</button>
+      <button class="popup-btn close-btn" id="popup-close">닫기</button>
+    </div>
+  </div>
+</div>
+
+<!-- Gallery screen -->
+<div id="gallery-screen" class="mini-screen">
+  <div class="mini-header">
+    <h2>🏛️ 명화 갤러리</h2>
+    <button class="close-mini" onclick="closeMiniGame('gallery')">✕ 나가기</button>
+  </div>
+  <div id="gallery-tabs">
+    <button class="tab-btn active" data-tab="europe">🌍 유럽</button>
+    <button class="tab-btn" data-tab="korea">🇰🇷 한국</button>
+    <button class="tab-btn" data-tab="japan">🗾 일본</button>
+    <button class="tab-btn" data-tab="latam">🌎 중남미</button>
+  </div>
+  <div id="gallery-grid"></div>
+</div>
+
+<!-- Art detail overlay -->
+<div id="art-detail-overlay">
+  <div id="art-detail-box">
+    <img id="art-detail-img" src="" alt="" referrerpolicy="no-referrer" style="display:none">
+    <div id="art-detail-fallback">🖼️ 이미지를 불러오는 중...</div>
+    <div id="art-detail-content">
+      <div id="art-detail-title"></div>
+      <div id="art-detail-meta"></div>
+      <div id="art-detail-desc"></div>
+      <div class="art-detail-btns">
+        <button id="art-appreciate-btn">✅ 감상 완료 (+5 코인)</button>
+        <button id="art-close-btn">닫기</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Quiz screen -->
+<div id="quiz-screen" class="mini-screen">
+  <div class="mini-header">
+    <h2>🎯 퀴즈 타워</h2>
+    <button class="close-mini" onclick="closeMiniGame('quiz')">✕ 나가기</button>
+  </div>
+  <div id="quiz-inner">
+    <div id="quiz-game-area">
+      <div id="quiz-progress-bar"><div id="quiz-progress-fill" style="width:0%"></div></div>
+      <div id="quiz-score-row"><span id="quiz-q-num">1 / 10</span><span>🪙 <span id="quiz-score">0</span></span></div>
+      <div id="quiz-question-box"></div>
+      <div class="quiz-choices" id="quiz-choices"></div>
+      <div id="quiz-explanation"></div>
+      <button id="quiz-next-btn">다음 문제 ▶</button>
+    </div>
+    <div id="quiz-result-box" style="display:none">
+      <h3>🎉 퀴즈 완료!</h3>
+      <div class="quiz-result-stats">
+        <div class="qr-stat"><div class="qr-label">정답</div><div class="qr-value" id="qr-correct">0</div></div>
+        <div class="qr-stat"><div class="qr-label">획득 코인</div><div class="qr-value" id="qr-coins">0 🪙</div></div>
+        <div class="qr-stat"><div class="qr-label">정확도</div><div class="qr-value" id="qr-acc">0%</div></div>
+      </div>
+      <button id="quiz-retry-btn" onclick="startQuiz()">다시 도전</button>
+      <button id="quiz-exit-btn" onclick="closeMiniGame('quiz')">나가기</button>
+    </div>
+  </div>
+</div>
+
+<!-- Memory screen -->
+<div id="memory-screen" class="mini-screen">
+  <div class="mini-header">
+    <h2>🃏 메모리 카드</h2>
+    <button class="close-mini" onclick="closeMiniGame('memory')">✕ 나가기</button>
+  </div>
+  <div id="memory-inner">
+    <div id="memory-info-row">
+      <div class="mem-info-chip">🃏 남은 짝: <span id="mem-pairs-left">8</span></div>
+      <div class="mem-info-chip">🪙 획득: <span id="mem-coins-earned">0</span></div>
+      <div class="mem-info-chip">🔄 시도: <span id="mem-attempts">0</span></div>
+    </div>
+    <div id="memory-grid"></div>
+    <div id="memory-complete-box" style="display:none">
+      <h3>🎉 모두 완성!</h3>
+      <p style="color:#e2c4ff;margin:10px 0 18px">보너스 +20 코인 획득!</p>
+      <button onclick="startMemory()" style="background:linear-gradient(90deg,#ffd700,#ff9900);color:#1a0a2e;border:none;border-radius:8px;padding:10px 24px;font-size:.95rem;font-weight:700;cursor:pointer;margin-right:8px">다시 하기</button>
+      <button onclick="closeMiniGame('memory')" style="background:linear-gradient(90deg,#6b21a8,#9333ea);color:#fff;border:none;border-radius:8px;padding:10px 20px;font-size:.95rem;cursor:pointer">나가기</button>
+    </div>
+  </div>
+</div>
+
+<!-- Coloring screen -->
+<div id="coloring-screen" class="mini-screen">
+  <div class="mini-header">
+    <h2>🎨 색칠 스튜디오</h2>
+    <button class="close-mini" onclick="closeMiniGame('coloring')">✕ 나가기</button>
+  </div>
+  <div id="coloring-inner">
+    <div id="coloring-painting-tabs">
+      <button class="ptab active" data-ptab="starrynight">🌙 별이 빛나는 밤</button>
+      <button class="ptab" data-ptab="monalisa">👩 모나리자</button>
+      <button class="ptab" data-ptab="waterlilies">🌸 수련</button>
+      <button class="ptab" data-ptab="ssireum">🤼 씨름</button>
+      <button class="ptab" data-ptab="greatwave">🌊 가나가와 파도</button>
+    </div>
+    <div id="coloring-workspace">
+      <div id="coloring-svg-area"></div>
+      <div id="coloring-palette-panel">
+        <div id="coloring-cur-color" style="background:#1d4ed8"></div>
+        <div id="coloring-palette"></div>
+        <div id="coloring-status">0 / 0 색칠 완료</div>
+        <button id="coloring-done-btn" onclick="checkColoringComplete(true)">완성! +20 코인 🎉</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Typing screen -->
+<div id="typing-screen" class="mini-screen">
+  <div class="mini-header">
+    <h2>⌨️ 타자 연습장</h2>
+    <button class="close-mini" onclick="closeMiniGame('typing')">✕ 나가기</button>
+  </div>
+  <div id="typing-inner">
+    <div id="typing-start-overlay">
+      <h3>🖼️ 명화 타자 연습</h3>
+      <p>명화에 관한 문장을 빠르고 정확하게 타이핑하세요!<br>30초 동안 최대한 많은 문장을 완성해 코인을 획득하세요.<br>최대 <strong style="color:#ffd700">30 코인</strong></p>
+      <button id="typing-start-btn" onclick="startTyping()">시작하기!</button>
+    </div>
+    <div id="typing-game-area" style="display:none">
+      <div id="typing-top-row">
+        <div id="typing-timer">30</div>
+        <div class="typing-stat-row">
+          <div class="t-stat"><div class="t-stat-label">정확도</div><div class="t-stat-value" id="live-accuracy">100%</div></div>
+          <div class="t-stat"><div class="t-stat-label">완성 문장</div><div class="t-stat-value" id="live-sentences">0</div></div>
+        </div>
+      </div>
+      <div id="typing-sentence-box"></div>
+      <input id="typing-input" type="text" placeholder="여기에 입력하세요..."
+             autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false">
+      <div id="typing-progress"></div>
+    </div>
+    <div id="typing-result-box" style="display:none">
+      <h3>🎉 게임 종료!</h3>
+      <div class="t-result-stats">
+        <div class="tr-stat"><div class="tr-label">WPM</div><div class="tr-value" id="result-wpm">0</div></div>
+        <div class="tr-stat"><div class="tr-label">정확도</div><div class="tr-value" id="result-accuracy">0%</div></div>
+        <div class="tr-stat"><div class="tr-label">획득 코인</div><div class="tr-value" id="result-coins">0 🪙</div></div>
+      </div>
+      <button id="typing-retry-btn" onclick="startTyping()">다시 하기</button>
+      <button id="typing-exit-btn" onclick="closeMiniGame('typing')">나가기</button>
+    </div>
+  </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/phaser@3.60.0/dist/phaser.min.js"></script>
+<script>
+// ─────────────────────────────────────────────
+//  건물 데이터
+// ─────────────────────────────────────────────
+const BUILDINGS = [
+  { id:'gallery', name:'명화 갤러리', icon:'🏛️', desc:'세계 각국의 명화를 감상하세요!\n유럽·한국·일본·중남미 작품을 만날 수 있어요.', color:0xffd700, tx:5,  ty:3,  width:4, height:3 },
+  { id:'quiz',    name:'퀴즈 타워',   icon:'🎯', desc:'명화 4지선다 퀴즈를 풀고 코인을 획득하세요!\n10문제, 정답당 +10 코인.',                    color:0xff6b35, tx:13, ty:3,  width:4, height:3 },
+  { id:'memory',  name:'메모리 카드', icon:'🃏', desc:'명화 카드 16장의 짝을 맞추세요!\n짝 맞출 때마다 +5코인, 전체 완성 +20 보너스!',           color:0xa855f7, tx:5,  ty:11, width:4, height:3 },
+  { id:'coloring',name:'색칠 스튜디오',icon:'🎨',desc:'명화 윤곽선을 직접 색칠하세요!\n5가지 명화, 16색 팔레트, 완성시 +20 코인.',              color:0x22c55e, tx:13, ty:11, width:4, height:3 },
+  { id:'typing',  name:'타자 연습장', icon:'⌨️', desc:'명화 관련 문장을 타이핑하세요!\n30초, 정확도에 따라 최대 +30 코인.',                      color:0x38bdf8, tx:9,  ty:7,  width:4, height:3 }
+];
+
+// ─────────────────────────────────────────────
+//  게임 상태
+// ─────────────────────────────────────────────
+const state = { level:1, coins:0, artworks:0 };
+function updateHUD() {
+  document.getElementById('hud-level').textContent    = state.level;
+  document.getElementById('hud-coins').textContent    = state.coins;
+  document.getElementById('hud-artworks').textContent = state.artworks;
+}
+
+// ─────────────────────────────────────────────
+//  코인 토스트
+// ─────────────────────────────────────────────
+let _toastTmr = null;
+function showCoinToast(n) {
+  const el = document.getElementById('coin-toast');
+  el.textContent = `🪙 +${n} 코인!`;
+  el.classList.add('show');
+  clearTimeout(_toastTmr);
+  _toastTmr = setTimeout(() => el.classList.remove('show'), 2000);
+}
+
+// ─────────────────────────────────────────────
+//  팝업 & Enter 키
+// ─────────────────────────────────────────────
+let activeBuilding = null;
+let gameScene      = null;
+
+function showPopup(b) {
+  activeBuilding = b;
+  document.getElementById('popup-icon').textContent  = b.icon;
+  document.getElementById('popup-title').textContent = b.name;
+  document.getElementById('popup-desc').textContent  = b.desc;
+  document.getElementById('popup-overlay').classList.add('active');
+  if (gameScene) gameScene.input.keyboard.enabled = false;
+}
+function hidePopup() {
+  document.getElementById('popup-overlay').classList.remove('active');
+  activeBuilding = null;
+  if (gameScene) gameScene.input.keyboard.enabled = true;
+}
+
+document.getElementById('popup-close').addEventListener('click', hidePopup);
+document.getElementById('popup-enter').addEventListener('click', () => {
+  if (!activeBuilding) return;
+  const id = activeBuilding.id; hidePopup();
+  if      (id === 'gallery')  openGallery();
+  else if (id === 'quiz')     openQuiz();
+  else if (id === 'memory')   openMemory();
+  else if (id === 'coloring') openColoring();
+  else if (id === 'typing')   openTyping();
+});
+document.getElementById('popup-overlay').addEventListener('click', e => {
+  if (e.target.id === 'popup-overlay') hidePopup();
+});
+
+// Enter 키 → 입장하기 클릭
+document.addEventListener('keydown', e => {
+  if (e.key !== 'Enter') return;
+  if (document.getElementById('popup-overlay').classList.contains('active'))
+    document.getElementById('popup-enter').click();
+  else if (document.getElementById('art-detail-overlay').classList.contains('active'))
+    document.getElementById('art-appreciate-btn').click();
+});
+
+// ─────────────────────────────────────────────
+//  미니게임 공통
+// ─────────────────────────────────────────────
+function closeMiniGame(id) {
+  if (id === 'typing') stopTyping();
+  document.getElementById(id + '-screen').classList.remove('active');
+  document.getElementById('art-detail-overlay').classList.remove('active');
+  if (gameScene) gameScene.input.keyboard.enabled = true;
+}
+
+// ─────────────────────────────────────────────
+//  명화 데이터
+// ─────────────────────────────────────────────
+const ARTWORKS = {
+  europe: [
+    { id:'monalisa',    title:'모나리자',            artist:'레오나르도 다빈치', year:'1503–1519', country:'이탈리아',
+      url:'https://upload.wikimedia.org/wikipedia/commons/thumb/e/ec/Mona_Lisa%2C_by_Leonardo_da_Vinci%2C_from_C2RMF_retouched.jpg/400px-Mona_Lisa%2C_by_Leonardo_da_Vinci%2C_from_C2RMF_retouched.jpg',
+      desc:'이탈리아 르네상스의 거장 레오나르도 다빈치가 그린 세계에서 가장 유명한 초상화입니다. 신비로운 미소와 스푸마토 기법으로 수백 년간 사람들을 매료시켜 왔습니다. 현재 프랑스 루브르 박물관에 소장되어 연간 900만 명 이상이 감상합니다.' },
+    { id:'starrynight', title:'별이 빛나는 밤',      artist:'빈센트 반 고흐',   year:'1889',      country:'네덜란드/프랑스',
+      url:'https://upload.wikimedia.org/wikipedia/commons/thumb/e/ea/Van_Gogh_-_Starry_Night_-_Google_Art_Project.jpg/400px-Van_Gogh_-_Starry_Night_-_Google_Art_Project.jpg',
+      desc:'반 고흐가 생레미 드 프로방스 요양원에서 그린 걸작입니다. 소용돌이치는 밤하늘과 빛나는 별들, 고요한 마을의 대비가 인상적입니다. 뉴욕 현대미술관(MoMA) 소장.' },
+    { id:'pearlgirl',   title:'진주 귀걸이를 한 소녀', artist:'요하네스 페르메이르', year:'1665',  country:'네덜란드',
+      url:'https://upload.wikimedia.org/wikipedia/commons/thumb/d/d7/Meisje_met_de_parel.jpg/400px-Meisje_met_de_parel.jpg',
+      desc:'"북방의 모나리자"라 불리는 걸작입니다. 신비로운 눈빛과 반짝이는 진주 귀걸이가 특징이며 소녀의 정체는 아직도 미스터리입니다. 네덜란드 마우리츠하위스 미술관 소장.' },
+    { id:'waterlilies', title:'수련',                artist:'클로드 모네',       year:'1906',      country:'프랑스',
+      url:'https://upload.wikimedia.org/wikipedia/commons/thumb/a/aa/Claude_Monet_-_Water_Lilies_-_1906%2C_Ryerson.jpg/400px-Claude_Monet_-_Water_Lilies_-_1906%2C_Ryerson.jpg',
+      desc:'인상주의 거장 모네가 지베르니 정원의 연못을 그린 연작입니다. 빛과 색의 변화에 집중하여 수면과 수련을 몽환적으로 표현했습니다. 시카고 아트 인스티튜트 소장.' }
+  ],
+  korea: [
+    { id:'ssireum',     title:'씨름',                artist:'김홍도 (단원)',     year:'18세기',    country:'조선',
+      url:'https://upload.wikimedia.org/wikipedia/commons/thumb/6/6d/Danwon-Ssireum.jpg/400px-Danwon-Ssireum.jpg',
+      desc:'조선 후기 풍속화의 대가 단원 김홍도의 대표작입니다. 씨름 경기 장면을 생동감 넘치게 묘사했으며 구경꾼들의 다양한 표정이 해학적입니다. 국립중앙박물관 소장.' },
+    { id:'chochungdo',  title:'초충도',              artist:'신사임당',          year:'16세기',    country:'조선',
+      url:'https://upload.wikimedia.org/wikipedia/commons/0/04/Chochungdo.jpg',
+      desc:'이율곡의 어머니이자 뛰어난 예술가 신사임당의 대표작입니다. 풀과 벌레를 섬세하게 표현한 세밀화로, 우리나라 5만원권 지폐에도 수록되어 있습니다.' }
+  ],
+  japan: [
+    { id:'greatwave',   title:'가나가와 해변의 큰 파도', artist:'가쓰시카 호쿠사이', year:'1831',  country:'일본',
+      url:'https://upload.wikimedia.org/wikipedia/commons/thumb/a/a5/Tsunami_by_hokusai_19th_century.jpg/400px-Tsunami_by_hokusai_19th_century.jpg',
+      desc:'에도 시대 목판화 거장 호쿠사이의 "후지산 36경" 연작 중 가장 유명한 작품입니다. 거대한 파도와 후지산의 대비가 인상적이며 서양 예술가에도 큰 영향을 미쳤습니다.' }
+  ],
+  latam: [
+    { id:'frida',       title:'자화상',              artist:'프리다 칼로',        year:'1940',      country:'멕시코',
+      url:'https://upload.wikimedia.org/wikipedia/en/1/18/Frida_Kahlo_%28self_portrait%29.jpg',
+      desc:'멕시코를 대표하는 화가 프리다 칼로의 자화상입니다. 신체적 고통을 강렬한 색채와 초현실주의 기법으로 표현했습니다. 이어지는 눈썹과 멕시코 전통 의상이 트레이드마크입니다.' }
+  ]
+};
+
+// ─────────────────────────────────────────────
+//  갤러리
+// ─────────────────────────────────────────────
+const viewedArtworks = new Set();
+let currentArtwork   = null;
+let curGalleryTab    = 'europe';
+
+function openGallery() {
+  document.getElementById('gallery-screen').classList.add('active');
+  if (gameScene) gameScene.input.keyboard.enabled = false;
+  renderGalleryTab(curGalleryTab);
+}
+
+function renderGalleryTab(tab) {
+  curGalleryTab = tab;
+  document.querySelectorAll('#gallery-tabs .tab-btn').forEach(b => b.classList.toggle('active', b.dataset.tab === tab));
+  const list = ARTWORKS[tab] || [];
+  document.getElementById('gallery-grid').innerHTML = list.map(art => `
+    <div class="art-card" onclick="openArtDetail('${art.id}','${tab}')">
+      <img class="art-card-img" src="${art.url}" alt="${art.title}"
+           referrerpolicy="no-referrer"
+           onerror="this.style.display='none';this.nextElementSibling.style.display='flex'">
+      <div class="art-card-fallback" style="display:none">
+        <span style="font-size:2rem">🖼️</span>
+        <span>${art.title}</span>
+        <span>${art.artist}</span>
+      </div>
+      <div class="art-card-info">
+        <div class="art-card-title">${art.title}</div>
+        <div class="art-card-artist">${art.artist} · ${art.year}</div>
+      </div>
+      ${viewedArtworks.has(art.id) ? '<div class="art-card-viewed">✓</div>' : ''}
+    </div>
+  `).join('');
+}
+
+function openArtDetail(artId, tab) {
+  const art = (ARTWORKS[tab] || []).find(a => a.id === artId);
+  if (!art) return;
+  currentArtwork = art;
+  const img = document.getElementById('art-detail-img');
+  const fb  = document.getElementById('art-detail-fallback');
+  img.style.display = 'block'; fb.style.display = 'none';
+  img.src = art.url;
+  img.onerror = () => { img.style.display = 'none'; fb.style.display = 'flex'; fb.textContent = art.title + ' — ' + art.artist; };
+  document.getElementById('art-detail-title').textContent = art.title;
+  document.getElementById('art-detail-meta').textContent  = `${art.artist} · ${art.year} · ${art.country}`;
+  document.getElementById('art-detail-desc').textContent  = art.desc;
+  const btn = document.getElementById('art-appreciate-btn');
+  btn.disabled = viewedArtworks.has(art.id);
+  btn.textContent = viewedArtworks.has(art.id) ? '✅ 이미 감상한 작품' : '✅ 감상 완료 (+5 코인)';
+  document.getElementById('art-detail-overlay').classList.add('active');
+}
+
+document.getElementById('gallery-tabs').addEventListener('click', e => {
+  const b = e.target.closest('.tab-btn'); if (b) renderGalleryTab(b.dataset.tab);
+});
+document.getElementById('art-appreciate-btn').addEventListener('click', () => {
+  if (!currentArtwork || viewedArtworks.has(currentArtwork.id)) return;
+  viewedArtworks.add(currentArtwork.id);
+  state.coins += 5; state.artworks++; updateHUD(); showCoinToast(5);
+  document.getElementById('art-appreciate-btn').disabled = true;
+  document.getElementById('art-appreciate-btn').textContent = '✅ 이미 감상한 작품';
+  renderGalleryTab(curGalleryTab);
+});
+document.getElementById('art-close-btn').addEventListener('click', () => {
+  document.getElementById('art-detail-overlay').classList.remove('active');
+});
+document.getElementById('art-detail-overlay').addEventListener('click', e => {
+  if (e.target.id === 'art-detail-overlay')
+    document.getElementById('art-detail-overlay').classList.remove('active');
+});
+
+// ─────────────────────────────────────────────
+//  퀴즈
+// ─────────────────────────────────────────────
+const QUIZ_QUESTIONS = [
+  { q:'모나리자를 그린 화가는 누구인가요?', choices:['레오나르도 다빈치','미켈란젤로','라파엘로','보티첼리'], answer:0, exp:'레오나르도 다빈치(1452-1519)가 약 1503년부터 그린 르네상스의 걸작입니다.' },
+  { q:'\'별이 빛나는 밤\'을 그린 화가는?', choices:['폴 고갱','클로드 모네','빈센트 반 고흐','폴 세잔'], answer:2, exp:'반 고흐(1853-1890)가 생레미 요양원에서 1889년에 그린 작품입니다.' },
+  { q:'\'진주 귀걸이를 한 소녀\'의 화가 국적은?', choices:['프랑스','스페인','네덜란드','독일'], answer:2, exp:'페르메이르(1632-1675)는 네덜란드 황금기 회화를 대표하는 화가입니다.' },
+  { q:'수련 연작을 그린 인상주의 화가는?', choices:['피에르 르누아르','에드가 드가','카미유 피사로','클로드 모네'], answer:3, exp:'모네(1840-1926)는 지베르니 정원에서 250점 이상의 수련 연작을 그렸습니다.' },
+  { q:'\'씨름\'을 그린 조선 시대 화가는?', choices:['신윤복','정선','안견','김홍도'], answer:3, exp:'단원 김홍도(1745-1806?)는 조선 후기를 대표하는 풍속화가입니다.' },
+  { q:'\'초충도\'를 그린 예술가는?', choices:['허난설헌','이매창','황진이','신사임당'], answer:3, exp:'신사임당(1504-1551)은 이율곡의 어머니이자 뛰어난 화가로, 초충도가 5만원권에 수록되었습니다.' },
+  { q:'\'가나가와 해변의 큰 파도\'를 그린 화가는?', choices:['우타가와 히로시게','기타가와 우타마로','가쓰시카 호쿠사이','도슈사이 샤라쿠'], answer:2, exp:'호쿠사이(1760-1849)는 "후지산 36경" 연작으로 유명한 에도 시대 목판화 거장입니다.' },
+  { q:'프리다 칼로의 국적은?', choices:['아르헨티나','브라질','페루','멕시코'], answer:3, exp:'프리다 칼로(1907-1954)는 멕시코의 상징적인 여성 화가로 강렬한 자화상으로 유명합니다.' },
+  { q:'모나리자는 현재 어느 박물관에 있나요?', choices:['대영박물관','루브르 박물관','에르미타주 미술관','우피치 미술관'], answer:1, exp:'모나리자는 프랑스 파리의 루브르 박물관에 소장되어 있으며 연간 900만 명이 관람합니다.' },
+  { q:'\'별이 빛나는 밤\'은 어느 미술관 소장인가요?', choices:['테이트 모던','오르세 미술관','뉴욕 현대미술관(MoMA)','구겐하임 미술관'], answer:2, exp:'별이 빛나는 밤은 미국 뉴욕의 현대미술관(MoMA)에 소장되어 있습니다.' },
+  { q:'클로드 모네는 어느 나라 화가인가요?', choices:['이탈리아','영국','독일','프랑스'], answer:3, exp:'클로드 모네(1840-1926)는 프랑스 파리 출신으로 인상주의를 이끈 핵심 화가입니다.' },
+  { q:'빈센트 반 고흐의 국적은?', choices:['벨기에','프랑스','네덜란드','독일'], answer:2, exp:'반 고흐(1853-1890)는 네덜란드 출신으로 프랑스에서 활동했습니다.' },
+  { q:'호쿠사이의 파도 그림이 속한 연작 이름은?', choices:['100가지 후지산','에도 명소','동해도 53역','후지산 36경'], answer:3, exp:'"가나가와 해변의 큰 파도"는 호쿠사이의 "후지산 36경"(1831-1833) 첫 번째 작품입니다.' },
+  { q:'신사임당의 아들로 유명한 조선 학자는?', choices:['이황','정약용','김정희','이율곡'], answer:3, exp:'이율곡(이이, 1536-1584)은 신사임당의 아들로 조선 최고의 성리학자 중 한 명입니다.' },
+  { q:'가쓰시카 호쿠사이의 파도 그림 제작 기법은?', choices:['유화','수채화','프레스코','목판화'], answer:3, exp:'호쿠사이의 작품은 나무에 그림을 새겨 종이에 찍는 목판화(우키요에) 기법으로 제작되었습니다.' },
+  { q:'\'초충도\'가 수록된 우리나라 지폐는?', choices:['천원권','오천원권','만원권','오만원권'], answer:3, exp:'신사임당의 초충도 중 수박과 여치 그림이 5만원권 지폐 뒷면에 수록되어 있습니다.' },
+  { q:'레오나르도 다빈치가 활동한 시대는?', choices:['중세 시대','바로크 시대','이탈리아 르네상스','낭만주의 시대'], answer:2, exp:'레오나르도 다빈치(1452-1519)는 이탈리아 르네상스 시대를 대표하는 천재 예술가·과학자입니다.' },
+  { q:'인상주의(Impressionism)의 특징은?', choices:['정밀한 세부 묘사','어두운 명암 대비','기하학적 도형 사용','빛과 색채의 순간적 표현'], answer:3, exp:'인상주의는 빛과 색채의 순간적 인상을 포착하는 화풍으로 모네·르누아르·드가가 대표 화가입니다.' },
+  { q:'\'씨름\'은 어느 박물관에 소장되어 있나요?', choices:['국립현대미술관','간송미술관','리움미술관','국립중앙박물관'], answer:3, exp:'김홍도의 풍속화첩은 국립중앙박물관에 소장되어 있습니다.' },
+  { q:'프리다 칼로가 즐겨 그린 주제는?', choices:['풍경화','정물화','역사화','자화상'], answer:3, exp:'프리다 칼로는 생애 동안 55점의 자화상을 그렸으며, 신체적 고통과 정체성을 표현했습니다.' }
+];
+
+let quizState = { questions:[], idx:0, score:0, correctCount:0, answered:false };
+
+function openQuiz() {
+  document.getElementById('quiz-screen').classList.add('active');
+  if (gameScene) gameScene.input.keyboard.enabled = false;
+  startQuiz();
+}
+function startQuiz() {
+  const shuffled = [...QUIZ_QUESTIONS].sort(() => Math.random() - .5).slice(0, 10);
+  quizState = { questions:shuffled, idx:0, score:0, correctCount:0, answered:false };
+  document.getElementById('quiz-result-box').style.display = 'none';
+  document.getElementById('quiz-game-area').style.display  = 'block';
+  renderQuizQuestion();
+}
+function renderQuizQuestion() {
+  const { questions, idx } = quizState;
+  const q = questions[idx];
+  const total = questions.length;
+  document.getElementById('quiz-q-num').textContent    = `${idx + 1} / ${total}`;
+  document.getElementById('quiz-score').textContent    = quizState.score;
+  document.getElementById('quiz-progress-fill').style.width = `${(idx / total) * 100}%`;
+  document.getElementById('quiz-question-box').textContent  = q.q;
+  document.getElementById('quiz-explanation').style.display = 'none';
+  document.getElementById('quiz-next-btn').style.display    = 'none';
+  quizState.answered = false;
+  document.getElementById('quiz-choices').innerHTML = q.choices.map((c, i) => `
+    <button class="quiz-choice" onclick="answerQuiz(${i})">${i === 0 ? '①' : i === 1 ? '②' : i === 2 ? '③' : '④'} ${c}</button>
+  `).join('');
+}
+function answerQuiz(idx) {
+  if (quizState.answered) return;
+  quizState.answered = true;
+  const q    = quizState.questions[quizState.idx];
+  const btns = document.querySelectorAll('.quiz-choice');
+  btns.forEach(b => b.disabled = true);
+  btns[q.answer].classList.add('correct');
+  if (idx === q.answer) {
+    quizState.score += 10; quizState.correctCount++;
+    state.coins += 10; updateHUD(); showCoinToast(10);
+  } else {
+    btns[idx].classList.add('wrong');
+    const exp = document.getElementById('quiz-explanation');
+    exp.textContent = '💡 ' + q.exp;
+    exp.style.display = 'block';
+  }
+  document.getElementById('quiz-score').textContent = quizState.score;
+  document.getElementById('quiz-next-btn').style.display = 'block';
+}
+document.getElementById('quiz-next-btn').addEventListener('click', () => {
+  quizState.idx++;
+  if (quizState.idx >= quizState.questions.length) showQuizResult();
+  else renderQuizQuestion();
+});
+function showQuizResult() {
+  document.getElementById('quiz-game-area').style.display  = 'none';
+  document.getElementById('quiz-result-box').style.display = 'block';
+  const acc = Math.round(quizState.correctCount / quizState.questions.length * 100);
+  document.getElementById('qr-correct').textContent = `${quizState.correctCount}/${quizState.questions.length}`;
+  document.getElementById('qr-coins').textContent   = quizState.score + ' 🪙';
+  document.getElementById('qr-acc').textContent     = acc + '%';
+}
+
+// ─────────────────────────────────────────────
+//  메모리 카드
+// ─────────────────────────────────────────────
+const MEM_ARTS = [
+  { id:'monalisa',    title:'모나리자',       url:ARTWORKS.europe[0].url },
+  { id:'starrynight', title:'별이 빛나는 밤', url:ARTWORKS.europe[1].url },
+  { id:'pearlgirl',   title:'진주 귀걸이 소녀', url:ARTWORKS.europe[2].url },
+  { id:'waterlilies', title:'수련',           url:ARTWORKS.europe[3].url },
+  { id:'ssireum',     title:'씨름',           url:ARTWORKS.korea[0].url  },
+  { id:'chochungdo',  title:'초충도',         url:ARTWORKS.korea[1].url  },
+  { id:'greatwave',   title:'가나가와 파도',   url:ARTWORKS.japan[0].url  },
+  { id:'frida',       title:'프리다 자화상',   url:ARTWORKS.latam[0].url  }
+];
+
+let memState = { cards:[], flipped:[], matched:new Set(), lock:false, coinsEarned:0, attempts:0 };
+
+function openMemory() {
+  document.getElementById('memory-screen').classList.add('active');
+  if (gameScene) gameScene.input.keyboard.enabled = false;
+  startMemory();
+}
+function startMemory() {
+  document.getElementById('memory-complete-box').style.display = 'none';
+  memState = { cards:[], flipped:[], matched:new Set(), lock:false, coinsEarned:0, attempts:0 };
+  const pairs = [...MEM_ARTS, ...MEM_ARTS].sort(() => Math.random() - .5);
+  memState.cards = pairs;
+  document.getElementById('mem-pairs-left').textContent   = MEM_ARTS.length;
+  document.getElementById('mem-coins-earned').textContent = 0;
+  document.getElementById('mem-attempts').textContent     = 0;
+  const grid = document.getElementById('memory-grid');
+  grid.innerHTML = pairs.map((art, i) => `
+    <div class="mem-card" id="mc-${i}" onclick="flipCard(${i})">
+      <div class="mem-card-inner">
+        <div class="mem-face">🖼️</div>
+        <div class="mem-back">
+          <img src="${art.url}" alt="${art.title}" referrerpolicy="no-referrer" onerror="this.style.display='none'">
+          <div class="mem-back-title">${art.title}</div>
+        </div>
+      </div>
+    </div>
+  `).join('');
+}
+function flipCard(i) {
+  if (memState.lock) return;
+  if (memState.matched.has(i)) return;
+  if (memState.flipped.includes(i)) return;
+  const card = document.getElementById('mc-' + i);
+  card.classList.add('flipped');
+  memState.flipped.push(i);
+  if (memState.flipped.length === 2) {
+    memState.lock = true;
+    memState.attempts++;
+    document.getElementById('mem-attempts').textContent = memState.attempts;
+    const [a, b] = memState.flipped;
+    if (memState.cards[a].id === memState.cards[b].id) {
+      memState.matched.add(a); memState.matched.add(b);
+      document.getElementById('mc-' + a).classList.add('matched');
+      document.getElementById('mc-' + b).classList.add('matched');
+      memState.coinsEarned += 5; state.coins += 5; updateHUD(); showCoinToast(5);
+      document.getElementById('mem-coins-earned').textContent = memState.coinsEarned;
+      document.getElementById('mem-pairs-left').textContent = MEM_ARTS.length - memState.matched.size / 2;
+      memState.flipped = []; memState.lock = false;
+      if (memState.matched.size === memState.cards.length) {
+        setTimeout(() => {
+          state.coins += 20; updateHUD(); showCoinToast(20);
+          document.getElementById('memory-complete-box').style.display = 'block';
+        }, 400);
+      }
+    } else {
+      setTimeout(() => {
+        document.getElementById('mc-' + a).classList.remove('flipped');
+        document.getElementById('mc-' + b).classList.remove('flipped');
+        memState.flipped = []; memState.lock = false;
+      }, 1000);
+    }
+  }
+}
+
+// ─────────────────────────────────────────────
+//  색칠 스튜디오
+// ─────────────────────────────────────────────
+const PALETTE = ['#1d4ed8','#60a5fa','#06b6d4','#22c55e','#15803d','#fbbf24','#f97316','#ef4444','#ec4899','#a855f7','#8b5cf6','#78350f','#92400e','#d1d5db','#6b7280','#111827'];
+let selectedColor   = '#1d4ed8';
+let coloringDone    = false;
+let curPainting     = 'starrynight';
+
+const PAINTINGS_SVG = {
+  starrynight: `<svg viewBox="0 0 400 300" xmlns="http://www.w3.org/2000/svg">
+  <rect class="cr" id="sn-sky" x="0" y="0" width="400" height="262" fill="#f8f4ee" stroke="#333" stroke-width="1.5"/>
+  <ellipse class="cr" id="sn-swirl1" cx="120" cy="62" rx="90" ry="45" fill="#f8f4ee" stroke="#333" stroke-width="2"/>
+  <ellipse class="cr" id="sn-swirl2" cx="280" cy="84" rx="76" ry="38" fill="#f8f4ee" stroke="#333" stroke-width="2"/>
+  <ellipse class="cr" id="sn-swirl3" cx="185" cy="142" rx="58" ry="30" fill="#f8f4ee" stroke="#333" stroke-width="2"/>
+  <circle class="cr" id="sn-moon" cx="345" cy="56" r="38" fill="#f8f4ee" stroke="#333" stroke-width="2"/>
+  <circle class="cr" id="sn-star1" cx="62" cy="30" r="10" fill="#f8f4ee" stroke="#333" stroke-width="1.5"/>
+  <circle class="cr" id="sn-star2" cx="175" cy="22" r="9" fill="#f8f4ee" stroke="#333" stroke-width="1.5"/>
+  <circle class="cr" id="sn-star3" cx="312" cy="138" r="9" fill="#f8f4ee" stroke="#333" stroke-width="1.5"/>
+  <rect class="cr" id="sn-ground" x="0" y="262" width="400" height="38" fill="#f8f4ee" stroke="#333" stroke-width="1.5"/>
+  <polygon class="cr" id="sn-cypress" points="28,262 48,262 38,88" fill="#f8f4ee" stroke="#333" stroke-width="2"/>
+  <rect class="cr" id="sn-bldg1" x="135" y="220" width="34" height="42" fill="#f8f4ee" stroke="#333" stroke-width="1.5"/>
+  <rect class="cr" id="sn-bldg2" x="178" y="230" width="28" height="32" fill="#f8f4ee" stroke="#333" stroke-width="1.5"/>
+  <rect class="cr" id="sn-bldg3" x="215" y="224" width="24" height="38" fill="#f8f4ee" stroke="#333" stroke-width="1.5"/>
+  <rect class="cr" id="sn-church" x="252" y="200" width="30" height="62" fill="#f8f4ee" stroke="#333" stroke-width="1.5"/>
+  <polygon class="cr" id="sn-steeple" points="252,200 282,200 267,168" fill="#f8f4ee" stroke="#333" stroke-width="1.5"/>
+</svg>`,
+  monalisa: `<svg viewBox="0 0 280 360" xmlns="http://www.w3.org/2000/svg">
+  <rect class="cr" id="ml-bgleft" x="0" y="0" width="98" height="188" fill="#f8f4ee" stroke="#333" stroke-width="1"/>
+  <rect class="cr" id="ml-bgright" x="182" y="0" width="98" height="188" fill="#f8f4ee" stroke="#333" stroke-width="1"/>
+  <path class="cr" id="ml-robe" d="M44,192 Q72,168 108,156 L172,156 Q208,168 236,192 L248,360 L32,360 Z" fill="#f8f4ee" stroke="#333" stroke-width="2"/>
+  <rect class="cr" id="ml-neck" x="118" y="118" width="44" height="42" fill="#f8f4ee" stroke="#333" stroke-width="1.5"/>
+  <ellipse class="cr" id="ml-face" cx="140" cy="82" rx="52" ry="62" fill="#f8f4ee" stroke="#333" stroke-width="2"/>
+  <path class="cr" id="ml-hair-l" d="M88,28 Q72,4 94,76 Q84,106 90,136 L110,126 Q106,82 108,52 Z" fill="#f8f4ee" stroke="#333" stroke-width="1.5"/>
+  <path class="cr" id="ml-hair-r" d="M192,28 Q208,4 186,76 Q196,106 190,136 L170,126 Q174,82 172,52 Z" fill="#f8f4ee" stroke="#333" stroke-width="1.5"/>
+  <ellipse class="cr" id="ml-hands" cx="140" cy="290" rx="58" ry="24" fill="#f8f4ee" stroke="#333" stroke-width="1.5"/>
+  <path class="cr" id="ml-veil" d="M88,28 Q140,-8 192,28 Q188,6 140,2 Q92,6 88,28 Z" fill="#f8f4ee" stroke="#333" stroke-width="1"/>
+</svg>`,
+  waterlilies: `<svg viewBox="0 0 400 280" xmlns="http://www.w3.org/2000/svg">
+  <rect class="cr" id="wl-water" x="0" y="0" width="400" height="280" fill="#f8f4ee" stroke="#333" stroke-width="1"/>
+  <ellipse class="cr" id="wl-pad1" cx="66" cy="86" rx="52" ry="28" fill="#f8f4ee" stroke="#333" stroke-width="1.5"/>
+  <ellipse class="cr" id="wl-pad2" cx="196" cy="56" rx="58" ry="30" fill="#f8f4ee" stroke="#333" stroke-width="1.5"/>
+  <ellipse class="cr" id="wl-pad3" cx="336" cy="96" rx="50" ry="25" fill="#f8f4ee" stroke="#333" stroke-width="1.5"/>
+  <ellipse class="cr" id="wl-pad4" cx="96" cy="212" rx="62" ry="30" fill="#f8f4ee" stroke="#333" stroke-width="1.5"/>
+  <ellipse class="cr" id="wl-pad5" cx="272" cy="222" rx="55" ry="28" fill="#f8f4ee" stroke="#333" stroke-width="1.5"/>
+  <ellipse class="cr" id="wl-pad6" cx="378" cy="248" rx="35" ry="18" fill="#f8f4ee" stroke="#333" stroke-width="1.5"/>
+  <circle class="cr" id="wl-fl1" cx="66" cy="72" r="15" fill="#f8f4ee" stroke="#333" stroke-width="1.5"/>
+  <circle class="cr" id="wl-fl2" cx="196" cy="40" r="16" fill="#f8f4ee" stroke="#333" stroke-width="1.5"/>
+  <circle class="cr" id="wl-fl3" cx="96" cy="196" r="15" fill="#f8f4ee" stroke="#333" stroke-width="1.5"/>
+  <circle class="cr" id="wl-fl4" cx="272" cy="206" r="14" fill="#f8f4ee" stroke="#333" stroke-width="1.5"/>
+  <circle class="cr" id="wl-ctr1" cx="66" cy="72" r="6" fill="#f8f4ee" stroke="#333" stroke-width="1"/>
+  <circle class="cr" id="wl-ctr2" cx="196" cy="40" r="7" fill="#f8f4ee" stroke="#333" stroke-width="1"/>
+  <circle class="cr" id="wl-ctr3" cx="96" cy="196" r="6" fill="#f8f4ee" stroke="#333" stroke-width="1"/>
+</svg>`,
+  ssireum: `<svg viewBox="0 0 400 320" xmlns="http://www.w3.org/2000/svg">
+  <ellipse class="cr" id="ss-crowd-bg" cx="200" cy="138" rx="188" ry="126" fill="#f8f4ee" stroke="#333" stroke-width="1.5"/>
+  <circle class="cr" id="ss-hd-a" cx="60" cy="80" r="18" fill="#f8f4ee" stroke="#333" stroke-width="1.5"/>
+  <circle class="cr" id="ss-hd-b" cx="105" cy="64" r="18" fill="#f8f4ee" stroke="#333" stroke-width="1.5"/>
+  <circle class="cr" id="ss-hd-c" cx="152" cy="54" r="18" fill="#f8f4ee" stroke="#333" stroke-width="1.5"/>
+  <circle class="cr" id="ss-hd-d" cx="200" cy="50" r="18" fill="#f8f4ee" stroke="#333" stroke-width="1.5"/>
+  <circle class="cr" id="ss-hd-e" cx="248" cy="54" r="18" fill="#f8f4ee" stroke="#333" stroke-width="1.5"/>
+  <circle class="cr" id="ss-hd-f" cx="295" cy="64" r="18" fill="#f8f4ee" stroke="#333" stroke-width="1.5"/>
+  <circle class="cr" id="ss-hd-g" cx="340" cy="80" r="18" fill="#f8f4ee" stroke="#333" stroke-width="1.5"/>
+  <ellipse class="cr" id="ss-ground" cx="200" cy="242" rx="158" ry="56" fill="#f8f4ee" stroke="#333" stroke-width="2"/>
+  <ellipse class="cr" id="ss-w1body" cx="152" cy="208" rx="38" ry="50" fill="#f8f4ee" stroke="#333" stroke-width="2"/>
+  <circle class="cr" id="ss-w1head" cx="150" cy="152" r="24" fill="#f8f4ee" stroke="#333" stroke-width="2"/>
+  <path class="cr" id="ss-w1legs" d="M124,256 Q114,280 110,306 L138,306 Q142,280 152,258 Z" fill="#f8f4ee" stroke="#333" stroke-width="1.5"/>
+  <ellipse class="cr" id="ss-w2body" cx="252" cy="204" rx="38" ry="50" fill="#f8f4ee" stroke="#333" stroke-width="2"/>
+  <circle class="cr" id="ss-w2head" cx="255" cy="148" r="24" fill="#f8f4ee" stroke="#333" stroke-width="2"/>
+  <path class="cr" id="ss-w2legs" d="M272,252 Q282,278 288,306 L262,306 Q258,278 248,254 Z" fill="#f8f4ee" stroke="#333" stroke-width="1.5"/>
+</svg>`,
+  greatwave: `<svg viewBox="0 0 400 280" xmlns="http://www.w3.org/2000/svg">
+  <rect class="cr" id="gw-sky" x="0" y="0" width="400" height="180" fill="#f8f4ee" stroke="#333" stroke-width="1"/>
+  <polygon class="cr" id="gw-fuji" points="255,178 315,178 285,108" fill="#f8f4ee" stroke="#333" stroke-width="2"/>
+  <polygon class="cr" id="gw-snow" points="277,138 293,138 285,108" fill="#f8f4ee" stroke="#333" stroke-width="1.5"/>
+  <path class="cr" id="gw-wave" d="M0,212 Q50,156 100,176 Q158,200 212,148 Q268,96 332,130 Q368,148 400,140 L400,280 L0,280 Z" fill="#f8f4ee" stroke="#333" stroke-width="2"/>
+  <path class="cr" id="gw-wave2" d="M0,260 Q80,232 162,250 Q242,268 322,240 Q362,228 400,235 L400,280 L0,280 Z" fill="#f8f4ee" stroke="#333" stroke-width="1.5"/>
+  <path class="cr" id="gw-foam1" d="M0,212 Q18,180 42,192 Q22,210 0,226 Z" fill="#f8f4ee" stroke="#333" stroke-width="1.5"/>
+  <path class="cr" id="gw-foam2" d="M90,176 Q118,148 150,162 Q130,178 100,190 Z" fill="#f8f4ee" stroke="#333" stroke-width="1.5"/>
+  <path class="cr" id="gw-foam3" d="M196,148 Q230,118 264,132 Q244,148 216,160 Z" fill="#f8f4ee" stroke="#333" stroke-width="1.5"/>
+  <path class="cr" id="gw-boat1" d="M88,220 L138,220 L132,236 L94,236 Z" fill="#f8f4ee" stroke="#333" stroke-width="1.5"/>
+  <path class="cr" id="gw-boat2" d="M240,186 L286,186 L280,200 L246,200 Z" fill="#f8f4ee" stroke="#333" stroke-width="1.5"/>
+</svg>`
+};
+
+function openColoring() {
+  document.getElementById('coloring-screen').classList.add('active');
+  if (gameScene) gameScene.input.keyboard.enabled = false;
+  buildPalette();
+  loadPainting('starrynight');
+}
+function buildPalette() {
+  document.getElementById('coloring-palette').innerHTML = PALETTE.map((c, i) => `
+    <div class="pal-color${i === 0 ? ' selected' : ''}" style="background:${c}" onclick="selectColor('${c}',this)" title="${c}"></div>
+  `).join('');
+  document.getElementById('coloring-cur-color').style.background = PALETTE[0];
+}
+function selectColor(c, el) {
+  selectedColor = c;
+  document.getElementById('coloring-cur-color').style.background = c;
+  document.querySelectorAll('.pal-color').forEach(x => x.classList.remove('selected'));
+  el.classList.add('selected');
+}
+function loadPainting(name) {
+  curPainting = name;
+  coloringDone = false;
+  document.getElementById('coloring-done-btn').style.display = 'none';
+  document.querySelectorAll('.ptab').forEach(b => b.classList.toggle('active', b.dataset.ptab === name));
+  document.getElementById('coloring-svg-area').innerHTML = PAINTINGS_SVG[name];
+  document.querySelectorAll('#coloring-svg-area .cr').forEach(el => {
+    el.addEventListener('click', () => { el.setAttribute('fill', selectedColor); checkColoringComplete(false); });
+  });
+  updateColoringStatus();
+}
+document.getElementById('coloring-painting-tabs').addEventListener('click', e => {
+  const b = e.target.closest('.ptab'); if (b) loadPainting(b.dataset.ptab);
+});
+function updateColoringStatus() {
+  const all     = document.querySelectorAll('#coloring-svg-area .cr');
+  const colored = Array.from(all).filter(el => el.getAttribute('fill') !== '#f8f4ee').length;
+  document.getElementById('coloring-status').textContent = `${colored} / ${all.length} 색칠 완료`;
+  return { colored, total: all.length };
+}
+function checkColoringComplete(force) {
+  const { colored, total } = updateColoringStatus();
+  if (!coloringDone && (force || colored === total)) {
+    document.getElementById('coloring-done-btn').style.display = 'block';
+    if (force) { coloringDone = true; state.coins += 20; updateHUD(); showCoinToast(20); document.getElementById('coloring-done-btn').textContent = '✅ +20 코인 획득!'; document.getElementById('coloring-done-btn').disabled = true; }
+  }
+  if (colored === total && !coloringDone) document.getElementById('coloring-done-btn').style.display = 'block';
+}
+
+// ─────────────────────────────────────────────
+//  타자연습 — 순수 HTML input 기반 (스페이스바 완전 지원)
+// ─────────────────────────────────────────────
+const TYPING_SENTENCES = [
+  '레오나르도 다빈치는 이탈리아 르네상스를 대표하는 천재 예술가입니다.',
+  '모나리자의 신비로운 미소는 수백 년간 사람들을 매료시켜 왔습니다.',
+  '반 고흐는 강렬한 색채와 소용돌이치는 붓 터치로 유명합니다.',
+  '별이 빛나는 밤은 반 고흐가 요양원에서 바라본 밤하늘을 그린 걸작입니다.',
+  '진주 귀걸이를 한 소녀는 네덜란드의 모나리자라고 불립니다.',
+  '클로드 모네는 인상주의 화풍을 이끈 프랑스의 위대한 화가입니다.',
+  '수련 연작은 모네가 지베르니 정원 연못을 바라보며 그린 작품들입니다.',
+  '김홍도는 조선 시대를 대표하는 풍속화의 대가입니다.',
+  '씨름은 조선 백성들의 생동감 넘치는 일상을 담은 명작입니다.',
+  '신사임당은 조선 중기의 뛰어난 예술가이자 이율곡의 어머니입니다.',
+  '초충도는 풀과 벌레를 섬세하게 표현한 아름다운 세밀화입니다.',
+  '가쓰시카 호쿠사이는 일본 에도 시대를 대표하는 목판화 거장입니다.',
+  '가나가와 해변의 큰 파도는 세계적으로 유명한 일본의 목판화입니다.',
+  '프리다 칼로는 강렬한 자화상으로 유명한 멕시코의 여성 화가입니다.',
+  '명화는 시대와 문화를 초월하여 인류의 감동과 지혜를 전달합니다.',
+];
+
+const ts = { active:false, sentences:[], idx:0, timeLeft:30, interval:null,
+             completedSentences:0, completedWords:0, totalKeys:0, correctKeys:0 };
+let _prevLen   = 0;   // 이전 input.value 길이 (백스페이스 판별용)
+let _composing = false; // IME 조합 중 여부
+
+const typingInput = document.getElementById('typing-input');
+
+// ── 타자 화면 열기 ──────────────────────────
+function openTyping() {
+  document.getElementById('typing-screen').classList.add('active');
+  // Phaser 키보드 완전 비활성화
+  if (gameScene) {
+    gameScene.input.keyboard.enabled = false;
+    if (gameScene.spaceKey) gameScene.spaceKey.enabled = false;
+    if (gameScene.enterKey) gameScene.enterKey.enabled = false;
+  }
+  document.getElementById('typing-start-overlay').style.display = 'flex';
+  document.getElementById('typing-game-area').style.display     = 'none';
+  document.getElementById('typing-result-box').style.display    = 'none';
+}
+
+// ── 게임 시작 ────────────────────────────────
+function startTyping() {
+  ts.sentences = [...TYPING_SENTENCES].sort(() => Math.random() - .5);
+  ts.idx = 0; ts.timeLeft = 30; ts.active = true;
+  ts.completedSentences = 0; ts.completedWords = 0;
+  ts.totalKeys = 0; ts.correctKeys = 0;
+  _prevLen = 0; _composing = false;
+
+  document.getElementById('typing-start-overlay').style.display = 'none';
+  document.getElementById('typing-game-area').style.display     = 'block';
+  document.getElementById('typing-result-box').style.display    = 'none';
+
+  const timerEl = document.getElementById('typing-timer');
+  timerEl.textContent = '30';
+  timerEl.classList.remove('urgent');
+
+  typingInput.value = '';
+  _prevLen = 0;
+  renderTypingDisplay('');
+  updateTypingStats();
+
+  // 자동 포커스
+  typingInput.focus();
+
+  stopTyping();
+  ts.interval = setInterval(() => {
+    ts.timeLeft--;
+    timerEl.textContent = ts.timeLeft;
+    if (ts.timeLeft <= 10) timerEl.classList.add('urgent');
+    if (ts.timeLeft <= 0) { stopTyping(); showTypingResult(); }
+  }, 1000);
+}
+
+// ── 타이머 정지 ──────────────────────────────
+function stopTyping() {
+  if (ts.interval) { clearInterval(ts.interval); ts.interval = null; }
+  ts.active = false;
+}
+
+// ── 디스플레이 렌더링 ─────────────────────────
+// val: 현재 input.value, composingNow: IME 조합 중 여부
+function renderTypingDisplay(val, composingNow) {
+  const sentence = ts.sentences[ts.idx] || '';
+  // 조합 중이면 마지막 글자는 중립(커서) 처리
+  const compareUpTo = (composingNow && val.length > 0) ? val.length - 1 : val.length;
+  let html = '';
+  for (let i = 0; i < sentence.length; i++) {
+    const raw = sentence[i];
+    const ch  = raw === ' ' ? '&nbsp;' : raw;
+    if (i < compareUpTo) {
+      // 확정된 글자: 맞음/틀림 색상
+      html += `<span class="${val[i] === raw ? 'c-ok' : 'c-err'}">${ch}</span>`;
+    } else if (i === compareUpTo) {
+      // 현재 커서 위치 (조합 중이면 중간 상태 글자 표시)
+      const disp = (composingNow && i < val.length) ? (val[i] === ' ' ? '&nbsp;' : val[i]) : ch;
+      html += `<span class="c-cur">${disp}</span>`;
+    } else {
+      html += `<span class="c-dim">${ch}</span>`;
+    }
+  }
+  document.getElementById('typing-sentence-box').innerHTML = html || `<span class="c-dim">문장을 로딩 중...</span>`;
+  document.getElementById('typing-progress').textContent = `문장 ${ts.idx + 1} / ${ts.sentences.length}`;
+}
+
+// ── 실시간 통계 갱신 ──────────────────────────
+function updateTypingStats() {
+  const acc = ts.totalKeys > 0 ? Math.round(ts.correctKeys / ts.totalKeys * 100) : 100;
+  document.getElementById('live-accuracy').textContent  = acc + '%';
+  document.getElementById('live-sentences').textContent = ts.completedSentences;
+}
+
+// ── 결과 화면 ────────────────────────────────
+function showTypingResult() {
+  document.getElementById('typing-game-area').style.display  = 'none';
+  document.getElementById('typing-result-box').style.display = 'block';
+  const acc   = ts.totalKeys > 0 ? Math.round(ts.correctKeys / ts.totalKeys * 100) : 100;
+  const wpm   = Math.round((ts.completedWords / 30) * 60);
+  const coins = Math.min(30, Math.round(acc / 100 * 30));
+  document.getElementById('result-wpm').textContent      = wpm;
+  document.getElementById('result-accuracy').textContent = acc + '%';
+  document.getElementById('result-coins').textContent    = coins + ' 🪙';
+  if (coins > 0) { state.coins += coins; updateHUD(); showCoinToast(coins); }
+}
+
+// ── IME 조합 추적 ─────────────────────────────
+typingInput.addEventListener('compositionstart', () => { _composing = true; });
+typingInput.addEventListener('compositionend',   function() {
+  _composing = false;
+  // 조합 완료 후 확정 처리
+  if (ts.active) processTypingValue(this.value);
+});
+
+// ── 핵심: input 이벤트로 실시간 비교 ────────────
+typingInput.addEventListener('input', function() {
+  if (!ts.active) return;
+  // IME 조합 중이면 display만 업데이트, 완성 체크는 compositionend에서
+  if (_composing) {
+    renderTypingDisplay(this.value, true);
+    return;
+  }
+  processTypingValue(this.value);
+});
+
+function processTypingValue(val) {
+  const sentence = ts.sentences[ts.idx] || '';
+
+  // 새로 추가된 글자의 정확도 추적 (백스페이스는 제외)
+  if (val.length > _prevLen) {
+    for (let i = _prevLen; i < Math.min(val.length, sentence.length); i++) {
+      ts.totalKeys++;
+      if (val[i] === sentence[i]) ts.correctKeys++;
+    }
+  }
+  _prevLen = val.length;
+
+  renderTypingDisplay(val, false);
+  updateTypingStats();
+
+  // 문장 완성 체크 — 입력값이 문장과 정확히 일치하면 다음 문장으로
+  if (val === sentence) {
+    ts.completedSentences++;
+    ts.completedWords += sentence.trim().split(/\s+/).length;
+    ts.idx = (ts.idx + 1) % ts.sentences.length;
+    typingInput.value = '';
+    _prevLen   = 0;
+    _composing = false;
+    renderTypingDisplay('', false);
+    updateTypingStats();
+    typingInput.focus(); // 다음 문장도 바로 입력 가능하게 포커스 유지
+  }
+}
+
+// ── keydown: Phaser로 이벤트 전파 차단 ──────────
+// (stopPropagation만 사용 — preventDefault 없음, 스페이스바 자연 동작 유지)
+typingInput.addEventListener('keydown', function(e) {
+  if (!document.getElementById('typing-screen').classList.contains('active')) return;
+  e.stopImmediatePropagation(); // Phaser의 전역 keydown 핸들러 차단
+});
+
+// ─────────────────────────────────────────────
+//  Phaser 씬
+// ─────────────────────────────────────────────
+const TILE = 48, COLS = 22, ROWS = 17;
+const W = COLS * TILE, H = ROWS * TILE;
+
+class GameScene extends Phaser.Scene {
+  constructor() { super('GameScene'); }
+  preload() {}
+  create() {
+    gameScene = this;
+    this._createTextures();
+    this._buildMap();
+    this._createPlayer();
+    this._setupCamera();
+    this._setupInput();
+    this._setupZones();
+    this.nearBuilding = null;
+  }
+  _createTextures() {
+    const g = this.make.graphics({ x:0, y:0, add:false });
+    g.fillStyle(0x2d5a1b); g.fillRect(0,0,TILE,TILE);
+    g.fillStyle(0x3a7325,.6); g.fillRect(4,4,8,8);
+    g.fillStyle(0x1f3d12,.4); g.fillRect(TILE-10,TILE-10,8,8);
+    g.generateTexture('tile_grass',TILE,TILE);
+    g.clear();
+    g.fillStyle(0x8b6914); g.fillRect(0,0,TILE,TILE);
+    g.fillStyle(0xa07820,.5); g.fillRect(6,6,10,10);
+    g.generateTexture('tile_path',TILE,TILE);
+    g.clear();
+    const P=8;
+    g.fillStyle(0x6366f1); g.fillRect(P,P*2,P*2,P*3);
+    g.fillStyle(0xfbbf24); g.fillRect(P,0,P*2,P*2);
+    g.fillStyle(0x1e1b4b); g.fillRect(P+4,4,4,4); g.fillRect(P*2,4,4,4);
+    g.fillStyle(0x1e3a5f); g.fillRect(P,P*5,P,P*2); g.fillRect(P*2,P*5,P,P*2);
+    g.fillStyle(0x6366f1); g.fillRect(0,P*2,P,P*2); g.fillRect(P*3,P*2,P,P*2);
+    g.generateTexture('player',P*4,P*7);
+    g.destroy();
+    BUILDINGS.forEach(b => this._mkBuilding(b));
+  }
+  _mkBuilding(b) {
+    const bw=b.width*TILE, bh=b.height*TILE;
+    const g=this.make.graphics({x:0,y:0,add:false});
+    g.fillStyle(this._dk(b.color,.4)); g.fillRect(0,0,bw,bh);
+    g.fillStyle(b.color,.85);           g.fillRect(4,4,bw-8,bh-8);
+    g.fillStyle(0xffeaa0,.9);
+    for(let x=12;x<bw-20;x+=28){ g.fillRect(x,12,18,18); if(bh>TILE*2) g.fillRect(x,44,18,18); }
+    const dw=22,dh=30,dx=Math.floor(bw/2)-11;
+    g.fillStyle(this._dk(b.color,.6)); g.fillRect(dx,bh-dh-4,dw,dh);
+    g.fillStyle(0xffd700,.7);          g.fillRect(dx+dw-8,bh-dh/2-4,4,4);
+    g.fillStyle(this._dk(b.color,.3)); g.fillTriangle(0,8,bw/2,-bh*.18,bw,8);
+    g.lineStyle(3,b.color,1);          g.strokeRect(2,2,bw-4,bh-4);
+    g.generateTexture('building_'+b.id,bw,bh); g.destroy();
+  }
+  _dk(hex,a){ return (((hex>>16)&0xff)*(1-a)<<16)|(((hex>>8)&0xff)*(1-a)<<8)|((hex&0xff)*(1-a)); }
+  _buildMap() {
+    for(let r=0;r<ROWS;r++) for(let c=0;c<COLS;c++) this.add.image(c*TILE+TILE/2,r*TILE+TILE/2,'tile_grass');
+    const pt=new Set();
+    for(let c=0;c<COLS;c++) pt.add(`${c},8`);
+    for(let r=0;r<ROWS;r++) pt.add(`9,${r}`);
+    BUILDINGS.forEach(b=>{ const cx=b.tx+Math.floor(b.width/2); for(let r=Math.min(b.ty+b.height,8);r<=Math.max(b.ty+b.height,8);r++) pt.add(`${cx},${r}`); });
+    pt.forEach(k=>{ const[c,r]=k.split(',').map(Number); this.add.image(c*TILE+TILE/2,r*TILE+TILE/2,'tile_path'); });
+    this.buildingSprites={};
+    BUILDINGS.forEach(b=>{
+      const spr=this.add.image(b.tx*TILE,b.ty*TILE,'building_'+b.id).setOrigin(0,0);
+      this.buildingSprites[b.id]=spr;
+      this.add.text(b.tx*TILE+b.width*TILE/2,(b.ty+b.height)*TILE+5,b.icon+' '+b.name,{fontSize:'13px',color:'#ffd700',stroke:'#000',strokeThickness:3}).setOrigin(.5,0);
+    });
+    this._plantTrees();
+  }
+  _plantTrees() {
+    const g=this.make.graphics({x:0,y:0,add:false});
+    g.fillStyle(0x1a5c0a); g.fillTriangle(16,0,32,28,0,28);
+    g.fillStyle(0x0f3d06); g.fillTriangle(16,8,28,28,4,28);
+    g.fillStyle(0x5c3d11); g.fillRect(12,28,8,10);
+    g.generateTexture('tree',32,38); g.destroy();
+    [[1,1],[2,1],[1,2],[20,1],[20,2],[19,1],[1,15],[2,15],[1,14],[20,15],[19,15],[20,14]].forEach(([c,r])=>
+      this.add.image(c*TILE+TILE/2,r*TILE+TILE/2,'tree').setScale(1.2));
+  }
+  _createPlayer() {
+    this.player = this.add.image(9*TILE+TILE/2,8*TILE+TILE/2,'player').setScale(2.2).setDepth(10);
+    this.playerLabel = this.add.text(0,0,'🧑 용사',{fontSize:'12px',color:'#ffd700',stroke:'#000',strokeThickness:3}).setOrigin(.5,1).setDepth(11);
+    this._wf=0; this._wt=0;
+  }
+  _setupCamera() { this.cameras.main.setBounds(0,0,W,H); this.cameras.main.startFollow(this.player,true,.1,.1); }
+  _setupInput() {
+    this.cursors=this.input.keyboard.createCursorKeys();
+    this.wasd=this.input.keyboard.addKeys({up:87,down:83,left:65,right:68});
+    this.enterKey=this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.ENTER);
+    this.spaceKey=this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.SPACE);
+    this.enterKey.on('down',()=>{ if(this.nearBuilding) showPopup(this.nearBuilding); });
+    this.spaceKey.on('down',()=>{ if(this.nearBuilding) showPopup(this.nearBuilding); });
+  }
+  _setupZones() {
+    this.zones=BUILDINGS.map(b=>({ building:b, x1:b.tx*TILE-TILE*1.5, y1:b.ty*TILE-TILE*1.5, x2:(b.tx+b.width)*TILE+TILE*1.5, y2:(b.ty+b.height)*TILE+TILE*1.5 }));
+  }
+  update(time, delta) {
+    const c=this.cursors, w=this.wasd; let dx=0,dy=0;
+    if(c.left.isDown||w.left.isDown)  dx-=3;
+    if(c.right.isDown||w.right.isDown) dx+=3;
+    if(c.up.isDown||w.up.isDown)      dy-=3;
+    if(c.down.isDown||w.down.isDown)  dy+=3;
+    if(dx&&dy){ dx*=.707; dy*=.707; }
+    const hw=this.player.displayWidth/2, hh=this.player.displayHeight/2;
+    this.player.x=Phaser.Math.Clamp(this.player.x+dx,hw,W-hw);
+    this.player.y=Phaser.Math.Clamp(this.player.y+dy,hh,H-hh);
+    this.playerLabel.setPosition(this.player.x,this.player.y-hh-4);
+    if(dx||dy){ this._wt+=delta; if(this._wt>120){ this._wf=1-this._wf; this._wt=0; this.player.y+=this._wf?1:-1; } }
+    const px=this.player.x, py=this.player.y;
+    let found=null;
+    for(const z of this.zones){ if(px>=z.x1&&px<=z.x2&&py>=z.y1&&py<=z.y2){ found=z.building; break; } }
+    if(found!==this.nearBuilding){
+      this.nearBuilding=found;
+      const hint=document.getElementById('hint');
+      if(found){
+        hint.textContent=`${found.icon} ${found.name} — Space / Enter 키로 입장`;
+        hint.classList.add('visible');
+        if(this.buildingSprites[found.id]) this.tweens.add({targets:this.buildingSprites[found.id],scaleX:1.04,scaleY:1.04,duration:180,yoyo:true,ease:'Sine.easeInOut'});
+      } else { hint.classList.remove('visible'); }
+    }
+  }
+}
+
+const game = new Phaser.Game({
+  type: Phaser.AUTO, width:W, height:H, backgroundColor:'#1a0a2e',
+  parent:'game-container', scene:[GameScene], render:{pixelArt:true,antialias:false}
+});
+updateHUD();
+</script>
+</body>
+</html>
