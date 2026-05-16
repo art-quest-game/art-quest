@@ -148,10 +148,11 @@ canvas { display:block; image-rendering:pixelated; }
 .t-stat-value { color:#ffd700; font-size:1.05rem; font-weight:700; }
 #typing-sentence-box { background:#0f0720; border:2px solid #6b21a8; border-radius:12px; padding:18px 22px; margin-bottom:14px; font-size:1.3rem; line-height:2.1; min-height:80px; letter-spacing:.04em; word-break:break-all; }
 .c-ok  { color:#ffd700; }
-.c-err { color:#f87171; background:#450a0a; border-radius:2px; }
-.c-cur { background:#ffd700; color:#1a0a2e; border-radius:3px; padding:0 2px; }
-.c-dim { color:#ffffff; }
-#typing-capture { position:fixed; left:-9999px; top:50%; width:1px; height:1px; opacity:0; border:none; outline:none; }
+.c-err { color:#f87171; }
+.c-cur { color:#ffffff; text-decoration:underline; text-underline-offset:4px; }
+.c-dim { color:#6b7280; }
+#typing-input { width:100%; background:#1a0a2e; border:2px solid #ffd700; border-radius:10px; color:#ffffff; font-size:1.25rem; padding:14px 18px; outline:none; margin-top:4px; box-shadow:0 0 10px #ffd70030; font-family:inherit; }
+#typing-input:focus { border-color:#ffd700; box-shadow:0 0 16px #ffd70055; }
 #typing-progress { margin-top:8px; color:#6b7280; font-size:.85rem; text-align:center; }
 #typing-result-box { background:linear-gradient(135deg,#2d1b69,#1a0a2e 60%,#3d1060); border:3px solid #ffd700; border-radius:16px; padding:28px 32px; text-align:center; box-shadow:0 0 50px #ffd70040; margin-top:20px; }
 #typing-result-box h3 { color:#ffd700; font-size:1.5rem; margin-bottom:20px; }
@@ -315,8 +316,8 @@ canvas { display:block; image-rendering:pixelated; }
           <div class="t-stat"><div class="t-stat-label">완성 문장</div><div class="t-stat-value" id="live-sentences">0</div></div>
         </div>
       </div>
-      <div id="typing-sentence-box" onclick="typingCapture.focus()"></div>
-      <input id="typing-capture" type="text"
+      <div id="typing-sentence-box"></div>
+      <input id="typing-input" type="text" placeholder="여기에 타이핑하세요..."
              autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false">
       <div id="typing-progress"></div>
     </div>
@@ -856,13 +857,13 @@ const ts = { active:false, sentences:[], idx:0, timeLeft:30, interval:null,
              completedSentences:0, completedWords:0, totalKeys:0, correctKeys:0 };
 let _prevLen   = 0;
 let _composing = false;
+let _sentenceDone = false; // 문장 완성 후 Enter 대기 상태
 
-const typingCapture = document.getElementById('typing-capture');
+const typingInput = document.getElementById('typing-input');
 
 // ── 타자 화면 열기 ──────────────────────────
 function openTyping() {
   document.getElementById('typing-screen').classList.add('active');
-  // Phaser 키보드 완전 비활성화
   if (gameScene) {
     gameScene.input.keyboard.enabled = false;
     if (gameScene.spaceKey) gameScene.spaceKey.enabled = false;
@@ -871,7 +872,7 @@ function openTyping() {
   document.getElementById('typing-start-overlay').style.display = 'flex';
   document.getElementById('typing-game-area').style.display     = 'none';
   document.getElementById('typing-result-box').style.display    = 'none';
-  setTimeout(() => typingCapture.focus(), 80);
+  setTimeout(() => typingInput.focus(), 80);
 }
 
 // ── 게임 시작 ────────────────────────────────
@@ -880,7 +881,7 @@ function startTyping() {
   ts.idx = 0; ts.timeLeft = 30; ts.active = true;
   ts.completedSentences = 0; ts.completedWords = 0;
   ts.totalKeys = 0; ts.correctKeys = 0;
-  _prevLen = 0; _composing = false;
+  _prevLen = 0; _composing = false; _sentenceDone = false;
 
   document.getElementById('typing-start-overlay').style.display = 'none';
   document.getElementById('typing-game-area').style.display     = 'block';
@@ -890,12 +891,12 @@ function startTyping() {
   timerEl.textContent = '30';
   timerEl.classList.remove('urgent');
 
-  typingCapture.value = '';
+  typingInput.value = '';
+  typingInput.placeholder = '여기에 타이핑하세요...';
   _prevLen = 0;
   renderTypingDisplay('');
   updateTypingStats();
-
-  typingCapture.focus();
+  typingInput.focus();
 
   stopTyping();
   ts.interval = setInterval(() => {
@@ -912,21 +913,31 @@ function stopTyping() {
   ts.active = false;
 }
 
+// ── 다음 문장으로 이동 ────────────────────────
+function advanceSentence() {
+  const sentence = ts.sentences[ts.idx] || '';
+  ts.completedSentences++;
+  ts.completedWords += sentence.trim().split(/\s+/).length;
+  ts.idx = (ts.idx + 1) % ts.sentences.length;
+  typingInput.value = '';
+  typingInput.placeholder = '여기에 타이핑하세요...';
+  _prevLen = 0; _composing = false; _sentenceDone = false;
+  renderTypingDisplay('', false);
+  updateTypingStats();
+  typingInput.focus();
+}
+
 // ── 디스플레이 렌더링 ─────────────────────────
-// val: 현재 input.value, composingNow: IME 조합 중 여부
 function renderTypingDisplay(val, composingNow) {
   const sentence = ts.sentences[ts.idx] || '';
-  // 조합 중이면 마지막 글자는 중립(커서) 처리
   const compareUpTo = (composingNow && val.length > 0) ? val.length - 1 : val.length;
   let html = '';
   for (let i = 0; i < sentence.length; i++) {
     const raw = sentence[i];
     const ch  = raw === ' ' ? '&nbsp;' : raw;
     if (i < compareUpTo) {
-      // 확정된 글자: 맞음/틀림 색상
       html += `<span class="${val[i] === raw ? 'c-ok' : 'c-err'}">${ch}</span>`;
     } else if (i === compareUpTo) {
-      // 현재 커서 위치 (조합 중이면 중간 상태 글자 표시)
       const disp = (composingNow && i < val.length) ? (val[i] === ' ' ? '&nbsp;' : val[i]) : ch;
       html += `<span class="c-cur">${disp}</span>`;
     } else {
@@ -958,15 +969,15 @@ function showTypingResult() {
 }
 
 // ── IME 조합 추적 ─────────────────────────────
-typingCapture.addEventListener('compositionstart', () => { _composing = true; });
-typingCapture.addEventListener('compositionend',   function() {
+typingInput.addEventListener('compositionstart', () => { _composing = true; });
+typingInput.addEventListener('compositionend',   function() {
   _composing = false;
   if (ts.active) processTypingValue(this.value);
 });
 
-// ── 핵심: input 이벤트로 실시간 비교 ────────────
-typingCapture.addEventListener('input', function() {
-  if (!ts.active) return;
+// ── input 이벤트: 실시간 비교 ────────────────────
+typingInput.addEventListener('input', function() {
+  if (!ts.active || _sentenceDone) return;
   if (_composing) { renderTypingDisplay(this.value, true); return; }
   processTypingValue(this.value);
 });
@@ -974,7 +985,6 @@ typingCapture.addEventListener('input', function() {
 function processTypingValue(val) {
   const sentence = ts.sentences[ts.idx] || '';
 
-  // 새로 추가된 글자의 정확도 추적 (백스페이스는 제외)
   if (val.length > _prevLen) {
     for (let i = _prevLen; i < Math.min(val.length, sentence.length); i++) {
       ts.totalKeys++;
@@ -986,33 +996,28 @@ function processTypingValue(val) {
   renderTypingDisplay(val, false);
   updateTypingStats();
 
-  // 문장 완성 체크 — 입력값이 문장과 정확히 일치하면 다음 문장으로
+  // 문장 완성 → 자동으로 바로 다음 문장 이동
   if (val === sentence) {
-    ts.completedSentences++;
-    ts.completedWords += sentence.trim().split(/\s+/).length;
-    ts.idx = (ts.idx + 1) % ts.sentences.length;
-    typingCapture.value = '';
-    _prevLen   = 0;
-    _composing = false;
-    renderTypingDisplay('', false);
-    updateTypingStats();
-    typingCapture.focus();
+    advanceSentence();
   }
 }
 
-// ── keydown: Phaser 차단 + Enter로 시작 ──────────
-typingCapture.addEventListener('keydown', function(e) {
+// ── keydown: Phaser 차단 + Enter 처리 ──────────
+typingInput.addEventListener('keydown', function(e) {
   if (!document.getElementById('typing-screen').classList.contains('active')) return;
   e.stopImmediatePropagation();
-  if (e.key === 'Enter' && !ts.active &&
-      document.getElementById('typing-start-overlay').style.display !== 'none') {
-    startTyping();
-  }
-});
 
-// ── 게임 중 blur → 자동 재포커스 ────────────────
-typingCapture.addEventListener('blur', () => {
-  if (ts.active) setTimeout(() => typingCapture.focus(), 50);
+  if (e.key === 'Enter') {
+    // 시작화면에서 Enter → 게임 시작
+    if (!ts.active && document.getElementById('typing-start-overlay').style.display !== 'none') {
+      startTyping();
+    }
+    // 게임 중 Enter → 다음 문장 (현재 문장 포기 후 이동)
+    else if (ts.active) {
+      const sentence = ts.sentences[ts.idx] || '';
+      advanceSentence();
+    }
+  }
 });
 
 // ─────────────────────────────────────────────
