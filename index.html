@@ -163,13 +163,38 @@ canvas { display:block; image-rendering:pixelated; }
 .tr-value { color:#ffd700; font-size:1.8rem; font-weight:700; }
 #typing-retry-btn { background:linear-gradient(90deg,#ffd700,#ff9900); color:#1a0a2e; border:none; border-radius:8px; padding:11px 26px; font-size:.95rem; font-weight:700; cursor:pointer; margin-right:8px; }
 #typing-exit-btn { background:linear-gradient(90deg,#6b21a8,#9333ea); color:#fff; border:none; border-radius:8px; padding:11px 22px; font-size:.95rem; cursor:pointer; }
+
+/* Shop */
+#shop-inner { width:100%; max-width:780px; padding:0 18px 40px; }
+#shop-rank-banner { background:linear-gradient(90deg,#2d1b69,#3d1060); border:2px solid #ffd700; border-radius:12px; padding:12px 20px; margin:14px 0 10px; text-align:center; }
+#shop-rank-name { color:#ffd700; font-size:1.25rem; font-weight:700; }
+#shop-rank-next { color:#a78bfa; font-size:.82rem; margin-top:4px; }
+#shop-equipped-row { display:flex; gap:10px; margin-bottom:10px; flex-wrap:wrap; }
+.eq-slot { background:#1a0a2e; border:2px solid #6b21a8; border-radius:10px; padding:8px 14px; color:#a78bfa; font-size:.78rem; min-width:85px; text-align:center; }
+.eq-slot span { display:block; font-size:1.4rem; margin-bottom:2px; }
+#shop-category-tabs { display:flex; gap:10px; margin:8px 0 12px; flex-wrap:wrap; }
+.shop-tab { background:#2d1b69; border:2px solid #ffd70050; border-radius:20px; color:#e2c4ff; padding:7px 18px; font-size:.88rem; cursor:pointer; transition:all .2s; }
+.shop-tab:hover,.shop-tab.active { background:linear-gradient(90deg,#ffd700,#ff9900); color:#1a0a2e; border-color:#ffd700; font-weight:700; }
+#shop-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(200px,1fr)); gap:12px; }
+.shop-item { background:linear-gradient(135deg,#2d1b69,#1a0a2e); border:2px solid #ffd70030; border-radius:12px; padding:16px; text-align:center; transition:border-color .2s,box-shadow .2s; }
+.shop-item.owned { border-color:#a855f760; }
+.shop-item.equipped { border-color:#ffd700; box-shadow:0 0 14px #ffd70050; }
+.shop-item-icon { font-size:2.6rem; margin-bottom:6px; }
+.shop-item-name { color:#ffd700; font-weight:700; font-size:.95rem; margin-bottom:3px; }
+.shop-item-desc { color:#a78bfa; font-size:.74rem; margin-bottom:8px; line-height:1.45; }
+.shop-item-price { color:#fbbf24; font-size:.85rem; font-weight:700; margin-bottom:8px; }
+.shop-buy-btn { background:linear-gradient(90deg,#ffd700,#ff9900); color:#1a0a2e; border:none; border-radius:8px; padding:8px 0; font-size:.85rem; font-weight:700; cursor:pointer; width:100%; transition:transform .1s; }
+.shop-buy-btn:hover:not(:disabled) { transform:scale(1.03); }
+.shop-buy-btn:disabled { background:#2d2d2d; color:#666; cursor:default; }
+.shop-equip-btn { background:linear-gradient(90deg,#6b21a8,#9333ea); color:#fff; border:none; border-radius:8px; padding:8px 0; font-size:.85rem; cursor:pointer; width:100%; margin-top:4px; transition:background .2s; }
+.shop-equip-btn.on { background:linear-gradient(90deg,#22c55e,#16a34a); }
 </style>
 </head>
 <body>
 <div id="game-container"></div>
 
 <div id="hud">
-  <div class="hud-chip">⭐ Lv.<span id="hud-level">1</span></div>
+  <div class="hud-chip">🎨 <span id="hud-rank">견습생</span></div>
   <div class="hud-chip">🪙 <span id="hud-coins">0</span></div>
   <div class="hud-chip">🖼️ <span id="hud-artworks">0</span>/50</div>
 </div>
@@ -335,6 +360,31 @@ canvas { display:block; image-rendering:pixelated; }
   </div>
 </div>
 
+<!-- Shop screen -->
+<div id="shop-screen" class="mini-screen">
+  <div class="mini-header">
+    <h2>🛍️ 캐릭터 상점</h2>
+    <button class="close-mini" onclick="closeMiniGame('shop')">✕ 나가기</button>
+  </div>
+  <div id="shop-inner">
+    <div id="shop-rank-banner">
+      <div id="shop-rank-name">🎨 견습생</div>
+      <div id="shop-rank-next"></div>
+    </div>
+    <div id="shop-equipped-row">
+      <div class="eq-slot"><span id="eq-hat-icon">❔</span>모자</div>
+      <div class="eq-slot"><span id="eq-outfit-icon">❔</span>의상</div>
+      <div class="eq-slot"><span id="eq-acc-icon">❔</span>액세서리</div>
+    </div>
+    <div id="shop-category-tabs">
+      <button class="shop-tab active" data-tab="hat">🎩 모자</button>
+      <button class="shop-tab" data-tab="outfit">👕 의상</button>
+      <button class="shop-tab" data-tab="accessory">🖌️ 액세서리</button>
+    </div>
+    <div id="shop-grid"></div>
+  </div>
+</div>
+
 <script src="https://cdn.jsdelivr.net/npm/phaser@3.60.0/dist/phaser.min.js"></script>
 <script>
 // ─────────────────────────────────────────────
@@ -345,7 +395,8 @@ const BUILDINGS = [
   { id:'quiz',    name:'퀴즈 타워',   icon:'🎯', desc:'명화 4지선다 퀴즈를 풀고 코인을 획득하세요!\n10문제, 정답당 +10 코인.',                    color:0xff6b35, tx:13, ty:3,  width:4, height:3 },
   { id:'memory',  name:'메모리 카드', icon:'🃏', desc:'명화 카드 16장의 짝을 맞추세요!\n짝 맞출 때마다 +5코인, 전체 완성 +20 보너스!',           color:0xa855f7, tx:5,  ty:11, width:4, height:3 },
   { id:'coloring',name:'색칠 스튜디오',icon:'🎨',desc:'명화 윤곽선을 직접 색칠하세요!\n5가지 명화, 16색 팔레트, 완성시 +20 코인.',              color:0x22c55e, tx:13, ty:11, width:4, height:3 },
-  { id:'typing',  name:'타자 연습장', icon:'⌨️', desc:'명화 관련 문장을 타이핑하세요!\n30초, 정확도에 따라 최대 +30 코인.',                      color:0x38bdf8, tx:9,  ty:7,  width:4, height:3 }
+  { id:'typing',  name:'타자 연습장', icon:'⌨️', desc:'명화 관련 문장을 타이핑하세요!\n30초, 정확도에 따라 최대 +30 코인.',                      color:0x38bdf8, tx:9,  ty:7,  width:4, height:3 },
+  { id:'shop',    name:'캐릭터 상점', icon:'🛍️', desc:'코인으로 캐릭터를 꾸며보세요!\n모자·의상·액세서리를 구매하고 장착하세요.',                    color:0xf59e0b, tx:1,  ty:7,  width:4, height:3 }
 ];
 
 // ─────────────────────────────────────────────
@@ -353,10 +404,125 @@ const BUILDINGS = [
 // ─────────────────────────────────────────────
 const state = { level:1, coins:0, artworks:0 };
 function updateHUD() {
-  document.getElementById('hud-level').textContent    = state.level;
+  document.getElementById('hud-rank').textContent     = getCurrentRank().name;
   document.getElementById('hud-coins').textContent    = state.coins;
   document.getElementById('hud-artworks').textContent = state.artworks;
+  updateRank();
 }
+
+// ─────────────────────────────────────────────
+//  등급 시스템
+// ─────────────────────────────────────────────
+const RANKS = [
+  { name:'견습생',     minCoins:0,   tint:0xffffff },
+  { name:'화가지망생', minCoins:50,  tint:0xaaffcc },
+  { name:'화가',       minCoins:150, tint:0xffffaa },
+  { name:'거장',       minCoins:300, tint:0xffcc88 },
+  { name:'마에스트로', minCoins:500, tint:0xff99ff },
+];
+let _prevRankIdx = 0;
+
+function getCurrentRank() {
+  for (let i = RANKS.length - 1; i >= 0; i--) {
+    if (state.coins >= RANKS[i].minCoins) return RANKS[i];
+  }
+  return RANKS[0];
+}
+
+function updateRank() {
+  const rank = getCurrentRank();
+  const idx  = RANKS.indexOf(rank);
+  if (gameScene) {
+    gameScene.playerLabel.setText('🎨 ' + rank.name);
+    gameScene.player.setTint(rank.tint);
+  }
+  if (idx > _prevRankIdx) {
+    _prevRankIdx = idx;
+    const el = document.getElementById('coin-toast');
+    el.textContent = `🎉 ${rank.name} 등급 달성!`;
+    el.classList.add('show');
+    clearTimeout(window._rankToast);
+    window._rankToast = setTimeout(() => el.classList.remove('show'), 2800);
+  }
+}
+
+// ─────────────────────────────────────────────
+//  캐릭터 상점
+// ─────────────────────────────────────────────
+const ALL_ITEMS = [
+  { id:'beret',        name:'베레모',   icon:'🎨', price:30,  slot:'hat',       desc:'화가의 상징적인 베레모' },
+  { id:'painter-hat',  name:'화가모자', icon:'👒', price:50,  slot:'hat',       desc:'넓은 챙의 화가 모자' },
+  { id:'crown',        name:'왕관',     icon:'👑', price:100, slot:'hat',       desc:'거장의 황금 왕관' },
+  { id:'apron',        name:'앞치마',   icon:'🦺', price:40,  slot:'outfit',    desc:'그림 그릴 때 입는 앞치마' },
+  { id:'gown',         name:'화가가운', icon:'🥼', price:60,  slot:'outfit',    desc:'우아한 화가의 가운' },
+  { id:'noble',        name:'귀족의상', icon:'👘', price:120, slot:'outfit',    desc:'귀족 화가의 화려한 의상' },
+  { id:'brush',        name:'붓',       icon:'🖌️', price:20,  slot:'accessory', desc:'화가의 필수 도구' },
+  { id:'palette',      name:'팔레트',   icon:'🎭', price:35,  slot:'accessory', desc:'다채로운 색상의 팔레트' },
+  { id:'glasses',      name:'안경',     icon:'🤓', price:45,  slot:'accessory', desc:'예술적 감각의 안경' },
+];
+const shopOwned    = new Set();
+const shopEquipped = { hat:null, outfit:null, accessory:null };
+let   curShopTab   = 'hat';
+
+function openShop() {
+  document.getElementById('shop-screen').classList.add('active');
+  if (gameScene) gameScene.input.keyboard.enabled = false;
+  renderShopBanner(); renderShopTab(curShopTab);
+}
+function renderShopBanner() {
+  const rank = getCurrentRank();
+  const idx  = RANKS.indexOf(rank);
+  document.getElementById('shop-rank-name').textContent = '🎨 ' + rank.name;
+  const next = RANKS[idx + 1];
+  document.getElementById('shop-rank-next').textContent = next
+    ? `다음 등급: ${next.name} — ${next.minCoins - state.coins}코인 더 필요`
+    : '✨ 최고 등급 달성!';
+  document.getElementById('eq-hat-icon').textContent    = shopEquipped.hat       ? ALL_ITEMS.find(i=>i.id===shopEquipped.hat).icon       : '❔';
+  document.getElementById('eq-outfit-icon').textContent = shopEquipped.outfit    ? ALL_ITEMS.find(i=>i.id===shopEquipped.outfit).icon    : '❔';
+  document.getElementById('eq-acc-icon').textContent    = shopEquipped.accessory ? ALL_ITEMS.find(i=>i.id===shopEquipped.accessory).icon : '❔';
+}
+function renderShopTab(tab) {
+  curShopTab = tab;
+  document.querySelectorAll('.shop-tab').forEach(b => b.classList.toggle('active', b.dataset.tab === tab));
+  const items = ALL_ITEMS.filter(i => i.slot === tab);
+  document.getElementById('shop-grid').innerHTML = items.map(item => {
+    const owned = shopOwned.has(item.id);
+    const isEq  = shopEquipped[item.slot] === item.id;
+    const afford = state.coins >= item.price;
+    return `<div class="shop-item${owned?' owned':''}${isEq?' equipped':''}">
+      <div class="shop-item-icon">${item.icon}</div>
+      <div class="shop-item-name">${item.name}</div>
+      <div class="shop-item-desc">${item.desc}</div>
+      <div class="shop-item-price">${owned ? '✅ 보유 중' : '🪙 '+item.price+' 코인'}</div>
+      ${owned
+        ? `<button class="shop-equip-btn${isEq?' on':''}" onclick="equipShopItem('${item.id}')">${isEq?'✅ 장착 중':'장착하기'}</button>`
+        : `<button class="shop-buy-btn" ${afford?'':'disabled'} onclick="buyShopItem('${item.id}')">${afford?'구매하기':'🪙 '+(item.price-state.coins)+'코인 부족'}</button>`
+      }
+    </div>`;
+  }).join('');
+}
+function buyShopItem(id) {
+  const item = ALL_ITEMS.find(i=>i.id===id);
+  if (!item || shopOwned.has(id) || state.coins < item.price) return;
+  state.coins -= item.price; shopOwned.add(id);
+  updateHUD(); renderShopBanner(); renderShopTab(curShopTab);
+}
+function equipShopItem(id) {
+  const item = ALL_ITEMS.find(i=>i.id===id);
+  if (!item || !shopOwned.has(id)) return;
+  shopEquipped[item.slot] = shopEquipped[item.slot] === id ? null : id;
+  updateCharacterOverlays(); renderShopBanner(); renderShopTab(curShopTab);
+}
+function updateCharacterOverlays() {
+  if (!gameScene) return;
+  const hat = shopEquipped.hat       ? ALL_ITEMS.find(i=>i.id===shopEquipped.hat)       : null;
+  const acc = shopEquipped.accessory ? ALL_ITEMS.find(i=>i.id===shopEquipped.accessory) : null;
+  gameScene.hatOverlay.setText(hat ? hat.icon : '');
+  gameScene.accOverlay.setText(acc ? acc.icon : '');
+}
+document.getElementById('shop-category-tabs').addEventListener('click', e => {
+  const b = e.target.closest('.shop-tab'); if (b) renderShopTab(b.dataset.tab);
+});
 
 // ─────────────────────────────────────────────
 //  코인 토스트
@@ -399,21 +565,32 @@ document.getElementById('popup-enter').addEventListener('click', () => {
   else if (id === 'memory')   openMemory();
   else if (id === 'coloring') openColoring();
   else if (id === 'typing')   openTyping();
+  else if (id === 'shop')     openShop();
 });
 document.getElementById('popup-overlay').addEventListener('click', e => {
   if (e.target.id === 'popup-overlay') hidePopup();
 });
 
-// Enter 키 → 입장하기 클릭
+// 전역 키보드 핸들러
 document.addEventListener('keydown', e => {
-  if (e.key !== 'Enter') return;
-  // 타자연습 시작화면에서 Enter → 게임 시작
-  if (document.getElementById('typing-screen').classList.contains('active') &&
+  // 타자연습 시작화면 Enter → 게임 시작
+  if (e.key === 'Enter' &&
+      document.getElementById('typing-screen').classList.contains('active') &&
       !ts.active &&
       document.getElementById('typing-start-overlay').style.display !== 'none') {
-    startTyping();
-    return;
+    startTyping(); return;
   }
+  // 퀴즈 숫자키 1-4 → 답 선택, Enter → 다음 문제
+  if (document.getElementById('quiz-screen').classList.contains('active')) {
+    if (!quizState.answered && ['1','2','3','4'].includes(e.key)) {
+      answerQuiz(parseInt(e.key) - 1); return;
+    }
+    if (e.key === 'Enter' && quizState.answered) {
+      document.getElementById('quiz-next-btn').click(); return;
+    }
+  }
+  // 팝업 / 감상 완료 Enter
+  if (e.key !== 'Enter') return;
   if (document.getElementById('popup-overlay').classList.contains('active'))
     document.getElementById('popup-enter').click();
   else if (document.getElementById('art-detail-overlay').classList.contains('active'))
@@ -1110,7 +1287,9 @@ class GameScene extends Phaser.Scene {
   }
   _createPlayer() {
     this.player = this.add.image(9*TILE+TILE/2,8*TILE+TILE/2,'player').setScale(2.2).setDepth(10);
-    this.playerLabel = this.add.text(0,0,'🧑 용사',{fontSize:'12px',color:'#ffd700',stroke:'#000',strokeThickness:3}).setOrigin(.5,1).setDepth(11);
+    this.playerLabel = this.add.text(0,0,'🎨 견습생',{fontSize:'12px',color:'#ffd700',stroke:'#000',strokeThickness:3}).setOrigin(.5,1).setDepth(11);
+    this.hatOverlay = this.add.text(0,0,'',{fontSize:'20px'}).setOrigin(.5,1).setDepth(12);
+    this.accOverlay = this.add.text(0,0,'',{fontSize:'15px'}).setOrigin(0,.5).setDepth(12);
     this._wf=0; this._wt=0;
   }
   _setupCamera() { this.cameras.main.setBounds(0,0,W,H); this.cameras.main.startFollow(this.player,true,.1,.1); }
@@ -1136,6 +1315,8 @@ class GameScene extends Phaser.Scene {
     this.player.x=Phaser.Math.Clamp(this.player.x+dx,hw,W-hw);
     this.player.y=Phaser.Math.Clamp(this.player.y+dy,hh,H-hh);
     this.playerLabel.setPosition(this.player.x,this.player.y-hh-4);
+    this.hatOverlay.setPosition(this.player.x,this.player.y-hh-20);
+    this.accOverlay.setPosition(this.player.x+16,this.player.y-hh/2);
     if(dx||dy){ this._wt+=delta; if(this._wt>120){ this._wf=1-this._wf; this._wt=0; this.player.y+=this._wf?1:-1; } }
     const px=this.player.x, py=this.player.y;
     let found=null;
