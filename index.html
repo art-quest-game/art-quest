@@ -149,11 +149,13 @@ canvas { display:block; image-rendering:pixelated; }
 #typing-sentence-box { background:#0f0720; border:2px solid #6b21a8; border-radius:12px; padding:18px 22px; margin-bottom:14px; font-size:1.3rem; line-height:2.1; min-height:80px; letter-spacing:.04em; word-break:break-all; }
 .c-ok  { color:#4ade80; }
 .c-err { color:#f87171; background:#450a0a; border-radius:2px; }
-.c-cur { color:#ffd700; border-bottom:2px solid #ffd700; }
+.c-cur { background:#ffd700; color:#1a0a2e; border-radius:3px; padding:0 2px; }
 .c-dim { color:#374151; }
-#typing-input { width:100%; background:#1a0a2e; border:2px solid #a855f7; border-radius:10px; color:#fff; font-size:1.05rem; padding:12px 16px; outline:none; transition:border-color .2s; }
-#typing-input:focus { border-color:#ffd700; }
-#typing-progress { margin-top:9px; color:#6b7280; font-size:.85rem; text-align:center; }
+/* 화면 밖 숨김 캡처 input */
+#typing-capture { position:fixed; left:-9999px; top:50%; width:1px; height:1px; opacity:0; border:none; outline:none; }
+#typing-click-area { border:2px dashed #6b21a8; border-radius:10px; padding:10px 14px; text-align:center; color:#6b7280; font-size:.85rem; cursor:pointer; margin-bottom:4px; transition:border-color .2s; }
+#typing-click-area:hover, #typing-click-area.focused { border-color:#ffd700; color:#ffd700; }
+#typing-progress { margin-top:8px; color:#6b7280; font-size:.85rem; text-align:center; }
 #typing-result-box { background:linear-gradient(135deg,#2d1b69,#1a0a2e 60%,#3d1060); border:3px solid #ffd700; border-radius:16px; padding:28px 32px; text-align:center; box-shadow:0 0 50px #ffd70040; margin-top:20px; }
 #typing-result-box h3 { color:#ffd700; font-size:1.5rem; margin-bottom:20px; }
 .t-result-stats { display:flex; justify-content:center; gap:16px; flex-wrap:wrap; margin-bottom:20px; }
@@ -206,7 +208,7 @@ canvas { display:block; image-rendering:pixelated; }
 <!-- Art detail overlay -->
 <div id="art-detail-overlay">
   <div id="art-detail-box">
-    <img id="art-detail-img" src="" alt="" referrerpolicy="no-referrer" style="display:none">
+    <img id="art-detail-img" src="" alt="" crossorigin="anonymous" referrerpolicy="no-referrer" style="display:none">
     <div id="art-detail-fallback">🖼️ 이미지를 불러오는 중...</div>
     <div id="art-detail-content">
       <div id="art-detail-title"></div>
@@ -316,8 +318,9 @@ canvas { display:block; image-rendering:pixelated; }
           <div class="t-stat"><div class="t-stat-label">완성 문장</div><div class="t-stat-value" id="live-sentences">0</div></div>
         </div>
       </div>
-      <div id="typing-sentence-box"></div>
-      <input id="typing-input" type="text" placeholder="여기에 입력하세요..."
+      <div id="typing-sentence-box" onclick="document.getElementById('typing-capture').focus()"></div>
+      <div id="typing-click-area" onclick="document.getElementById('typing-capture').focus()">⌨️ 이 영역을 클릭하면 타이핑을 시작할 수 있습니다</div>
+      <input id="typing-capture" type="text"
              autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false">
       <div id="typing-progress"></div>
     </div>
@@ -428,21 +431,21 @@ function closeMiniGame(id) {
 const ARTWORKS = {
   europe: [
     { id:'monalisa',    title:'모나리자',            artist:'레오나르도 다빈치', year:'1503–1519', country:'이탈리아',
-      url:'https://upload.wikimedia.org/wikipedia/commons/thumb/e/ec/Mona_Lisa%2C_by_Leonardo_da_Vinci%2C_from_C2RMF_retouched.jpg/400px-Mona_Lisa%2C_by_Leonardo_da_Vinci%2C_from_C2RMF_retouched.jpg',
+      url:'mona-lisa.jpg',
       desc:'이탈리아 르네상스의 거장 레오나르도 다빈치가 그린 세계에서 가장 유명한 초상화입니다. 신비로운 미소와 스푸마토 기법으로 수백 년간 사람들을 매료시켜 왔습니다. 현재 프랑스 루브르 박물관에 소장되어 연간 900만 명 이상이 감상합니다.' },
     { id:'starrynight', title:'별이 빛나는 밤',      artist:'빈센트 반 고흐',   year:'1889',      country:'네덜란드/프랑스',
-      url:'https://upload.wikimedia.org/wikipedia/commons/thumb/e/ea/Van_Gogh_-_Starry_Night_-_Google_Art_Project.jpg/400px-Van_Gogh_-_Starry_Night_-_Google_Art_Project.jpg',
+      url:'starry-night.jpg',
       desc:'반 고흐가 생레미 드 프로방스 요양원에서 그린 걸작입니다. 소용돌이치는 밤하늘과 빛나는 별들, 고요한 마을의 대비가 인상적입니다. 뉴욕 현대미술관(MoMA) 소장.' },
     { id:'pearlgirl',   title:'진주 귀걸이를 한 소녀', artist:'요하네스 페르메이르', year:'1665',  country:'네덜란드',
       url:'https://upload.wikimedia.org/wikipedia/commons/thumb/d/d7/Meisje_met_de_parel.jpg/400px-Meisje_met_de_parel.jpg',
       desc:'"북방의 모나리자"라 불리는 걸작입니다. 신비로운 눈빛과 반짝이는 진주 귀걸이가 특징이며 소녀의 정체는 아직도 미스터리입니다. 네덜란드 마우리츠하위스 미술관 소장.' },
     { id:'waterlilies', title:'수련',                artist:'클로드 모네',       year:'1906',      country:'프랑스',
-      url:'https://upload.wikimedia.org/wikipedia/commons/thumb/a/aa/Claude_Monet_-_Water_Lilies_-_1906%2C_Ryerson.jpg/400px-Claude_Monet_-_Water_Lilies_-_1906%2C_Ryerson.jpg',
+      url:'water-lilies.jpg',
       desc:'인상주의 거장 모네가 지베르니 정원의 연못을 그린 연작입니다. 빛과 색의 변화에 집중하여 수면과 수련을 몽환적으로 표현했습니다. 시카고 아트 인스티튜트 소장.' }
   ],
   korea: [
     { id:'ssireum',     title:'씨름',                artist:'김홍도 (단원)',     year:'18세기',    country:'조선',
-      url:'https://upload.wikimedia.org/wikipedia/commons/thumb/6/6d/Danwon-Ssireum.jpg/400px-Danwon-Ssireum.jpg',
+      url:'ssireum.jpg',
       desc:'조선 후기 풍속화의 대가 단원 김홍도의 대표작입니다. 씨름 경기 장면을 생동감 넘치게 묘사했으며 구경꾼들의 다양한 표정이 해학적입니다. 국립중앙박물관 소장.' },
     { id:'chochungdo',  title:'초충도',              artist:'신사임당',          year:'16세기',    country:'조선',
       url:'https://upload.wikimedia.org/wikipedia/commons/0/04/Chochungdo.jpg',
@@ -450,7 +453,7 @@ const ARTWORKS = {
   ],
   japan: [
     { id:'greatwave',   title:'가나가와 해변의 큰 파도', artist:'가쓰시카 호쿠사이', year:'1831',  country:'일본',
-      url:'https://upload.wikimedia.org/wikipedia/commons/thumb/a/a5/Tsunami_by_hokusai_19th_century.jpg/400px-Tsunami_by_hokusai_19th_century.jpg',
+      url:'great-wave.jpg',
       desc:'에도 시대 목판화 거장 호쿠사이의 "후지산 36경" 연작 중 가장 유명한 작품입니다. 거대한 파도와 후지산의 대비가 인상적이며 서양 예술가에도 큰 영향을 미쳤습니다.' }
   ],
   latam: [
@@ -480,7 +483,7 @@ function renderGalleryTab(tab) {
   document.getElementById('gallery-grid').innerHTML = list.map(art => `
     <div class="art-card" onclick="openArtDetail('${art.id}','${tab}')">
       <img class="art-card-img" src="${art.url}" alt="${art.title}"
-           referrerpolicy="no-referrer"
+           crossorigin="anonymous" referrerpolicy="no-referrer"
            onerror="this.style.display='none';this.nextElementSibling.style.display='flex'">
       <div class="art-card-fallback" style="display:none">
         <span style="font-size:2rem">🖼️</span>
@@ -503,6 +506,8 @@ function openArtDetail(artId, tab) {
   const img = document.getElementById('art-detail-img');
   const fb  = document.getElementById('art-detail-fallback');
   img.style.display = 'block'; fb.style.display = 'none';
+  img.crossOrigin = 'anonymous';
+  img.referrerPolicy = 'no-referrer';
   img.src = art.url;
   img.onerror = () => { img.style.display = 'none'; fb.style.display = 'flex'; fb.textContent = art.title + ' — ' + art.artist; };
   document.getElementById('art-detail-title').textContent = art.title;
@@ -656,7 +661,7 @@ function startMemory() {
       <div class="mem-card-inner">
         <div class="mem-face">🖼️</div>
         <div class="mem-back">
-          <img src="${art.url}" alt="${art.title}" referrerpolicy="no-referrer" onerror="this.style.display='none'">
+          <img src="${art.url}" alt="${art.title}" crossorigin="anonymous" referrerpolicy="no-referrer" onerror="this.style.display='none'">
           <div class="mem-back-title">${art.title}</div>
         </div>
       </div>
@@ -853,10 +858,10 @@ const TYPING_SENTENCES = [
 
 const ts = { active:false, sentences:[], idx:0, timeLeft:30, interval:null,
              completedSentences:0, completedWords:0, totalKeys:0, correctKeys:0 };
-let _prevLen   = 0;   // 이전 input.value 길이 (백스페이스 판별용)
-let _composing = false; // IME 조합 중 여부
+let _prevLen   = 0;
+let _composing = false;
 
-const typingInput = document.getElementById('typing-input');
+const typingCapture = document.getElementById('typing-capture');
 
 // ── 타자 화면 열기 ──────────────────────────
 function openTyping() {
@@ -888,13 +893,12 @@ function startTyping() {
   timerEl.textContent = '30';
   timerEl.classList.remove('urgent');
 
-  typingInput.value = '';
+  typingCapture.value = '';
   _prevLen = 0;
   renderTypingDisplay('');
   updateTypingStats();
 
-  // 자동 포커스
-  typingInput.focus();
+  typingCapture.focus();
 
   stopTyping();
   ts.interval = setInterval(() => {
@@ -957,21 +961,16 @@ function showTypingResult() {
 }
 
 // ── IME 조합 추적 ─────────────────────────────
-typingInput.addEventListener('compositionstart', () => { _composing = true; });
-typingInput.addEventListener('compositionend',   function() {
+typingCapture.addEventListener('compositionstart', () => { _composing = true; });
+typingCapture.addEventListener('compositionend',   function() {
   _composing = false;
-  // 조합 완료 후 확정 처리
   if (ts.active) processTypingValue(this.value);
 });
 
 // ── 핵심: input 이벤트로 실시간 비교 ────────────
-typingInput.addEventListener('input', function() {
+typingCapture.addEventListener('input', function() {
   if (!ts.active) return;
-  // IME 조합 중이면 display만 업데이트, 완성 체크는 compositionend에서
-  if (_composing) {
-    renderTypingDisplay(this.value, true);
-    return;
-  }
+  if (_composing) { renderTypingDisplay(this.value, true); return; }
   processTypingValue(this.value);
 });
 
@@ -995,20 +994,28 @@ function processTypingValue(val) {
     ts.completedSentences++;
     ts.completedWords += sentence.trim().split(/\s+/).length;
     ts.idx = (ts.idx + 1) % ts.sentences.length;
-    typingInput.value = '';
+    typingCapture.value = '';
     _prevLen   = 0;
     _composing = false;
     renderTypingDisplay('', false);
     updateTypingStats();
-    typingInput.focus(); // 다음 문장도 바로 입력 가능하게 포커스 유지
+    typingCapture.focus();
   }
 }
 
 // ── keydown: Phaser로 이벤트 전파 차단 ──────────
-// (stopPropagation만 사용 — preventDefault 없음, 스페이스바 자연 동작 유지)
-typingInput.addEventListener('keydown', function(e) {
+typingCapture.addEventListener('keydown', function(e) {
   if (!document.getElementById('typing-screen').classList.contains('active')) return;
-  e.stopImmediatePropagation(); // Phaser의 전역 keydown 핸들러 차단
+  e.stopImmediatePropagation();
+});
+
+// ── 포커스 표시 & 화면 클릭시 항상 재포커스 ────────
+typingCapture.addEventListener('focus', () => {
+  document.getElementById('typing-click-area').classList.add('focused');
+});
+typingCapture.addEventListener('blur', () => {
+  document.getElementById('typing-click-area').classList.remove('focused');
+  if (ts.active) setTimeout(() => typingCapture.focus(), 50);
 });
 
 // ─────────────────────────────────────────────
