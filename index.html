@@ -147,14 +147,11 @@ canvas { display:block; image-rendering:pixelated; }
 .t-stat-label { color:#a78bfa; font-size:.7rem; }
 .t-stat-value { color:#ffd700; font-size:1.05rem; font-weight:700; }
 #typing-sentence-box { background:#0f0720; border:2px solid #6b21a8; border-radius:12px; padding:18px 22px; margin-bottom:14px; font-size:1.3rem; line-height:2.1; min-height:80px; letter-spacing:.04em; word-break:break-all; }
-.c-ok  { color:#4ade80; }
+.c-ok  { color:#ffd700; }
 .c-err { color:#f87171; background:#450a0a; border-radius:2px; }
 .c-cur { background:#ffd700; color:#1a0a2e; border-radius:3px; padding:0 2px; }
-.c-dim { color:#374151; }
-/* 화면 밖 숨김 캡처 input */
+.c-dim { color:#ffffff; }
 #typing-capture { position:fixed; left:-9999px; top:50%; width:1px; height:1px; opacity:0; border:none; outline:none; }
-#typing-click-area { border:2px dashed #6b21a8; border-radius:10px; padding:10px 14px; text-align:center; color:#6b7280; font-size:.85rem; cursor:pointer; margin-bottom:4px; transition:border-color .2s; }
-#typing-click-area:hover, #typing-click-area.focused { border-color:#ffd700; color:#ffd700; }
 #typing-progress { margin-top:8px; color:#6b7280; font-size:.85rem; text-align:center; }
 #typing-result-box { background:linear-gradient(135deg,#2d1b69,#1a0a2e 60%,#3d1060); border:3px solid #ffd700; border-radius:16px; padding:28px 32px; text-align:center; box-shadow:0 0 50px #ffd70040; margin-top:20px; }
 #typing-result-box h3 { color:#ffd700; font-size:1.5rem; margin-bottom:20px; }
@@ -318,8 +315,7 @@ canvas { display:block; image-rendering:pixelated; }
           <div class="t-stat"><div class="t-stat-label">완성 문장</div><div class="t-stat-value" id="live-sentences">0</div></div>
         </div>
       </div>
-      <div id="typing-sentence-box" onclick="document.getElementById('typing-capture').focus()"></div>
-      <div id="typing-click-area" onclick="document.getElementById('typing-capture').focus()">⌨️ 이 영역을 클릭하면 타이핑을 시작할 수 있습니다</div>
+      <div id="typing-sentence-box" onclick="typingCapture.focus()"></div>
       <input id="typing-capture" type="text"
              autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false">
       <div id="typing-progress"></div>
@@ -437,7 +433,7 @@ const ARTWORKS = {
       url:'starry-night.jpg',
       desc:'반 고흐가 생레미 드 프로방스 요양원에서 그린 걸작입니다. 소용돌이치는 밤하늘과 빛나는 별들, 고요한 마을의 대비가 인상적입니다. 뉴욕 현대미술관(MoMA) 소장.' },
     { id:'pearlgirl',   title:'진주 귀걸이를 한 소녀', artist:'요하네스 페르메이르', year:'1665',  country:'네덜란드',
-      url:'https://upload.wikimedia.org/wikipedia/commons/thumb/d/d7/Meisje_met_de_parel.jpg/400px-Meisje_met_de_parel.jpg',
+      url:'pearlgirl.jpg',
       desc:'"북방의 모나리자"라 불리는 걸작입니다. 신비로운 눈빛과 반짝이는 진주 귀걸이가 특징이며 소녀의 정체는 아직도 미스터리입니다. 네덜란드 마우리츠하위스 미술관 소장.' },
     { id:'waterlilies', title:'수련',                artist:'클로드 모네',       year:'1906',      country:'프랑스',
       url:'water-lilies.jpg',
@@ -447,8 +443,8 @@ const ARTWORKS = {
     { id:'ssireum',     title:'씨름',                artist:'김홍도 (단원)',     year:'18세기',    country:'조선',
       url:'ssireum.jpg',
       desc:'조선 후기 풍속화의 대가 단원 김홍도의 대표작입니다. 씨름 경기 장면을 생동감 넘치게 묘사했으며 구경꾼들의 다양한 표정이 해학적입니다. 국립중앙박물관 소장.' },
-    { id:'chochungdo',  title:'초충도',              artist:'신사임당',          year:'16세기',    country:'조선',
-      url:'https://upload.wikimedia.org/wikipedia/commons/0/04/Chochungdo.jpg',
+    { id:'chochungdo',  title:'초충도',              artist:'신사임당',          year:'16세기',    country:'한국',
+      url:'chochungdo.jpg',
       desc:'이율곡의 어머니이자 뛰어난 예술가 신사임당의 대표작입니다. 풀과 벌레를 섬세하게 표현한 세밀화로, 우리나라 5만원권 지폐에도 수록되어 있습니다.' }
   ],
   japan: [
@@ -457,9 +453,9 @@ const ARTWORKS = {
       desc:'에도 시대 목판화 거장 호쿠사이의 "후지산 36경" 연작 중 가장 유명한 작품입니다. 거대한 파도와 후지산의 대비가 인상적이며 서양 예술가에도 큰 영향을 미쳤습니다.' }
   ],
   latam: [
-    { id:'frida',       title:'자화상',              artist:'프리다 칼로',        year:'1940',      country:'멕시코',
-      url:'https://upload.wikimedia.org/wikipedia/en/1/18/Frida_Kahlo_%28self_portrait%29.jpg',
-      desc:'멕시코를 대표하는 화가 프리다 칼로의 자화상입니다. 신체적 고통을 강렬한 색채와 초현실주의 기법으로 표현했습니다. 이어지는 눈썹과 멕시코 전통 의상이 트레이드마크입니다.' }
+    { id:'frida',       title:'원숭이와 함께한 자화상', artist:'프리다 칼로',        year:'1945',      country:'멕시코',
+      url:'frida.jpg',
+      desc:'멕시코를 대표하는 화가 프리다 칼로의 자화상입니다. 원숭이와 함께한 모습을 강렬한 색채로 표현했으며, 이어지는 눈썹과 멕시코 전통 의상이 트레이드마크입니다.' }
   ]
 };
 
@@ -875,6 +871,7 @@ function openTyping() {
   document.getElementById('typing-start-overlay').style.display = 'flex';
   document.getElementById('typing-game-area').style.display     = 'none';
   document.getElementById('typing-result-box').style.display    = 'none';
+  setTimeout(() => typingCapture.focus(), 80);
 }
 
 // ── 게임 시작 ────────────────────────────────
@@ -1003,18 +1000,18 @@ function processTypingValue(val) {
   }
 }
 
-// ── keydown: Phaser로 이벤트 전파 차단 ──────────
+// ── keydown: Phaser 차단 + Enter로 시작 ──────────
 typingCapture.addEventListener('keydown', function(e) {
   if (!document.getElementById('typing-screen').classList.contains('active')) return;
   e.stopImmediatePropagation();
+  if (e.key === 'Enter' && !ts.active &&
+      document.getElementById('typing-start-overlay').style.display !== 'none') {
+    startTyping();
+  }
 });
 
-// ── 포커스 표시 & 화면 클릭시 항상 재포커스 ────────
-typingCapture.addEventListener('focus', () => {
-  document.getElementById('typing-click-area').classList.add('focused');
-});
+// ── 게임 중 blur → 자동 재포커스 ────────────────
 typingCapture.addEventListener('blur', () => {
-  document.getElementById('typing-click-area').classList.remove('focused');
   if (ts.active) setTimeout(() => typingCapture.focus(), 50);
 });
 
