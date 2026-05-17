@@ -474,7 +474,7 @@ let   curShopTab   = 'hat';
 
 function openShop() {
   document.getElementById('shop-screen').classList.add('active');
-  if (gameScene) gameScene.input.keyboard.enabled = false;
+  disablePhaserInput();
   renderShopBanner(); renderShopTab(curShopTab);
 }
 function renderShopBanner() {
@@ -549,6 +549,28 @@ function showCoinToast(n) {
 // ─────────────────────────────────────────────
 let activeBuilding = null;
 let gameScene      = null;
+let miniGameActive = false; // 미니게임/팝업 열림 여부 — Phaser update 가드에 사용
+
+// ── Phaser 입력 완전 비활성화 ──────────────────
+function disablePhaserInput() {
+  miniGameActive = true;
+  if (!gameScene) return;
+  gameScene.input.keyboard.enabled = false;
+}
+
+// ── Phaser 입력 완전 복구 ──────────────────────
+function enablePhaserInput() {
+  miniGameActive = false;
+  if (!gameScene) return;
+  // 플러그인 재활성화 (window 이벤트 리스너 재등록)
+  gameScene.input.keyboard.enabled = true;
+  // 모든 키 상태 초기화 — isDown 등 stuck 상태 해소
+  const resetKey = k => { if (k && typeof k.reset === 'function') k.reset(); };
+  if (gameScene.cursors) Object.values(gameScene.cursors).forEach(resetKey);
+  if (gameScene.wasd)    Object.values(gameScene.wasd).forEach(resetKey);
+  resetKey(gameScene.spaceKey);
+  resetKey(gameScene.enterKey);
+}
 
 function showPopup(b) {
   activeBuilding = b;
@@ -556,12 +578,12 @@ function showPopup(b) {
   document.getElementById('popup-title').textContent = b.name;
   document.getElementById('popup-desc').textContent  = b.desc;
   document.getElementById('popup-overlay').classList.add('active');
-  if (gameScene) gameScene.input.keyboard.enabled = false;
+  disablePhaserInput();
 }
 function hidePopup() {
   document.getElementById('popup-overlay').classList.remove('active');
   activeBuilding = null;
-  if (gameScene) gameScene.input.keyboard.enabled = true;
+  enablePhaserInput();
 }
 
 document.getElementById('popup-close').addEventListener('click', hidePopup);
@@ -581,6 +603,22 @@ document.getElementById('popup-overlay').addEventListener('click', e => {
 
 // 전역 키보드 핸들러
 document.addEventListener('keydown', e => {
+  // ESC → 열려있는 미니게임/팝업 닫기
+  if (e.key === 'Escape') {
+    const miniIds = ['gallery','quiz','memory','coloring','typing','shop'];
+    for (const id of miniIds) {
+      if (document.getElementById(id + '-screen').classList.contains('active')) {
+        closeMiniGame(id); return;
+      }
+    }
+    if (document.getElementById('popup-overlay').classList.contains('active')) {
+      hidePopup(); return;
+    }
+    if (document.getElementById('art-detail-overlay').classList.contains('active')) {
+      document.getElementById('art-detail-overlay').classList.remove('active'); return;
+    }
+    return;
+  }
   // 타자연습 시작화면 Enter → 게임 시작
   if (e.key === 'Enter' &&
       document.getElementById('typing-screen').classList.contains('active') &&
@@ -612,7 +650,14 @@ function closeMiniGame(id) {
   if (id === 'typing') stopTyping();
   document.getElementById(id + '-screen').classList.remove('active');
   document.getElementById('art-detail-overlay').classList.remove('active');
-  if (gameScene) gameScene.input.keyboard.enabled = true;
+  // Phaser 입력 완전 복구 (키 상태 reset 포함)
+  enablePhaserInput();
+  // HTML 입력 포커스 해제 → Phaser 캔버스로 복귀 (setTimeout으로 DOM 정리 후 실행)
+  if (document.activeElement && document.activeElement !== document.body) {
+    document.activeElement.blur();
+  }
+  const canvas = document.querySelector('#game-container canvas');
+  if (canvas) setTimeout(() => canvas.focus(), 50);
 }
 
 // ─────────────────────────────────────────────
@@ -662,7 +707,7 @@ let curGalleryTab    = 'europe';
 
 function openGallery() {
   document.getElementById('gallery-screen').classList.add('active');
-  if (gameScene) gameScene.input.keyboard.enabled = false;
+  disablePhaserInput();
   renderGalleryTab(curGalleryTab);
 }
 
@@ -731,38 +776,64 @@ document.getElementById('art-detail-overlay').addEventListener('click', e => {
 // ─────────────────────────────────────────────
 //  퀴즈
 // ─────────────────────────────────────────────
-const QUIZ_QUESTIONS = [
-  { q:'모나리자를 그린 화가는 누구인가요?', choices:['레오나르도 다빈치','미켈란젤로','라파엘로','보티첼리'], answer:0, exp:'레오나르도 다빈치(1452-1519)가 약 1503년부터 그린 르네상스의 걸작입니다.' },
-  { q:'\'별이 빛나는 밤\'을 그린 화가는?', choices:['폴 고갱','클로드 모네','빈센트 반 고흐','폴 세잔'], answer:2, exp:'반 고흐(1853-1890)가 생레미 요양원에서 1889년에 그린 작품입니다.' },
-  { q:'\'진주 귀걸이를 한 소녀\'의 화가 국적은?', choices:['프랑스','스페인','네덜란드','독일'], answer:2, exp:'페르메이르(1632-1675)는 네덜란드 황금기 회화를 대표하는 화가입니다.' },
-  { q:'수련 연작을 그린 인상주의 화가는?', choices:['피에르 르누아르','에드가 드가','카미유 피사로','클로드 모네'], answer:3, exp:'모네(1840-1926)는 지베르니 정원에서 250점 이상의 수련 연작을 그렸습니다.' },
-  { q:'\'씨름\'을 그린 조선 시대 화가는?', choices:['신윤복','정선','안견','김홍도'], answer:3, exp:'단원 김홍도(1745-1806?)는 조선 후기를 대표하는 풍속화가입니다.' },
-  { q:'\'초충도\'를 그린 예술가는?', choices:['허난설헌','이매창','황진이','신사임당'], answer:3, exp:'신사임당(1504-1551)은 이율곡의 어머니이자 뛰어난 화가로, 초충도가 5만원권에 수록되었습니다.' },
-  { q:'\'가나가와 해변의 큰 파도\'를 그린 화가는?', choices:['우타가와 히로시게','기타가와 우타마로','가쓰시카 호쿠사이','도슈사이 샤라쿠'], answer:2, exp:'호쿠사이(1760-1849)는 "후지산 36경" 연작으로 유명한 에도 시대 목판화 거장입니다.' },
-  { q:'프리다 칼로의 국적은?', choices:['아르헨티나','브라질','페루','멕시코'], answer:3, exp:'프리다 칼로(1907-1954)는 멕시코의 상징적인 여성 화가로 강렬한 자화상으로 유명합니다.' },
-  { q:'모나리자는 현재 어느 박물관에 있나요?', choices:['대영박물관','루브르 박물관','에르미타주 미술관','우피치 미술관'], answer:1, exp:'모나리자는 프랑스 파리의 루브르 박물관에 소장되어 있으며 연간 900만 명이 관람합니다.' },
-  { q:'\'별이 빛나는 밤\'은 어느 미술관 소장인가요?', choices:['테이트 모던','오르세 미술관','뉴욕 현대미술관(MoMA)','구겐하임 미술관'], answer:2, exp:'별이 빛나는 밤은 미국 뉴욕의 현대미술관(MoMA)에 소장되어 있습니다.' },
-  { q:'클로드 모네는 어느 나라 화가인가요?', choices:['이탈리아','영국','독일','프랑스'], answer:3, exp:'클로드 모네(1840-1926)는 프랑스 파리 출신으로 인상주의를 이끈 핵심 화가입니다.' },
-  { q:'빈센트 반 고흐의 국적은?', choices:['벨기에','프랑스','네덜란드','독일'], answer:2, exp:'반 고흐(1853-1890)는 네덜란드 출신으로 프랑스에서 활동했습니다.' },
-  { q:'호쿠사이의 파도 그림이 속한 연작 이름은?', choices:['100가지 후지산','에도 명소','동해도 53역','후지산 36경'], answer:3, exp:'"가나가와 해변의 큰 파도"는 호쿠사이의 "후지산 36경"(1831-1833) 첫 번째 작품입니다.' },
-  { q:'신사임당의 아들로 유명한 조선 학자는?', choices:['이황','정약용','김정희','이율곡'], answer:3, exp:'이율곡(이이, 1536-1584)은 신사임당의 아들로 조선 최고의 성리학자 중 한 명입니다.' },
-  { q:'가쓰시카 호쿠사이의 파도 그림 제작 기법은?', choices:['유화','수채화','프레스코','목판화'], answer:3, exp:'호쿠사이의 작품은 나무에 그림을 새겨 종이에 찍는 목판화(우키요에) 기법으로 제작되었습니다.' },
-  { q:'\'초충도\'가 수록된 우리나라 지폐는?', choices:['천원권','오천원권','만원권','오만원권'], answer:3, exp:'신사임당의 초충도 중 수박과 여치 그림이 5만원권 지폐 뒷면에 수록되어 있습니다.' },
-  { q:'레오나르도 다빈치가 활동한 시대는?', choices:['중세 시대','바로크 시대','이탈리아 르네상스','낭만주의 시대'], answer:2, exp:'레오나르도 다빈치(1452-1519)는 이탈리아 르네상스 시대를 대표하는 천재 예술가·과학자입니다.' },
-  { q:'인상주의(Impressionism)의 특징은?', choices:['정밀한 세부 묘사','어두운 명암 대비','기하학적 도형 사용','빛과 색채의 순간적 표현'], answer:3, exp:'인상주의는 빛과 색채의 순간적 인상을 포착하는 화풍으로 모네·르누아르·드가가 대표 화가입니다.' },
-  { q:'\'씨름\'은 어느 박물관에 소장되어 있나요?', choices:['국립현대미술관','간송미술관','리움미술관','국립중앙박물관'], answer:3, exp:'김홍도의 풍속화첩은 국립중앙박물관에 소장되어 있습니다.' },
-  { q:'프리다 칼로가 즐겨 그린 주제는?', choices:['풍경화','정물화','역사화','자화상'], answer:3, exp:'프리다 칼로는 생애 동안 55점의 자화상을 그렸으며, 신체적 고통과 정체성을 표현했습니다.' }
-];
+// ARTWORKS에서 퀴즈 자동 생성
+// 작품명 / 작가명 / 제작연도 / 나라 — 4종 × 작품 수 문제 풀
+function buildQuizFromArtworks() {
+  const all = Object.values(ARTWORKS).flat();
+  const pick3 = (pool, exclude) => {
+    const filtered = [...new Set(pool.filter(v => v !== exclude))];
+    for (let i = filtered.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [filtered[i], filtered[j]] = [filtered[j], filtered[i]];
+    }
+    return filtered.slice(0, 3);
+  };
+  const makeQ = (q, correct, wrongs, exp) => {
+    if (wrongs.length < 3) return null;
+    const choices = [correct, ...wrongs].sort(() => Math.random() - .5);
+    return { q, choices, answer: choices.indexOf(correct), exp };
+  };
+
+  const qs = [];
+  for (const art of all) {
+    const others = all.filter(x => x.id !== art.id);
+    qs.push(makeQ(
+      `"${art.title}"을(를) 그린 화가는 누구인가요?`,
+      art.artist,
+      pick3(others.map(x => x.artist), art.artist),
+      art.desc
+    ));
+    qs.push(makeQ(
+      `다음 중 "${art.artist}"의 작품은 무엇인가요?`,
+      art.title,
+      pick3(others.map(x => x.title), art.title),
+      art.desc
+    ));
+    qs.push(makeQ(
+      `"${art.title}"이(가) 제작된 시기는 언제인가요?`,
+      art.year,
+      pick3(others.map(x => x.year), art.year),
+      art.desc
+    ));
+    qs.push(makeQ(
+      `"${art.title}"이(가) 탄생한 나라는 어디인가요?`,
+      art.country,
+      pick3(others.map(x => x.country), art.country),
+      art.desc
+    ));
+  }
+  return qs.filter(Boolean);
+}
 
 let quizState = { questions:[], idx:0, score:0, correctCount:0, answered:false };
 
 function openQuiz() {
   document.getElementById('quiz-screen').classList.add('active');
-  if (gameScene) gameScene.input.keyboard.enabled = false;
+  disablePhaserInput();
   startQuiz();
 }
 function startQuiz() {
-  const shuffled = [...QUIZ_QUESTIONS].sort(() => Math.random() - .5).slice(0, 10);
+  const shuffled = buildQuizFromArtworks().sort(() => Math.random() - .5).slice(0, 10);
   quizState = { questions:shuffled, idx:0, score:0, correctCount:0, answered:false };
   document.getElementById('quiz-result-box').style.display = 'none';
   document.getElementById('quiz-game-area').style.display  = 'block';
@@ -819,22 +890,14 @@ function showQuizResult() {
 // ─────────────────────────────────────────────
 //  메모리 카드
 // ─────────────────────────────────────────────
-const MEM_ARTS = [
-  { id:'monalisa',    title:'모나리자',       url:ARTWORKS.europe[0].url },
-  { id:'starrynight', title:'별이 빛나는 밤', url:ARTWORKS.europe[1].url },
-  { id:'pearlgirl',   title:'진주 귀걸이 소녀', url:ARTWORKS.europe[2].url },
-  { id:'waterlilies', title:'수련',           url:ARTWORKS.europe[3].url },
-  { id:'ssireum',     title:'씨름',           url:ARTWORKS.korea[0].url  },
-  { id:'chochungdo',  title:'초충도',         url:ARTWORKS.korea[1].url  },
-  { id:'greatwave',   title:'가나가와 파도',   url:ARTWORKS.japan[0].url  },
-  { id:'frida',       title:'프리다 자화상',   url:ARTWORKS.latam[0].url  }
-];
+// ARTWORKS 전체 목록을 메모리카드 데이터로 사용 (추가 시 자동 반영)
+const MEM_ARTS = Object.values(ARTWORKS).flat();
 
 let memState = { cards:[], flipped:[], matched:new Set(), lock:false, coinsEarned:0, attempts:0 };
 
 function openMemory() {
   document.getElementById('memory-screen').classList.add('active');
-  if (gameScene) gameScene.input.keyboard.enabled = false;
+  disablePhaserInput();
   startMemory();
 }
 function startMemory() {
@@ -911,7 +974,7 @@ let cMode          = 'fill'; // 'fill' | 'brush'
 
 function openColoring() {
   document.getElementById('coloring-screen').classList.add('active');
-  if (gameScene) gameScene.input.keyboard.enabled = false;
+  disablePhaserInput();
   buildPalette();
   const canvas = document.getElementById('coloring-draw-canvas');
   cCtx = canvas.getContext('2d');
@@ -1122,23 +1185,10 @@ function updateColoringStatus(pct) {
 // ─────────────────────────────────────────────
 //  타자연습 — 순수 HTML input 기반 (스페이스바 완전 지원)
 // ─────────────────────────────────────────────
-const TYPING_SENTENCES = [
-  '레오나르도 다빈치는 이탈리아 르네상스를 대표하는 천재 예술가입니다.',
-  '모나리자의 신비로운 미소는 수백 년간 사람들을 매료시켜 왔습니다.',
-  '반 고흐는 강렬한 색채와 소용돌이치는 붓 터치로 유명합니다.',
-  '별이 빛나는 밤은 반 고흐가 요양원에서 바라본 밤하늘을 그린 걸작입니다.',
-  '진주 귀걸이를 한 소녀는 네덜란드의 모나리자라고 불립니다.',
-  '클로드 모네는 인상주의 화풍을 이끈 프랑스의 위대한 화가입니다.',
-  '수련 연작은 모네가 지베르니 정원 연못을 바라보며 그린 작품들입니다.',
-  '김홍도는 조선 시대를 대표하는 풍속화의 대가입니다.',
-  '씨름은 조선 백성들의 생동감 넘치는 일상을 담은 명작입니다.',
-  '신사임당은 조선 중기의 뛰어난 예술가이자 이율곡의 어머니입니다.',
-  '초충도는 풀과 벌레를 섬세하게 표현한 아름다운 세밀화입니다.',
-  '가쓰시카 호쿠사이는 일본 에도 시대를 대표하는 목판화 거장입니다.',
-  '가나가와 해변의 큰 파도는 세계적으로 유명한 일본의 목판화입니다.',
-  '프리다 칼로는 강렬한 자화상으로 유명한 멕시코의 여성 화가입니다.',
-  '명화는 시대와 문화를 초월하여 인류의 감동과 지혜를 전달합니다.',
-];
+// ARTWORKS desc에서 문장 단위로 타자연습 문장 자동 추출
+const TYPING_SENTENCES = Object.values(ARTWORKS).flat()
+  .flatMap(a => a.desc.split(/(?<=\.)\s+/).map(s => s.trim()).filter(s => s.length > 10))
+  .filter((s, i, arr) => arr.indexOf(s) === i); // 중복 제거
 
 const ts = { active:false, sentences:[], idx:0, timeLeft:30, interval:null,
              completedSentences:0, completedWords:0, totalKeys:0, correctKeys:0 };
@@ -1151,11 +1201,7 @@ const typingInput = document.getElementById('typing-input');
 // ── 타자 화면 열기 ──────────────────────────
 function openTyping() {
   document.getElementById('typing-screen').classList.add('active');
-  if (gameScene) {
-    gameScene.input.keyboard.enabled = false;
-    if (gameScene.spaceKey) gameScene.spaceKey.enabled = false;
-    if (gameScene.enterKey) gameScene.enterKey.enabled = false;
-  }
+  disablePhaserInput();
   document.getElementById('typing-start-overlay').style.display = 'flex';
   document.getElementById('typing-game-area').style.display     = 'none';
   document.getElementById('typing-result-box').style.display    = 'none';
@@ -1400,25 +1446,29 @@ class GameScene extends Phaser.Scene {
     this.wasd=this.input.keyboard.addKeys({up:87,down:83,left:65,right:68});
     this.enterKey=this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.ENTER);
     this.spaceKey=this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.SPACE);
-    this.enterKey.on('down',()=>{ if(this.nearBuilding) showPopup(this.nearBuilding); });
-    this.spaceKey.on('down',()=>{ if(this.nearBuilding) showPopup(this.nearBuilding); });
+    this.enterKey.on('down',()=>{ if(this.nearBuilding && !miniGameActive) showPopup(this.nearBuilding); });
+    this.spaceKey.on('down',()=>{ if(this.nearBuilding && !miniGameActive) showPopup(this.nearBuilding); });
   }
   _setupZones() {
     this.zones=BUILDINGS.map(b=>({ building:b, x1:b.tx*TILE-TILE*1.5, y1:b.ty*TILE-TILE*1.5, x2:(b.tx+b.width)*TILE+TILE*1.5, y2:(b.ty+b.height)*TILE+TILE*1.5 }));
   }
   update(time, delta) {
+    const hh=this.player.displayHeight/2;
+    // 오버레이는 항상 갱신
+    this.playerLabel.setPosition(this.player.x,this.player.y-hh-4);
+    this.hatOverlay.setPosition(this.player.x,this.player.y-hh-20);
+    this.accOverlay.setPosition(this.player.x+16,this.player.y-hh/2);
+    // 미니게임/팝업 열려 있으면 이동·입장 처리 스킵
+    if (miniGameActive) return;
     const c=this.cursors, w=this.wasd; let dx=0,dy=0;
     if(c.left.isDown||w.left.isDown)  dx-=3;
     if(c.right.isDown||w.right.isDown) dx+=3;
     if(c.up.isDown||w.up.isDown)      dy-=3;
     if(c.down.isDown||w.down.isDown)  dy+=3;
     if(dx&&dy){ dx*=.707; dy*=.707; }
-    const hw=this.player.displayWidth/2, hh=this.player.displayHeight/2;
+    const hw=this.player.displayWidth/2;
     this.player.x=Phaser.Math.Clamp(this.player.x+dx,hw,W-hw);
     this.player.y=Phaser.Math.Clamp(this.player.y+dy,hh,H-hh);
-    this.playerLabel.setPosition(this.player.x,this.player.y-hh-4);
-    this.hatOverlay.setPosition(this.player.x,this.player.y-hh-20);
-    this.accOverlay.setPosition(this.player.x+16,this.player.y-hh/2);
     if(dx||dy){ this._wt+=delta; if(this._wt>120){ this._wf=1-this._wf; this._wt=0; this.player.y+=this._wf?1:-1; } }
     const px=this.player.x, py=this.player.y;
     let found=null;
@@ -1439,6 +1489,8 @@ const game = new Phaser.Game({
   type: Phaser.AUTO, width:W, height:H, backgroundColor:'#1a0a2e',
   parent:'game-container', scene:[GameScene], render:{pixelArt:true,antialias:false}
 });
+// canvas가 포커스를 받을 수 있어야 closeMiniGame에서 canvas.focus()가 동작함
+game.canvas.setAttribute('tabindex', '0');
 updateHUD();
 </script>
 </body>
