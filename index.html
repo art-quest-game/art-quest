@@ -47,9 +47,12 @@ canvas { display:block; image-rendering:pixelated; }
 #gallery-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(185px,1fr)); gap:14px; padding:16px 22px 30px; width:100%; max-width:920px; }
 .art-card { background:linear-gradient(135deg,#2d1b69,#1a0a2e); border:2px solid #ffd70030; border-radius:12px; overflow:hidden; cursor:pointer; position:relative; transition:transform .2s,border-color .2s,box-shadow .2s; min-width:150px; min-height:200px; }
 .art-card:hover { transform:translateY(-4px); border-color:#ffd700; box-shadow:0 8px 24px #ffd70040; }
-.art-card-img { width:100%; height:150px; object-fit:cover; display:block; background:#0f0720; }
-.art-card-fallback { width:100%; height:150px; background:#1a0a2e; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:6px; }
-.art-card-fallback span { color:#a78bfa; font-size:.78rem; text-align:center; padding:0 8px; }
+.art-card-img-wrap { width:100%; height:150px; overflow:hidden; background:#0f0720; position:relative; }
+.art-card-img { width:100%; height:100%; object-fit:cover; display:block; }
+.art-loading { width:100%; height:150px; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:6px; color:#6b7280; font-size:.78rem; }
+.art-fallback { width:100%; height:150px; background:linear-gradient(135deg,#1a0820,#0f0720); display:flex; flex-direction:column; align-items:center; justify-content:center; gap:5px; padding:8px; }
+.art-fallback span { color:#e2c4ff; font-size:.78rem; text-align:center; font-weight:600; }
+.art-fallback small { color:#6b7280; font-size:.72rem; text-align:center; }
 .art-card-info { padding:9px 12px; }
 .art-card-title { color:#ffd700; font-weight:700; font-size:.86rem; }
 .art-card-artist { color:#a78bfa; font-size:.76rem; margin-top:2px; }
@@ -223,10 +226,8 @@ canvas { display:block; image-rendering:pixelated; }
     <button class="close-mini" onclick="closeMiniGame('gallery')">✕ 나가기</button>
   </div>
   <div id="gallery-tabs">
-    <button class="tab-btn active" data-tab="europe">🌍 유럽</button>
-    <button class="tab-btn" data-tab="korea">🇰🇷 한국</button>
-    <button class="tab-btn" data-tab="japan">🗾 일본</button>
-    <button class="tab-btn" data-tab="latam">🌎 중남미</button>
+    <button class="tab-btn active" data-tab="korea">🇰🇷 한국명화</button>
+    <button class="tab-btn" data-tab="world">🌍 세계명화</button>
   </div>
   <div id="gallery-grid"></div>
 </div>
@@ -664,37 +665,87 @@ function closeMiniGame(id) {
 //  명화 데이터
 // ─────────────────────────────────────────────
 const ARTWORKS = {
-  europe: [
-    { id:'monalisa',    title:'모나리자',            artist:'레오나르도 다빈치', year:'1503–1519', country:'이탈리아',
-      url:'mona-lisa.jpg',
-      desc:'이탈리아 르네상스의 거장 레오나르도 다빈치가 그린 세계에서 가장 유명한 초상화입니다. 신비로운 미소와 스푸마토 기법으로 수백 년간 사람들을 매료시켜 왔습니다. 현재 프랑스 루브르 박물관에 소장되어 연간 900만 명 이상이 감상합니다.' },
-    { id:'starrynight', title:'별이 빛나는 밤',      artist:'빈센트 반 고흐',   year:'1889',      country:'네덜란드/프랑스',
-      url:'starry-night.jpg',
-      desc:'반 고흐가 생레미 드 프로방스 요양원에서 그린 걸작입니다. 소용돌이치는 밤하늘과 빛나는 별들, 고요한 마을의 대비가 인상적입니다. 뉴욕 현대미술관(MoMA) 소장.' },
-    { id:'pearlgirl',   title:'진주 귀걸이를 한 소녀', artist:'요하네스 페르메이르', year:'1665',  country:'네덜란드',
-      url:'pearlgirl.jpg',
-      desc:'"북방의 모나리자"라 불리는 걸작입니다. 신비로운 눈빛과 반짝이는 진주 귀걸이가 특징이며 소녀의 정체는 아직도 미스터리입니다. 네덜란드 마우리츠하위스 미술관 소장.' },
-    { id:'waterlilies', title:'수련',                artist:'클로드 모네',       year:'1906',      country:'프랑스',
-      url:'water-lilies.jpg',
-      desc:'인상주의 거장 모네가 지베르니 정원의 연못을 그린 연작입니다. 빛과 색의 변화에 집중하여 수면과 수련을 몽환적으로 표현했습니다. 시카고 아트 인스티튜트 소장.' }
-  ],
   korea: [
-    { id:'ssireum',     title:'씨름',                artist:'김홍도 (단원)',     year:'18세기',    country:'조선',
+    { id:'goguryeo-hunt',   title:'수렵도',          artist:'작자미상',          year:'4–5세기', country:'고구려',
+      wikiSearch:'Muyongchong',
+      desc:'고구려 무용총에 그려진 수렵도입니다. 말을 탄 사냥꾼이 힘차게 활을 당기는 역동적인 장면으로, 고구려인의 용맹함과 생동감 넘치는 필치가 느껴집니다. 고구려 고분벽화 중 가장 유명한 작품 중 하나입니다.' },
+    { id:'goguryeo-ssireum', title:'씨름 (고구려 벽화)', artist:'작자미상',       year:'4–5세기', country:'고구려',
+      wikiSearch:'Gakchuchong',
+      desc:'고구려 각저총(씨름무덤)에 그려진 벽화입니다. 두 인물이 씨름하는 모습과 구경꾼이 묘사되어 있으며, 고구려 시대 씨름 문화와 풍속을 생생하게 전해줍니다.' },
+    { id:'mongyu',          title:'몽유도원도',       artist:'안견',              year:'1447',    country:'조선',
+      wikiSearch:'Dream_Journey_to_the_Peach_Blossom_Land',
+      desc:'세종대왕의 셋째 아들 안평대군이 꿈에서 본 도원경을 안견이 사흘 만에 그린 작품입니다. 현실과 이상세계를 대비적으로 표현한 조선 초기 최고의 산수화로 일본 텐리대학에 소장되어 있습니다.' },
+    { id:'chochungdo',      title:'초충도',           artist:'신사임당',          year:'16세기',  country:'조선',
+      url:'chochungdo.jpg',
+      desc:'이율곡의 어머니이자 뛰어난 예술가 신사임당의 대표작입니다. 풀과 벌레를 섬세하게 표현한 세밀화로, 우리나라 5만원권 지폐에도 수록되어 있습니다.' },
+    { id:'geumgang',        title:'금강전도',         artist:'정선 (겸재)',        year:'1734',    country:'조선',
+      wikiSearch:'Geumgang_Jeondo',
+      desc:'진경산수화의 대가 겸재 정선이 금강산 전경을 담은 걸작입니다. 실제 경치를 보고 그린 진경산수화로, 웅장한 금강산의 모습을 부채꼴 구도로 힘차게 표현했습니다. 리움미술관 소장.' },
+    { id:'ssireum',         title:'씨름도',           artist:'김홍도 (단원)',      year:'18세기',  country:'조선',
       url:'ssireum.jpg',
       desc:'조선 후기 풍속화의 대가 단원 김홍도의 대표작입니다. 씨름 경기 장면을 생동감 넘치게 묘사했으며 구경꾼들의 다양한 표정이 해학적입니다. 국립중앙박물관 소장.' },
-    { id:'chochungdo',  title:'초충도',              artist:'신사임당',          year:'16세기',    country:'한국',
-      url:'chochungdo.jpg',
-      desc:'이율곡의 어머니이자 뛰어난 예술가 신사임당의 대표작입니다. 풀과 벌레를 섬세하게 표현한 세밀화로, 우리나라 5만원권 지폐에도 수록되어 있습니다.' }
+    { id:'dano',            title:'단오풍정',         artist:'신윤복 (혜원)',      year:'18세기',  country:'조선',
+      wikiSearch:'Dano_pungjong',
+      desc:'조선 후기 풍속화가 혜원 신윤복의 대표작입니다. 단오절에 그네를 타는 여인들과 이를 몰래 바라보는 선비들의 모습을 생동감 있게 표현했습니다. 간송미술관 소장.' },
+    { id:'woljeongin',      title:'월하정인',         artist:'신윤복',             year:'18세기',  country:'조선',
+      wikiSearch:'Wolha_jeong-in',
+      desc:'달빛 아래 연인이 은밀히 만나는 장면을 묘사한 신윤복의 풍속화입니다. "달빛 아래 두 사람의 마음은 이미 정해졌다"는 화제가 적혀 있어 낭만적인 분위기를 자아냅니다. 간송미술관 소장.' },
+    { id:'miindo',          title:'미인도',           artist:'신윤복',             year:'18세기',  country:'조선',
+      wikiSearch:'Miindo',
+      desc:'혜원 신윤복의 미인도는 조선 후기 여성의 아름다움을 섬세하게 표현한 작품입니다. 치마저고리를 입은 여인의 우아한 자태와 정교한 의복 묘사가 특징입니다. 간송미술관 소장.' },
+    { id:'sehando',         title:'세한도',           artist:'김정희 (추사)',      year:'1844',    country:'조선',
+      wikiSearch:'Sehando',
+      desc:'실학자이자 서예가 추사 김정희가 제주도 유배 중에 그린 작품입니다. 소나무와 잣나무 두 그루를 단순하게 표현하여 변치 않는 절조와 우정을 담았습니다. 국립중앙박물관 소장.' }
   ],
-  japan: [
-    { id:'greatwave',   title:'가나가와 해변의 큰 파도', artist:'가쓰시카 호쿠사이', year:'1831',  country:'일본',
+  world: [
+    { id:'monalisa',        title:'모나리자',          artist:'레오나르도 다빈치', year:'1503–1519', country:'이탈리아',
+      url:'mona-lisa.jpg',
+      desc:'이탈리아 르네상스의 거장 레오나르도 다빈치가 그린 세계에서 가장 유명한 초상화입니다. 신비로운 미소와 스푸마토 기법으로 수백 년간 사람들을 매료시켜 왔습니다. 현재 프랑스 루브르 박물관에 소장되어 연간 900만 명 이상이 감상합니다.' },
+    { id:'lastsupper',      title:'최후의 만찬',       artist:'레오나르도 다빈치', year:'1495–1498', country:'이탈리아',
+      wikiSearch:'The_Last_Supper_(Leonardo)',
+      desc:'레오나르도 다빈치가 밀라노 수도원 식당 벽에 그린 대형 벽화입니다. 예수가 "너희 중 한 명이 나를 배신할 것이다"라고 말하는 순간을 포착했습니다. 밀라노 산타 마리아 델레 그라치에 성당 소장.' },
+    { id:'venus',           title:'비너스의 탄생',     artist:'산드로 보티첼리',   year:'1484–1486', country:'이탈리아',
+      wikiSearch:'The_Birth_of_Venus',
+      desc:'이탈리아 르네상스 화가 보티첼리의 걸작으로 사랑의 여신 비너스가 조개껍데기에서 태어나는 장면을 묘사했습니다. 고대 신화를 주제로 한 최초의 대형 캔버스 작품 중 하나입니다. 피렌체 우피치 미술관 소장.' },
+    { id:'athens',          title:'아테네 학당',       artist:'라파엘로 산치오',   year:'1509–1511', country:'이탈리아',
+      wikiSearch:'The_School_of_Athens',
+      desc:'교황 율리오 2세의 주문으로 라파엘로가 그린 프레스코화입니다. 플라톤과 아리스토텔레스를 중심으로 고대 그리스 철학자들이 모여 있는 장면으로, 르네상스 정신의 집대성입니다. 바티칸 궁전 서명의 방 소장.' },
+    { id:'pearlgirl',       title:'진주 귀걸이를 한 소녀', artist:'요하네스 페르메이르', year:'1665', country:'네덜란드',
+      url:'pearlgirl.jpg',
+      desc:'"북방의 모나리자"라 불리는 걸작입니다. 신비로운 눈빛과 반짝이는 진주 귀걸이가 특징이며 소녀의 정체는 아직도 미스터리입니다. 네덜란드 마우리츠하위스 미술관 소장.' },
+    { id:'nightwatch',      title:'야경',              artist:'렘브란트 판 레인',  year:'1642',      country:'네덜란드',
+      wikiSearch:'The_Night_Watch',
+      desc:'렘브란트의 대표작으로 야간 순찰을 나서는 민병대의 모습을 역동적으로 표현했습니다. 빛과 그림자의 극적인 대비가 바로크 회화의 특징을 잘 보여줍니다. 암스테르담 국립미술관(라익스무세움) 소장.' },
+    { id:'starrynight',     title:'별이 빛나는 밤',    artist:'빈센트 반 고흐',    year:'1889',      country:'네덜란드',
+      url:'starry-night.jpg',
+      desc:'반 고흐가 생레미 드 프로방스 요양원에서 그린 걸작입니다. 소용돌이치는 밤하늘과 빛나는 별들, 고요한 마을의 대비가 인상적입니다. 뉴욕 현대미술관(MoMA) 소장.' },
+    { id:'sunflowers',      title:'해바라기',          artist:'빈센트 반 고흐',    year:'1888',      country:'네덜란드',
+      wikiSearch:'Sunflowers_(Van_Gogh_series)',
+      desc:'반 고흐가 남프랑스 아를에서 폴 고갱을 맞이하기 위해 그린 연작입니다. 황금빛 해바라기들을 독특한 임파스토 기법으로 표현하여 생명력과 기쁨을 담았습니다. 런던 내셔널 갤러리 소장.' },
+    { id:'waterlilies',     title:'수련',              artist:'클로드 모네',        year:'1906',      country:'프랑스',
+      url:'water-lilies.jpg',
+      desc:'인상주의 거장 모네가 지베르니 정원의 연못을 그린 연작입니다. 빛과 색의 변화에 집중하여 수면과 수련을 몽환적으로 표현했습니다. 시카고 아트 인스티튜트 소장.' },
+    { id:'americangothic',  title:'아메리칸 고딕',     artist:'그랜트 우드',        year:'1930',      country:'미국',
+      wikiSearch:'American_Gothic',
+      desc:'미국 화가 그랜트 우드의 대표작으로 미국 중서부 농가 앞에 선 남녀의 모습을 담았습니다. 근엄한 표정의 두 인물은 미국 농촌 문화와 청교도적 가치관을 상징합니다. 시카고 아트 인스티튜트 소장.' },
+    { id:'greatwave',       title:'가나가와 해변의 큰 파도', artist:'가쓰시카 호쿠사이', year:'1831', country:'일본',
       url:'great-wave.jpg',
-      desc:'에도 시대 목판화 거장 호쿠사이의 "후지산 36경" 연작 중 가장 유명한 작품입니다. 거대한 파도와 후지산의 대비가 인상적이며 서양 예술가에도 큰 영향을 미쳤습니다.' }
-  ],
-  latam: [
-    { id:'frida',       title:'원숭이와 함께한 자화상', artist:'프리다 칼로',        year:'1945',      country:'멕시코',
-      url:'frida.jpg',
-      desc:'멕시코를 대표하는 화가 프리다 칼로의 자화상입니다. 원숭이와 함께한 모습을 강렬한 색채로 표현했으며, 이어지는 눈썹과 멕시코 전통 의상이 트레이드마크입니다.' }
+      desc:'에도 시대 목판화 거장 호쿠사이의 "후지산 36경" 연작 중 가장 유명한 작품입니다. 거대한 파도와 후지산의 대비가 인상적이며 서양 예술가에도 큰 영향을 미쳤습니다.' },
+    { id:'plum',            title:'홍백매화도',        artist:'오가타 고린',        year:'1714–1716', country:'일본',
+      wikiSearch:'Red_and_White_Plum_Blossoms',
+      desc:'에도 시대 화가 오가타 고린의 대표작입니다. 흐르는 물과 홍백 매화나무를 대담하고 장식적으로 표현한 금박 병풍화로, 일본 린파 화풍의 최고 걸작으로 꼽힙니다. MOA 미술관 소장.' },
+    { id:'rain-bridge',     title:'오하시 다리의 소나기', artist:'우타가와 히로시게', year:'1857',  country:'일본',
+      wikiSearch:'Sudden_Shower_over_Shin-Ōhashi_bridge_and_Atake',
+      desc:'우타가와 히로시게의 목판화 걸작으로 소나기 내리는 다리 위 사람들의 모습을 담았습니다. 대각선 빗줄기와 움직이는 인물들의 묘사가 인상적이며, 인상주의 화가들에게 큰 영향을 주었습니다.' },
+    { id:'geisha',          title:'기녀',              artist:'기타가와 우타마로', year:'1790년대',  country:'일본',
+      wikiSearch:'Kitagawa_Utamaro',
+      desc:'기타가와 우타마로의 미인화로 에도 시대 여성의 아름다움을 섬세하게 표현했습니다. 특유의 오쿠비에(흉상) 형식과 은은한 색채 처리로 여성의 우아함을 극대화했습니다.' },
+    { id:'qingming',        title:'청명상하도',        artist:'장쩌돤',             year:'12세기',    country:'중국',
+      wikiSearch:'Along_the_River_During_the_Qingming_Festival',
+      desc:'북송의 화가 장쩌돤이 그린 풍속화의 걸작입니다. 청명절 즈음 수도 변경의 번화한 거리 풍경을 5미터가 넘는 두루마리에 담아 12세기 중국 도시 생활을 생생하게 보여줍니다. 베이징 고궁박물원 소장.' },
+    { id:'fuchun',          title:'부춘산거도',        artist:'황공망',             year:'1350',      country:'중국',
+      wikiSearch:'Dwelling_in_the_Fuchun_Mountains',
+      desc:'원나라 화가 황공망이 3~4년에 걸쳐 완성한 산수화의 걸작입니다. 부춘강 주변의 경치를 담백하고 자유로운 필치로 표현했으며, 중국 산수화의 최고 작품 중 하나로 꼽힙니다.' }
   ]
 };
 
@@ -703,7 +754,36 @@ const ARTWORKS = {
 // ─────────────────────────────────────────────
 const viewedArtworks = new Set();
 let currentArtwork   = null;
-let curGalleryTab    = 'europe';
+let curGalleryTab    = 'korea';
+
+// ── Wikipedia REST API 이미지 로딩 ────────────────
+async function fetchWikiImage(art) {
+  if (art._imgUrl || art._imgFailed) return;
+  try {
+    const res = await fetch(
+      `https://en.wikipedia.org/api/rest_v1/page/summary/${encodeURIComponent(art.wikiSearch)}`,
+      { headers: { Accept: 'application/json' } }
+    );
+    if (!res.ok) throw new Error('404');
+    const data = await res.json();
+    const src = data.originalimage?.source || data.thumbnail?.source;
+    if (!src) throw new Error('no image');
+    art._imgUrl = src;
+  } catch {
+    art._imgFailed = true;
+  }
+}
+
+function artCardImgHtml(art) {
+  const src = art._imgUrl || art.url;
+  const esc  = s => s.replace(/'/g, '&#39;');
+  if (src) {
+    return `<img class="art-card-img" src="${src}" alt="${esc(art.title)}"
+               crossorigin="anonymous" referrerpolicy="no-referrer"
+               onerror="this.parentElement.innerHTML='<div class=art-fallback><span>${esc(art.title)}</span><small>${esc(art.artist)}</small></div>'">`;
+  }
+  return `<div class="art-loading">⏳</div>`;
+}
 
 function openGallery() {
   document.getElementById('gallery-screen').classList.add('active');
@@ -715,16 +795,10 @@ function renderGalleryTab(tab) {
   curGalleryTab = tab;
   document.querySelectorAll('#gallery-tabs .tab-btn').forEach(b => b.classList.toggle('active', b.dataset.tab === tab));
   const list = ARTWORKS[tab] || [];
+  const esc  = s => s.replace(/'/g, '&#39;');
   document.getElementById('gallery-grid').innerHTML = list.map(art => `
     <div class="art-card" onclick="openArtDetail('${art.id}','${tab}')">
-      <img class="art-card-img" src="${art.url}" alt="${art.title}"
-           crossorigin="anonymous" referrerpolicy="no-referrer"
-           onerror="this.style.display='none';this.nextElementSibling.style.display='flex'">
-      <div class="art-card-fallback" style="display:none">
-        <span style="font-size:2rem">🖼️</span>
-        <span>${art.title}</span>
-        <span>${art.artist}</span>
-      </div>
+      <div class="art-card-img-wrap" id="img-${art.id}">${artCardImgHtml(art)}</div>
       <div class="art-card-info">
         <div class="art-card-title">${art.title}</div>
         <div class="art-card-artist">${art.artist} · ${art.year}</div>
@@ -732,19 +806,25 @@ function renderGalleryTab(tab) {
       ${viewedArtworks.has(art.id) ? '<div class="art-card-viewed">✓</div>' : ''}
     </div>
   `).join('');
+
+  // Wikipedia 이미지 비동기 로딩
+  list.forEach(art => {
+    if (!art.url && art.wikiSearch && !art._imgUrl && !art._imgFailed) {
+      fetchWikiImage(art).then(() => {
+        const wrap = document.getElementById(`img-${art.id}`);
+        if (wrap) wrap.innerHTML = artCardImgHtml(art);
+      });
+    }
+  });
 }
 
-function openArtDetail(artId, tab) {
+async function openArtDetail(artId, tab) {
   const art = (ARTWORKS[tab] || []).find(a => a.id === artId);
   if (!art) return;
   currentArtwork = art;
   const img = document.getElementById('art-detail-img');
   const fb  = document.getElementById('art-detail-fallback');
-  img.style.display = 'block'; fb.style.display = 'none';
-  img.crossOrigin = 'anonymous';
-  img.referrerPolicy = 'no-referrer';
-  img.src = art.url;
-  img.onerror = () => { img.style.display = 'none'; fb.style.display = 'flex'; fb.textContent = art.title + ' — ' + art.artist; };
+
   document.getElementById('art-detail-title').textContent = art.title;
   document.getElementById('art-detail-meta').textContent  = `${art.artist} · ${art.year} · ${art.country}`;
   document.getElementById('art-detail-desc').textContent  = art.desc;
@@ -752,6 +832,23 @@ function openArtDetail(artId, tab) {
   btn.disabled = viewedArtworks.has(art.id);
   btn.textContent = viewedArtworks.has(art.id) ? '✅ 이미 감상한 작품' : '✅ 감상 완료 (+5 코인)';
   document.getElementById('art-detail-overlay').classList.add('active');
+
+  // 이미지 표시: 로컬 → 캐시된 위키 → 즉시 fetch → 실패시 텍스트
+  let src = art._imgUrl || art.url;
+  if (!src && art.wikiSearch) {
+    img.style.display = 'none'; fb.style.display = 'flex'; fb.textContent = '⏳ 이미지 불러오는 중...';
+    await fetchWikiImage(art);
+    src = art._imgUrl;
+  }
+  if (src) {
+    img.style.display = 'block'; fb.style.display = 'none';
+    img.crossOrigin = 'anonymous'; img.referrerPolicy = 'no-referrer';
+    img.src = src;
+    img.onerror = () => { img.style.display = 'none'; fb.style.display = 'flex'; fb.textContent = `${art.title} — ${art.artist}`; };
+  } else {
+    img.style.display = 'none'; fb.style.display = 'flex';
+    fb.textContent = `${art.title} — ${art.artist}`;
+  }
 }
 
 document.getElementById('gallery-tabs').addEventListener('click', e => {
@@ -890,8 +987,8 @@ function showQuizResult() {
 // ─────────────────────────────────────────────
 //  메모리 카드
 // ─────────────────────────────────────────────
-// ARTWORKS 전체 목록을 메모리카드 데이터로 사용 (추가 시 자동 반영)
-const MEM_ARTS = Object.values(ARTWORKS).flat();
+// 메모리카드는 로컬 파일 보유 작품만 사용 (이미지 즉시 표시 보장)
+const MEM_ARTS = Object.values(ARTWORKS).flat().filter(a => a.url);
 
 let memState = { cards:[], flipped:[], matched:new Set(), lock:false, coinsEarned:0, attempts:0 };
 
