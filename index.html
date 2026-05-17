@@ -114,23 +114,25 @@ canvas { display:block; image-rendering:pixelated; }
 #memory-complete-box h3 { color:#ffd700; font-size:1.45rem; margin-bottom:16px; }
 
 /* Coloring studio */
-#coloring-inner { width:100%; max-width:900px; padding:10px 18px 36px; display:flex; flex-direction:column; align-items:center; }
-#coloring-painting-tabs { display:flex; gap:8px; margin:12px 0; flex-wrap:wrap; justify-content:center; }
-.ptab { background:#2d1b69; border:2px solid #ffd70050; border-radius:16px; color:#e2c4ff; padding:6px 14px; font-size:.82rem; cursor:pointer; transition:all .2s; }
-.ptab:hover,.ptab.active { background:linear-gradient(90deg,#ffd700,#ff9900); color:#1a0a2e; border-color:#ffd700; font-weight:700; }
+#coloring-inner { width:100%; max-width:920px; padding:8px 18px 36px; display:flex; flex-direction:column; align-items:center; }
+#coloring-toolbar { display:flex; gap:7px; margin:10px 0 8px; flex-wrap:wrap; align-items:center; width:100%; }
+.c-tool-btn { background:#2d1b69; border:2px solid #6b21a8; border-radius:8px; color:#e2c4ff; padding:7px 13px; font-size:.84rem; cursor:pointer; transition:all .15s; white-space:nowrap; }
+.c-tool-btn:hover,.c-tool-btn.active { background:linear-gradient(90deg,#ffd700,#ff9900); color:#1a0a2e; border-color:#ffd700; font-weight:700; }
+.c-tool-btn.eraser-on { background:linear-gradient(90deg,#ef4444,#dc2626); color:#fff; border-color:#ef4444; font-weight:700; }
+.c-tool-btn.save-btn { background:linear-gradient(90deg,#22c55e,#16a34a); color:#fff; border-color:#22c55e; }
+#coloring-coin-status { color:#a78bfa; font-size:.78rem; margin-left:auto; text-align:right; }
 #coloring-workspace { display:flex; gap:14px; align-items:flex-start; width:100%; justify-content:center; flex-wrap:wrap; }
-#coloring-svg-area { background:#fff; border-radius:12px; border:3px solid #ffd70060; overflow:hidden; flex-shrink:0; max-width:100%; }
-#coloring-svg-area svg { display:block; max-width:400px; width:100%; height:auto; cursor:crosshair; }
-.cr { transition:fill .18s; }
-.cr:hover { opacity:.85; }
+#coloring-canvas-wrapper { position:relative; width:560px; height:392px; max-width:100%; background:#fff; border-radius:12px; border:3px solid #ffd70060; overflow:hidden; flex-shrink:0; touch-action:none; }
+#coloring-draw-canvas { position:absolute; top:0; left:0; width:100%; height:100%; z-index:1; }
+#coloring-overlay-img { position:absolute; top:0; left:0; width:100%; height:100%; z-index:2; pointer-events:none; user-select:none; }
+#coloring-canvas-wrapper.mode-brush { cursor:crosshair; }
+#coloring-canvas-wrapper.mode-fill  { cursor:cell; }
 #coloring-palette-panel { display:flex; flex-direction:column; align-items:center; gap:10px; }
 #coloring-palette { display:grid; grid-template-columns:repeat(4,1fr); gap:8px; }
 .pal-color { width:36px; height:36px; border-radius:50%; border:3px solid transparent; cursor:pointer; transition:transform .15s,border-color .15s; }
 .pal-color:hover { transform:scale(1.15); }
 .pal-color.selected { border-color:#fff; transform:scale(1.2); box-shadow:0 0 10px rgba(255,255,255,.6); }
-#coloring-cur-color { width:60px; height:60px; border-radius:50%; border:3px solid #ffd700; box-shadow:0 0 14px #ffd70066; }
-#coloring-status { color:#a78bfa; font-size:.82rem; margin-top:6px; text-align:center; }
-#coloring-done-btn { background:linear-gradient(90deg,#ffd700,#ff9900); color:#1a0a2e; border:none; border-radius:8px; padding:10px 22px; font-size:.9rem; font-weight:700; cursor:pointer; margin-top:8px; display:none; }
+#coloring-cur-color { width:56px; height:56px; border-radius:50%; border:3px solid #ffd700; box-shadow:0 0 14px #ffd70066; }
 
 /* Typing */
 #typing-inner { width:100%; max-width:760px; padding:0 18px 40px; }
@@ -303,20 +305,26 @@ canvas { display:block; image-rendering:pixelated; }
     <button class="close-mini" onclick="closeMiniGame('coloring')">✕ 나가기</button>
   </div>
   <div id="coloring-inner">
-    <div id="coloring-painting-tabs">
-      <button class="ptab active" data-ptab="starrynight">🌙 별이 빛나는 밤</button>
-      <button class="ptab" data-ptab="monalisa">👩 모나리자</button>
-      <button class="ptab" data-ptab="waterlilies">🌸 수련</button>
-      <button class="ptab" data-ptab="ssireum">🤼 씨름</button>
-      <button class="ptab" data-ptab="greatwave">🌊 가나가와 파도</button>
+    <div id="coloring-toolbar">
+      <button class="c-tool-btn active" id="mode-fill-btn"  onclick="setColoringMode('fill')">🪣 페인트통</button>
+      <button class="c-tool-btn"        id="mode-brush-btn" onclick="setColoringMode('brush')">🖌️ 브러시</button>
+      <span style="color:#a78bfa;font-size:.8rem;margin-left:6px" id="brush-size-label">크기:</span>
+      <button class="c-tool-btn brush-size-btn active" id="bsz-s" onclick="setBrushSize(10,this)">S</button>
+      <button class="c-tool-btn brush-size-btn"        id="bsz-m" onclick="setBrushSize(20,this)">M</button>
+      <button class="c-tool-btn brush-size-btn"        id="bsz-l" onclick="setBrushSize(35,this)">L</button>
+      <button class="c-tool-btn" id="eraser-btn"       onclick="toggleEraser()">지우개</button>
+      <button class="c-tool-btn"                        onclick="clearColoringCanvas()">🗑️ 전체 지우기</button>
+      <button class="c-tool-btn save-btn"               onclick="saveColoringCanvas()">💾 저장</button>
+      <span id="coloring-coin-status">🎨 0% 색칠됨</span>
     </div>
     <div id="coloring-workspace">
-      <div id="coloring-svg-area"></div>
+      <div id="coloring-canvas-wrapper" class="mode-fill">
+        <canvas id="coloring-draw-canvas" width="600" height="420"></canvas>
+        <img id="coloring-overlay-img" src="starry-coloring.png" alt="starry night outline" draggable="false">
+      </div>
       <div id="coloring-palette-panel">
         <div id="coloring-cur-color" style="background:#1d4ed8"></div>
         <div id="coloring-palette"></div>
-        <div id="coloring-status">0 / 0 색칠 완료</div>
-        <button id="coloring-done-btn" onclick="checkColoringComplete(true)">완성! +20 코인 🎉</button>
       </div>
     </div>
   </div>
@@ -887,135 +895,229 @@ function flipCard(i) {
 }
 
 // ─────────────────────────────────────────────
-//  색칠 스튜디오
+//  색칠 스튜디오 (페인트통 flood-fill + 브러시)
 // ─────────────────────────────────────────────
 const PALETTE = ['#1d4ed8','#60a5fa','#06b6d4','#22c55e','#15803d','#fbbf24','#f97316','#ef4444','#ec4899','#a855f7','#8b5cf6','#78350f','#92400e','#d1d5db','#6b7280','#111827'];
-let selectedColor   = '#1d4ed8';
-let coloringDone    = false;
-let curPainting     = 'starrynight';
-
-const PAINTINGS_SVG = {
-  starrynight: `<svg viewBox="0 0 400 300" xmlns="http://www.w3.org/2000/svg">
-  <rect class="cr" id="sn-sky" x="0" y="0" width="400" height="262" fill="#f8f4ee" stroke="#333" stroke-width="1.5"/>
-  <ellipse class="cr" id="sn-swirl1" cx="120" cy="62" rx="90" ry="45" fill="#f8f4ee" stroke="#333" stroke-width="2"/>
-  <ellipse class="cr" id="sn-swirl2" cx="280" cy="84" rx="76" ry="38" fill="#f8f4ee" stroke="#333" stroke-width="2"/>
-  <ellipse class="cr" id="sn-swirl3" cx="185" cy="142" rx="58" ry="30" fill="#f8f4ee" stroke="#333" stroke-width="2"/>
-  <circle class="cr" id="sn-moon" cx="345" cy="56" r="38" fill="#f8f4ee" stroke="#333" stroke-width="2"/>
-  <circle class="cr" id="sn-star1" cx="62" cy="30" r="10" fill="#f8f4ee" stroke="#333" stroke-width="1.5"/>
-  <circle class="cr" id="sn-star2" cx="175" cy="22" r="9" fill="#f8f4ee" stroke="#333" stroke-width="1.5"/>
-  <circle class="cr" id="sn-star3" cx="312" cy="138" r="9" fill="#f8f4ee" stroke="#333" stroke-width="1.5"/>
-  <rect class="cr" id="sn-ground" x="0" y="262" width="400" height="38" fill="#f8f4ee" stroke="#333" stroke-width="1.5"/>
-  <polygon class="cr" id="sn-cypress" points="28,262 48,262 38,88" fill="#f8f4ee" stroke="#333" stroke-width="2"/>
-  <rect class="cr" id="sn-bldg1" x="135" y="220" width="34" height="42" fill="#f8f4ee" stroke="#333" stroke-width="1.5"/>
-  <rect class="cr" id="sn-bldg2" x="178" y="230" width="28" height="32" fill="#f8f4ee" stroke="#333" stroke-width="1.5"/>
-  <rect class="cr" id="sn-bldg3" x="215" y="224" width="24" height="38" fill="#f8f4ee" stroke="#333" stroke-width="1.5"/>
-  <rect class="cr" id="sn-church" x="252" y="200" width="30" height="62" fill="#f8f4ee" stroke="#333" stroke-width="1.5"/>
-  <polygon class="cr" id="sn-steeple" points="252,200 282,200 267,168" fill="#f8f4ee" stroke="#333" stroke-width="1.5"/>
-</svg>`,
-  monalisa: `<svg viewBox="0 0 280 360" xmlns="http://www.w3.org/2000/svg">
-  <rect class="cr" id="ml-bgleft" x="0" y="0" width="98" height="188" fill="#f8f4ee" stroke="#333" stroke-width="1"/>
-  <rect class="cr" id="ml-bgright" x="182" y="0" width="98" height="188" fill="#f8f4ee" stroke="#333" stroke-width="1"/>
-  <path class="cr" id="ml-robe" d="M44,192 Q72,168 108,156 L172,156 Q208,168 236,192 L248,360 L32,360 Z" fill="#f8f4ee" stroke="#333" stroke-width="2"/>
-  <rect class="cr" id="ml-neck" x="118" y="118" width="44" height="42" fill="#f8f4ee" stroke="#333" stroke-width="1.5"/>
-  <ellipse class="cr" id="ml-face" cx="140" cy="82" rx="52" ry="62" fill="#f8f4ee" stroke="#333" stroke-width="2"/>
-  <path class="cr" id="ml-hair-l" d="M88,28 Q72,4 94,76 Q84,106 90,136 L110,126 Q106,82 108,52 Z" fill="#f8f4ee" stroke="#333" stroke-width="1.5"/>
-  <path class="cr" id="ml-hair-r" d="M192,28 Q208,4 186,76 Q196,106 190,136 L170,126 Q174,82 172,52 Z" fill="#f8f4ee" stroke="#333" stroke-width="1.5"/>
-  <ellipse class="cr" id="ml-hands" cx="140" cy="290" rx="58" ry="24" fill="#f8f4ee" stroke="#333" stroke-width="1.5"/>
-  <path class="cr" id="ml-veil" d="M88,28 Q140,-8 192,28 Q188,6 140,2 Q92,6 88,28 Z" fill="#f8f4ee" stroke="#333" stroke-width="1"/>
-</svg>`,
-  waterlilies: `<svg viewBox="0 0 400 280" xmlns="http://www.w3.org/2000/svg">
-  <rect class="cr" id="wl-water" x="0" y="0" width="400" height="280" fill="#f8f4ee" stroke="#333" stroke-width="1"/>
-  <ellipse class="cr" id="wl-pad1" cx="66" cy="86" rx="52" ry="28" fill="#f8f4ee" stroke="#333" stroke-width="1.5"/>
-  <ellipse class="cr" id="wl-pad2" cx="196" cy="56" rx="58" ry="30" fill="#f8f4ee" stroke="#333" stroke-width="1.5"/>
-  <ellipse class="cr" id="wl-pad3" cx="336" cy="96" rx="50" ry="25" fill="#f8f4ee" stroke="#333" stroke-width="1.5"/>
-  <ellipse class="cr" id="wl-pad4" cx="96" cy="212" rx="62" ry="30" fill="#f8f4ee" stroke="#333" stroke-width="1.5"/>
-  <ellipse class="cr" id="wl-pad5" cx="272" cy="222" rx="55" ry="28" fill="#f8f4ee" stroke="#333" stroke-width="1.5"/>
-  <ellipse class="cr" id="wl-pad6" cx="378" cy="248" rx="35" ry="18" fill="#f8f4ee" stroke="#333" stroke-width="1.5"/>
-  <circle class="cr" id="wl-fl1" cx="66" cy="72" r="15" fill="#f8f4ee" stroke="#333" stroke-width="1.5"/>
-  <circle class="cr" id="wl-fl2" cx="196" cy="40" r="16" fill="#f8f4ee" stroke="#333" stroke-width="1.5"/>
-  <circle class="cr" id="wl-fl3" cx="96" cy="196" r="15" fill="#f8f4ee" stroke="#333" stroke-width="1.5"/>
-  <circle class="cr" id="wl-fl4" cx="272" cy="206" r="14" fill="#f8f4ee" stroke="#333" stroke-width="1.5"/>
-  <circle class="cr" id="wl-ctr1" cx="66" cy="72" r="6" fill="#f8f4ee" stroke="#333" stroke-width="1"/>
-  <circle class="cr" id="wl-ctr2" cx="196" cy="40" r="7" fill="#f8f4ee" stroke="#333" stroke-width="1"/>
-  <circle class="cr" id="wl-ctr3" cx="96" cy="196" r="6" fill="#f8f4ee" stroke="#333" stroke-width="1"/>
-</svg>`,
-  ssireum: `<svg viewBox="0 0 400 320" xmlns="http://www.w3.org/2000/svg">
-  <ellipse class="cr" id="ss-crowd-bg" cx="200" cy="138" rx="188" ry="126" fill="#f8f4ee" stroke="#333" stroke-width="1.5"/>
-  <circle class="cr" id="ss-hd-a" cx="60" cy="80" r="18" fill="#f8f4ee" stroke="#333" stroke-width="1.5"/>
-  <circle class="cr" id="ss-hd-b" cx="105" cy="64" r="18" fill="#f8f4ee" stroke="#333" stroke-width="1.5"/>
-  <circle class="cr" id="ss-hd-c" cx="152" cy="54" r="18" fill="#f8f4ee" stroke="#333" stroke-width="1.5"/>
-  <circle class="cr" id="ss-hd-d" cx="200" cy="50" r="18" fill="#f8f4ee" stroke="#333" stroke-width="1.5"/>
-  <circle class="cr" id="ss-hd-e" cx="248" cy="54" r="18" fill="#f8f4ee" stroke="#333" stroke-width="1.5"/>
-  <circle class="cr" id="ss-hd-f" cx="295" cy="64" r="18" fill="#f8f4ee" stroke="#333" stroke-width="1.5"/>
-  <circle class="cr" id="ss-hd-g" cx="340" cy="80" r="18" fill="#f8f4ee" stroke="#333" stroke-width="1.5"/>
-  <ellipse class="cr" id="ss-ground" cx="200" cy="242" rx="158" ry="56" fill="#f8f4ee" stroke="#333" stroke-width="2"/>
-  <ellipse class="cr" id="ss-w1body" cx="152" cy="208" rx="38" ry="50" fill="#f8f4ee" stroke="#333" stroke-width="2"/>
-  <circle class="cr" id="ss-w1head" cx="150" cy="152" r="24" fill="#f8f4ee" stroke="#333" stroke-width="2"/>
-  <path class="cr" id="ss-w1legs" d="M124,256 Q114,280 110,306 L138,306 Q142,280 152,258 Z" fill="#f8f4ee" stroke="#333" stroke-width="1.5"/>
-  <ellipse class="cr" id="ss-w2body" cx="252" cy="204" rx="38" ry="50" fill="#f8f4ee" stroke="#333" stroke-width="2"/>
-  <circle class="cr" id="ss-w2head" cx="255" cy="148" r="24" fill="#f8f4ee" stroke="#333" stroke-width="2"/>
-  <path class="cr" id="ss-w2legs" d="M272,252 Q282,278 288,306 L262,306 Q258,278 248,254 Z" fill="#f8f4ee" stroke="#333" stroke-width="1.5"/>
-</svg>`,
-  greatwave: `<svg viewBox="0 0 400 280" xmlns="http://www.w3.org/2000/svg">
-  <rect class="cr" id="gw-sky" x="0" y="0" width="400" height="180" fill="#f8f4ee" stroke="#333" stroke-width="1"/>
-  <polygon class="cr" id="gw-fuji" points="255,178 315,178 285,108" fill="#f8f4ee" stroke="#333" stroke-width="2"/>
-  <polygon class="cr" id="gw-snow" points="277,138 293,138 285,108" fill="#f8f4ee" stroke="#333" stroke-width="1.5"/>
-  <path class="cr" id="gw-wave" d="M0,212 Q50,156 100,176 Q158,200 212,148 Q268,96 332,130 Q368,148 400,140 L400,280 L0,280 Z" fill="#f8f4ee" stroke="#333" stroke-width="2"/>
-  <path class="cr" id="gw-wave2" d="M0,260 Q80,232 162,250 Q242,268 322,240 Q362,228 400,235 L400,280 L0,280 Z" fill="#f8f4ee" stroke="#333" stroke-width="1.5"/>
-  <path class="cr" id="gw-foam1" d="M0,212 Q18,180 42,192 Q22,210 0,226 Z" fill="#f8f4ee" stroke="#333" stroke-width="1.5"/>
-  <path class="cr" id="gw-foam2" d="M90,176 Q118,148 150,162 Q130,178 100,190 Z" fill="#f8f4ee" stroke="#333" stroke-width="1.5"/>
-  <path class="cr" id="gw-foam3" d="M196,148 Q230,118 264,132 Q244,148 216,160 Z" fill="#f8f4ee" stroke="#333" stroke-width="1.5"/>
-  <path class="cr" id="gw-boat1" d="M88,220 L138,220 L132,236 L94,236 Z" fill="#f8f4ee" stroke="#333" stroke-width="1.5"/>
-  <path class="cr" id="gw-boat2" d="M240,186 L286,186 L280,200 L246,200 Z" fill="#f8f4ee" stroke="#333" stroke-width="1.5"/>
-</svg>`
-};
+let selectedColor  = '#1d4ed8';
+let cBrushSize     = 10;
+let cEraser        = false;
+let cDrawing       = false;
+let cLastX = 0, cLastY = 0;
+let cReward50      = false;
+let cReward100     = false;
+let cCtx           = null;
+let cCheckTimer    = 0;
+let cMode          = 'fill'; // 'fill' | 'brush'
 
 function openColoring() {
   document.getElementById('coloring-screen').classList.add('active');
   if (gameScene) gameScene.input.keyboard.enabled = false;
   buildPalette();
-  loadPainting('starrynight');
+  const canvas = document.getElementById('coloring-draw-canvas');
+  cCtx = canvas.getContext('2d');
+  cCtx.clearRect(0, 0, canvas.width, canvas.height);
+  cReward50 = false; cReward100 = false;
+  setColoringMode('fill');
+  updateColoringStatus(0);
 }
+
 function buildPalette() {
   document.getElementById('coloring-palette').innerHTML = PALETTE.map((c, i) => `
     <div class="pal-color${i === 0 ? ' selected' : ''}" style="background:${c}" onclick="selectColor('${c}',this)" title="${c}"></div>
   `).join('');
   document.getElementById('coloring-cur-color').style.background = PALETTE[0];
+  selectedColor = PALETTE[0]; cEraser = false;
 }
+
 function selectColor(c, el) {
-  selectedColor = c;
+  selectedColor = c; cEraser = false;
   document.getElementById('coloring-cur-color').style.background = c;
   document.querySelectorAll('.pal-color').forEach(x => x.classList.remove('selected'));
   el.classList.add('selected');
+  document.getElementById('eraser-btn').classList.remove('eraser-on');
 }
-function loadPainting(name) {
-  curPainting = name;
-  coloringDone = false;
-  document.getElementById('coloring-done-btn').style.display = 'none';
-  document.querySelectorAll('.ptab').forEach(b => b.classList.toggle('active', b.dataset.ptab === name));
-  document.getElementById('coloring-svg-area').innerHTML = PAINTINGS_SVG[name];
-  document.querySelectorAll('#coloring-svg-area .cr').forEach(el => {
-    el.addEventListener('click', () => { el.setAttribute('fill', selectedColor); checkColoringComplete(false); });
-  });
-  updateColoringStatus();
+
+function setColoringMode(mode) {
+  cMode = mode; cEraser = false;
+  document.getElementById('eraser-btn').classList.remove('eraser-on');
+  document.getElementById('mode-fill-btn').classList.toggle('active',  mode === 'fill');
+  document.getElementById('mode-brush-btn').classList.toggle('active', mode === 'brush');
+  const wrapper = document.getElementById('coloring-canvas-wrapper');
+  wrapper.className = mode === 'fill' ? 'mode-fill' : 'mode-brush';
+  // brush-size buttons only relevant in brush mode
+  const showSize = mode === 'brush';
+  document.getElementById('brush-size-label').style.display = showSize ? '' : 'none';
+  document.querySelectorAll('.brush-size-btn').forEach(b => b.style.display = showSize ? '' : 'none');
 }
-document.getElementById('coloring-painting-tabs').addEventListener('click', e => {
-  const b = e.target.closest('.ptab'); if (b) loadPainting(b.dataset.ptab);
-});
-function updateColoringStatus() {
-  const all     = document.querySelectorAll('#coloring-svg-area .cr');
-  const colored = Array.from(all).filter(el => el.getAttribute('fill') !== '#f8f4ee').length;
-  document.getElementById('coloring-status').textContent = `${colored} / ${all.length} 색칠 완료`;
-  return { colored, total: all.length };
+
+function setBrushSize(size, el) {
+  cBrushSize = size; cEraser = false;
+  document.querySelectorAll('.brush-size-btn').forEach(b => b.classList.remove('active'));
+  el.classList.add('active');
+  document.getElementById('eraser-btn').classList.remove('eraser-on');
 }
-function checkColoringComplete(force) {
-  const { colored, total } = updateColoringStatus();
-  if (!coloringDone && (force || colored === total)) {
-    document.getElementById('coloring-done-btn').style.display = 'block';
-    if (force) { coloringDone = true; state.coins += 20; updateHUD(); showCoinToast(20); document.getElementById('coloring-done-btn').textContent = '✅ +20 코인 획득!'; document.getElementById('coloring-done-btn').disabled = true; }
+
+function toggleEraser() {
+  cEraser = !cEraser;
+  document.getElementById('eraser-btn').classList.toggle('eraser-on', cEraser);
+}
+
+function clearColoringCanvas() {
+  if (!cCtx) return;
+  const cv = document.getElementById('coloring-draw-canvas');
+  cCtx.clearRect(0, 0, cv.width, cv.height);
+  cReward50 = false; cReward100 = false;
+  updateColoringStatus(0);
+}
+
+function saveColoringCanvas() {
+  const cv = document.getElementById('coloring-draw-canvas');
+  const tmp = document.createElement('canvas');
+  tmp.width = cv.width; tmp.height = cv.height;
+  const ctx = tmp.getContext('2d');
+  ctx.fillStyle = '#ffffff';
+  ctx.fillRect(0, 0, tmp.width, tmp.height);
+  ctx.drawImage(cv, 0, 0);
+  try { ctx.drawImage(document.getElementById('coloring-overlay-img'), 0, 0, tmp.width, tmp.height); } catch(e) {}
+  const a = document.createElement('a');
+  a.download = 'my-artwork.png'; a.href = tmp.toDataURL('image/png'); a.click();
+}
+
+function cGetPos(e) {
+  const cv = document.getElementById('coloring-draw-canvas');
+  const r = cv.getBoundingClientRect();
+  return { x: Math.round((e.clientX-r.left)*(cv.width/r.width)),
+           y: Math.round((e.clientY-r.top)*(cv.height/r.height)) };
+}
+
+// ── Flood fill (BFS, scanline-optimized) ──
+function hexToRgb(hex) {
+  const v = parseInt(hex.slice(1), 16);
+  return [(v>>16)&255, (v>>8)&255, v&255];
+}
+
+function floodFill(startX, startY, fillColor) {
+  if (!cCtx) return;
+  const cv   = document.getElementById('coloring-draw-canvas');
+  const W    = cv.width, H = cv.height;
+  const img  = cCtx.getImageData(0, 0, W, H);
+  const data = img.data;
+  const idx  = (x, y) => (y * W + x) * 4;
+
+  const si = idx(startX, startY);
+  const sr = data[si], sg = data[si+1], sb = data[si+2], sa = data[si+3];
+
+  const [fr, fg, fb] = hexToRgb(fillColor);
+  // Already the target color (and fully opaque)
+  if (sr === fr && sg === fg && sb === fb && sa === 255) return;
+
+  const TOLERANCE = 40; // allow slight anti-alias variation
+  function matches(i) {
+    return Math.abs(data[i]-sr) + Math.abs(data[i+1]-sg) +
+           Math.abs(data[i+2]-sb) + Math.abs(data[i+3]-sa) <= TOLERANCE;
   }
-  if (colored === total && !coloringDone) document.getElementById('coloring-done-btn').style.display = 'block';
+
+  const visited = new Uint8Array(W * H);
+  const stack = [[startX, startY]];
+  visited[startY * W + startX] = 1;
+
+  while (stack.length) {
+    const [x, y] = stack.pop();
+    const i = idx(x, y);
+    data[i] = fr; data[i+1] = fg; data[i+2] = fb; data[i+3] = 255;
+
+    const neighbors = [[x-1,y],[x+1,y],[x,y-1],[x,y+1]];
+    for (const [nx, ny] of neighbors) {
+      if (nx < 0 || nx >= W || ny < 0 || ny >= H) continue;
+      if (visited[ny * W + nx]) continue;
+      if (!matches(idx(nx, ny))) continue;
+      visited[ny * W + nx] = 1;
+      stack.push([nx, ny]);
+    }
+  }
+  cCtx.putImageData(img, 0, 0);
 }
+
+// ── Brush painting ──
+function cPaint(x, y) {
+  if (!cCtx) return;
+  cCtx.globalCompositeOperation = cEraser ? 'destination-out' : 'source-over';
+  cCtx.fillStyle = cEraser ? 'rgba(0,0,0,1)' : selectedColor;
+  cCtx.beginPath();
+  cCtx.arc(x, y, cBrushSize / 2, 0, Math.PI * 2);
+  cCtx.fill();
+  cCtx.globalCompositeOperation = 'source-over';
+}
+
+function cPaintLine(x0, y0, x1, y1) {
+  const d = Math.hypot(x1-x0, y1-y0);
+  const steps = Math.max(1, Math.ceil(d / Math.max(1, cBrushSize/4)));
+  for (let i = 0; i <= steps; i++) { const t=i/steps; cPaint(x0+(x1-x0)*t, y0+(y1-y0)*t); }
+}
+
+function checkColoringCoverage() {
+  if (!cCtx) return;
+  const cv = document.getElementById('coloring-draw-canvas');
+  const d  = cCtx.getImageData(0, 0, cv.width, cv.height).data;
+  let col  = 0;
+  for (let i = 3; i < d.length; i += 4) { if (d[i] > 10) col++; }
+  const pct = col / (cv.width * cv.height);
+  updateColoringStatus(pct);
+  if (!cReward50  && pct >= 0.5) { cReward50  = true; state.coins += 10; updateHUD(); showCoinToast(10); updateRank(); }
+  if (!cReward100 && pct >= 0.9) { cReward100 = true; state.coins += 20; updateHUD(); showCoinToast(20); updateRank(); }
+}
+
+function updateColoringStatus(pct) {
+  const p = Math.round((pct||0)*100);
+  document.getElementById('coloring-coin-status').textContent =
+    cReward100 ? '✅ 완성! +20코인 획득!' :
+    cReward50  ? `🎨 ${p}% — 계속 색칠하세요!` :
+    `🎨 ${p}% 색칠됨 (50%→+10🪙, 90%→+20🪙)`;
+}
+
+(function setupColoringEvents() {
+  const wrapper = document.getElementById('coloring-canvas-wrapper');
+
+  function onDown(e) {
+    if (!document.getElementById('coloring-screen').classList.contains('active')) return;
+    e.preventDefault();
+    const raw = e.touches ? e.touches[0] : e;
+    const p   = cGetPos(raw);
+
+    if (cMode === 'fill' && !cEraser) {
+      floodFill(p.x, p.y, selectedColor);
+      checkColoringCoverage();
+    } else if (cMode === 'fill' && cEraser) {
+      // eraser in fill mode: paint with transparent using brush stroke
+      cDrawing = true; cLastX = p.x; cLastY = p.y; cPaint(p.x, p.y);
+    } else {
+      cDrawing = true; cLastX = p.x; cLastY = p.y; cPaint(p.x, p.y);
+    }
+  }
+
+  function onMove(e) {
+    if (!cDrawing) return; e.preventDefault();
+    const raw = e.touches ? e.touches[0] : e;
+    const p   = cGetPos(raw);
+    cPaintLine(cLastX, cLastY, p.x, p.y);
+    cLastX = p.x; cLastY = p.y;
+    cCheckTimer++;
+    if (cCheckTimer % 50 === 0) checkColoringCoverage();
+  }
+
+  function onUp() {
+    if (!cDrawing) return;
+    cDrawing = false;
+    checkColoringCoverage();
+  }
+
+  wrapper.addEventListener('mousedown',  onDown);
+  wrapper.addEventListener('mousemove',  onMove);
+  window.addEventListener('mouseup',    onUp);
+  wrapper.addEventListener('touchstart', onDown, { passive:false });
+  wrapper.addEventListener('touchmove',  onMove, { passive:false });
+  window.addEventListener('touchend',   onUp);
+})();
 
 // ─────────────────────────────────────────────
 //  타자연습 — 순수 HTML input 기반 (스페이스바 완전 지원)
