@@ -175,23 +175,29 @@ canvas { display:block; image-rendering:pixelated; }
 #shop-rank-name { color:#ffd700; font-size:1.25rem; font-weight:700; }
 #shop-rank-next { color:#a78bfa; font-size:.82rem; margin-top:4px; }
 #shop-equipped-row { display:flex; gap:10px; margin-bottom:10px; flex-wrap:wrap; }
-.eq-slot { background:#1a0a2e; border:2px solid #6b21a8; border-radius:10px; padding:8px 14px; color:#a78bfa; font-size:.78rem; min-width:85px; text-align:center; }
-.eq-slot span { display:block; font-size:1.4rem; margin-bottom:2px; }
+.eq-slot { background:#1a0a2e; border:2px solid #6b21a8; border-radius:10px; padding:8px 14px; color:#a78bfa; font-size:.78rem; min-width:95px; text-align:center; transition:all .2s; }
+.eq-slot .slot-icon { display:block; font-size:1.6rem; margin-bottom:3px; filter:grayscale(1); opacity:.35; transition:all .2s; }
+.eq-slot.has-item { border-color:#ffd700; box-shadow:0 0 10px #ffd70040; color:#ffd700; }
+.eq-slot.has-item .slot-icon { filter:none; opacity:1; }
 #shop-category-tabs { display:flex; gap:10px; margin:8px 0 12px; flex-wrap:wrap; }
 .shop-tab { background:#2d1b69; border:2px solid #ffd70050; border-radius:20px; color:#e2c4ff; padding:7px 18px; font-size:.88rem; cursor:pointer; transition:all .2s; }
 .shop-tab:hover,.shop-tab.active { background:linear-gradient(90deg,#ffd700,#ff9900); color:#1a0a2e; border-color:#ffd700; font-weight:700; }
 #shop-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(200px,1fr)); gap:12px; }
-.shop-item { background:linear-gradient(135deg,#2d1b69,#1a0a2e); border:2px solid #ffd70030; border-radius:12px; padding:16px; text-align:center; transition:border-color .2s,box-shadow .2s; }
+.shop-item { background:linear-gradient(135deg,#2d1b69,#1a0a2e); border:2px solid #ffd70030; border-radius:12px; padding:16px; text-align:center; transition:border-color .2s,box-shadow .2s; cursor:pointer; position:relative; }
+.shop-item:hover { border-color:#ffd70080; }
 .shop-item.owned { border-color:#a855f760; }
 .shop-item.equipped { border-color:#ffd700; box-shadow:0 0 14px #ffd70050; }
+.shop-item.previewing { border-color:#a855f7 !important; box-shadow:0 0 18px #a855f770 !important; }
+.shop-preview-badge { position:absolute; top:7px; right:7px; background:#a855f7; color:#fff; border-radius:6px; padding:2px 7px; font-size:.68rem; font-weight:700; pointer-events:none; }
 .shop-item-icon { font-size:2.6rem; margin-bottom:6px; }
 .shop-item-name { color:#ffd700; font-weight:700; font-size:.95rem; margin-bottom:3px; }
 .shop-item-desc { color:#a78bfa; font-size:.74rem; margin-bottom:8px; line-height:1.45; }
 .shop-item-price { color:#fbbf24; font-size:.85rem; font-weight:700; margin-bottom:8px; }
+.shop-item-btns { display:flex; flex-direction:column; gap:5px; }
 .shop-buy-btn { background:linear-gradient(90deg,#ffd700,#ff9900); color:#1a0a2e; border:none; border-radius:8px; padding:8px 0; font-size:.85rem; font-weight:700; cursor:pointer; width:100%; transition:transform .1s; }
 .shop-buy-btn:hover:not(:disabled) { transform:scale(1.03); }
 .shop-buy-btn:disabled { background:#2d2d2d; color:#666; cursor:default; }
-.shop-equip-btn { background:linear-gradient(90deg,#6b21a8,#9333ea); color:#fff; border:none; border-radius:8px; padding:8px 0; font-size:.85rem; cursor:pointer; width:100%; margin-top:4px; transition:background .2s; }
+.shop-equip-btn { background:linear-gradient(90deg,#6b21a8,#9333ea); color:#fff; border:none; border-radius:8px; padding:8px 0; font-size:.85rem; cursor:pointer; width:100%; transition:background .2s; }
 .shop-equip-btn.on { background:linear-gradient(90deg,#22c55e,#16a34a); }
 </style>
 </head>
@@ -381,9 +387,9 @@ canvas { display:block; image-rendering:pixelated; }
       <div id="shop-rank-next"></div>
     </div>
     <div id="shop-equipped-row">
-      <div class="eq-slot"><span id="eq-hat-icon">❔</span>모자</div>
-      <div class="eq-slot"><span id="eq-outfit-icon">❔</span>의상</div>
-      <div class="eq-slot"><span id="eq-acc-icon">❔</span>액세서리</div>
+      <div class="eq-slot" id="slot-hat"><span id="eq-hat-icon" class="slot-icon">🎩</span>모자</div>
+      <div class="eq-slot" id="slot-outfit"><span id="eq-outfit-icon" class="slot-icon">👘</span>의상</div>
+      <div class="eq-slot" id="slot-acc"><span id="eq-acc-icon" class="slot-icon">✨</span>액세서리</div>
     </div>
     <div id="shop-category-tabs">
       <button class="shop-tab active" data-tab="hat">🎩 모자</button>
@@ -444,6 +450,7 @@ function updateRank() {
   if (gameScene) {
     gameScene.playerLabel.setText('🎨 ' + rank.name);
     gameScene.player.setTint(rank.tint);
+    updateCharacterOverlays();
   }
   if (idx > _prevRankIdx) {
     _prevRankIdx = idx;
@@ -462,21 +469,33 @@ const ALL_ITEMS = [
   { id:'beret',        name:'베레모',   icon:'🎨', price:30,  slot:'hat',       desc:'화가의 상징적인 베레모' },
   { id:'painter-hat',  name:'화가모자', icon:'👒', price:50,  slot:'hat',       desc:'넓은 챙의 화가 모자' },
   { id:'crown',        name:'왕관',     icon:'👑', price:100, slot:'hat',       desc:'거장의 황금 왕관' },
-  { id:'apron',        name:'앞치마',   icon:'🦺', price:40,  slot:'outfit',    desc:'그림 그릴 때 입는 앞치마' },
+  { id:'apron',        name:'앞치마',   icon:'👕', price:40,  slot:'outfit',    desc:'그림 그릴 때 입는 앞치마' },
   { id:'gown',         name:'화가가운', icon:'🥼', price:60,  slot:'outfit',    desc:'우아한 화가의 가운' },
-  { id:'noble',        name:'귀족의상', icon:'👘', price:120, slot:'outfit',    desc:'귀족 화가의 화려한 의상' },
+  { id:'noble',        name:'귀족의상', icon:'👔', price:120, slot:'outfit',    desc:'귀족 화가의 화려한 의상' },
   { id:'brush',        name:'붓',       icon:'🖌️', price:20,  slot:'accessory', desc:'화가의 필수 도구' },
-  { id:'palette',      name:'팔레트',   icon:'🎭', price:35,  slot:'accessory', desc:'다채로운 색상의 팔레트' },
-  { id:'glasses',      name:'안경',     icon:'🤓', price:45,  slot:'accessory', desc:'예술적 감각의 안경' },
+  { id:'palette',      name:'팔레트',   icon:'🎨', price:35,  slot:'accessory', desc:'다채로운 색상의 팔레트' },
+  { id:'glasses',      name:'안경',     icon:'👓', price:45,  slot:'accessory', desc:'예술적 감각의 안경' },
 ];
 const shopOwned    = new Set();
 const shopEquipped = { hat:null, outfit:null, accessory:null };
 let   curShopTab   = 'hat';
+let   previewItem  = null; // currently previewed item object
 
 function openShop() {
   document.getElementById('shop-screen').classList.add('active');
   disablePhaserInput();
   renderShopBanner(); renderShopTab(curShopTab);
+}
+function previewShopItem(id) {
+  const item = ALL_ITEMS.find(i => i.id === id);
+  if (!item) return;
+  previewItem = (previewItem?.id === id) ? null : item; // toggle
+  updateCharacterOverlays();
+  renderShopTab(curShopTab);
+}
+function clearPreview() {
+  previewItem = null;
+  updateCharacterOverlays();
 }
 function renderShopBanner() {
   const rank = getCurrentRank();
@@ -486,27 +505,37 @@ function renderShopBanner() {
   document.getElementById('shop-rank-next').textContent = next
     ? `다음 등급: ${next.name} — ${next.minCoins - state.coins}코인 더 필요`
     : '✨ 최고 등급 달성!';
-  document.getElementById('eq-hat-icon').textContent    = shopEquipped.hat       ? ALL_ITEMS.find(i=>i.id===shopEquipped.hat).icon       : '❔';
-  document.getElementById('eq-outfit-icon').textContent = shopEquipped.outfit    ? ALL_ITEMS.find(i=>i.id===shopEquipped.outfit).icon    : '❔';
-  document.getElementById('eq-acc-icon').textContent    = shopEquipped.accessory ? ALL_ITEMS.find(i=>i.id===shopEquipped.accessory).icon : '❔';
+  const setSlot = (iconId, slotKey, slotElemId, defIcon) => {
+    const eqId = shopEquipped[slotKey];
+    const item = eqId ? ALL_ITEMS.find(i => i.id === eqId) : null;
+    document.getElementById(iconId).textContent = item ? item.icon : defIcon;
+    document.getElementById(slotElemId).classList.toggle('has-item', !!item);
+  };
+  setSlot('eq-hat-icon',    'hat',       'slot-hat',    '🎩');
+  setSlot('eq-outfit-icon', 'outfit',    'slot-outfit', '👘');
+  setSlot('eq-acc-icon',    'accessory', 'slot-acc',    '✨');
 }
 function renderShopTab(tab) {
   curShopTab = tab;
   document.querySelectorAll('.shop-tab').forEach(b => b.classList.toggle('active', b.dataset.tab === tab));
   const items = ALL_ITEMS.filter(i => i.slot === tab);
   document.getElementById('shop-grid').innerHTML = items.map(item => {
-    const owned = shopOwned.has(item.id);
-    const isEq  = shopEquipped[item.slot] === item.id;
+    const owned  = shopOwned.has(item.id);
+    const isEq   = shopEquipped[item.slot] === item.id;
+    const isPrev = previewItem?.id === item.id;
     const afford = state.coins >= item.price;
-    return `<div class="shop-item${owned?' owned':''}${isEq?' equipped':''}">
+    return `<div class="shop-item${owned?' owned':''}${isEq?' equipped':''}${isPrev?' previewing':''}" onclick="previewShopItem('${item.id}')">
+      ${isPrev ? '<div class="shop-preview-badge">👁 미리보기</div>' : ''}
       <div class="shop-item-icon">${item.icon}</div>
       <div class="shop-item-name">${item.name}</div>
       <div class="shop-item-desc">${item.desc}</div>
       <div class="shop-item-price">${owned ? '✅ 보유 중' : '🪙 '+item.price+' 코인'}</div>
-      ${owned
-        ? `<button class="shop-equip-btn${isEq?' on':''}" onclick="equipShopItem('${item.id}')">${isEq?'✅ 장착 중':'장착하기'}</button>`
-        : `<button class="shop-buy-btn" ${afford?'':'disabled'} onclick="buyShopItem('${item.id}')">${afford?'구매하기':'🪙 '+(item.price-state.coins)+'코인 부족'}</button>`
-      }
+      <div class="shop-item-btns">
+        ${owned
+          ? `<button class="shop-equip-btn${isEq?' on':''}" onclick="event.stopPropagation();equipShopItem('${item.id}')">${isEq?'✅ 장착 중':'장착하기'}</button>`
+          : `<button class="shop-buy-btn" ${afford?'':'disabled'} onclick="event.stopPropagation();buyShopItem('${item.id}')">${afford?'구매하기':'🪙 '+(item.price-state.coins)+'코인 부족'}</button>`
+        }
+      </div>
     </div>`;
   }).join('');
 }
@@ -514,20 +543,47 @@ function buyShopItem(id) {
   const item = ALL_ITEMS.find(i=>i.id===id);
   if (!item || shopOwned.has(id) || state.coins < item.price) return;
   state.coins -= item.price; shopOwned.add(id);
+  previewItem = null;
   updateHUD(); renderShopBanner(); renderShopTab(curShopTab);
 }
 function equipShopItem(id) {
   const item = ALL_ITEMS.find(i=>i.id===id);
   if (!item || !shopOwned.has(id)) return;
   shopEquipped[item.slot] = shopEquipped[item.slot] === id ? null : id;
+  previewItem = null;
   updateCharacterOverlays(); renderShopBanner(); renderShopTab(curShopTab);
 }
 function updateCharacterOverlays() {
   if (!gameScene) return;
-  const hat = shopEquipped.hat       ? ALL_ITEMS.find(i=>i.id===shopEquipped.hat)       : null;
-  const acc = shopEquipped.accessory ? ALL_ITEMS.find(i=>i.id===shopEquipped.accessory) : null;
-  gameScene.hatOverlay.setText(hat ? hat.icon : '');
-  gameScene.accOverlay.setText(acc ? acc.icon : '');
+  const rankIdx = RANKS.indexOf(getCurrentRank());
+  // Rank-based default items (shown if that slot has nothing equipped)
+  const RANK_DEFAULTS = [
+    { hat:null,          outfit:null,    acc:null      }, // 견습생
+    { hat:'beret',       outfit:null,    acc:null      }, // 화가지망생
+    { hat:'beret',       outfit:'apron', acc:'brush'   }, // 화가
+    { hat:'painter-hat', outfit:'gown',  acc:null      }, // 거장
+    { hat:'crown',       outfit:'noble', acc:'palette' }, // 마에스트로
+  ];
+  const def = RANK_DEFAULTS[rankIdx] || RANK_DEFAULTS[0];
+  const getIcon = id => id ? (ALL_ITEMS.find(i => i.id === id)?.icon || '') : '';
+  // Preview overrides the slot's current equip; rank default fills empty slots
+  const hatId    = (previewItem?.slot === 'hat'       ? previewItem.id : shopEquipped.hat)       || def.hat;
+  const outfitId = (previewItem?.slot === 'outfit'    ? previewItem.id : shopEquipped.outfit)    || def.outfit;
+  const accId    = (previewItem?.slot === 'accessory' ? previewItem.id : shopEquipped.accessory) || def.acc;
+  gameScene.hatOverlay.setText(getIcon(hatId));
+  if (gameScene.outfitOverlay) gameScene.outfitOverlay.setText(getIcon(outfitId));
+  gameScene.accOverlay.setText(getIcon(accId));
+  // Sync rank index for glow/particles in update()
+  gameScene._curRankIdx = rankIdx;
+  if (gameScene.sparkleEmitter) {
+    if (rankIdx >= 4 && !gameScene._maestroActive) {
+      gameScene._maestroActive = true;
+      gameScene.sparkleEmitter.start();
+    } else if (rankIdx < 4 && gameScene._maestroActive) {
+      gameScene._maestroActive = false;
+      gameScene.sparkleEmitter.stop();
+    }
+  }
 }
 document.getElementById('shop-category-tabs').addEventListener('click', e => {
   const b = e.target.closest('.shop-tab'); if (b) renderShopTab(b.dataset.tab);
@@ -649,6 +705,7 @@ document.addEventListener('keydown', e => {
 // ─────────────────────────────────────────────
 function closeMiniGame(id) {
   if (id === 'typing') stopTyping();
+  if (id === 'shop') clearPreview();
   document.getElementById(id + '-screen').classList.remove('active');
   document.getElementById('art-detail-overlay').classList.remove('active');
   // Phaser 입력 완전 복구 (키 상태 reset 포함)
@@ -1531,10 +1588,25 @@ class GameScene extends Phaser.Scene {
       this.add.image(c*TILE+TILE/2,r*TILE+TILE/2,'tree').setScale(1.2));
   }
   _createPlayer() {
-    this.player = this.add.image(9*TILE+TILE/2,8*TILE+TILE/2,'player').setScale(2.2).setDepth(10);
-    this.playerLabel = this.add.text(0,0,'🎨 견습생',{fontSize:'12px',color:'#ffd700',stroke:'#000',strokeThickness:3}).setOrigin(.5,1).setDepth(11);
-    this.hatOverlay = this.add.text(0,0,'',{fontSize:'20px'}).setOrigin(.5,1).setDepth(12);
-    this.accOverlay = this.add.text(0,0,'',{fontSize:'15px'}).setOrigin(0,.5).setDepth(12);
+    this.player       = this.add.image(9*TILE+TILE/2,8*TILE+TILE/2,'player').setScale(2.2).setDepth(10);
+    this.playerLabel  = this.add.text(0,0,'🎨 견습생',{fontSize:'12px',color:'#ffd700',stroke:'#000',strokeThickness:3}).setOrigin(.5,1).setDepth(11);
+    this.hatOverlay   = this.add.text(0,0,'',{fontSize:'34px'}).setOrigin(.5,1).setDepth(12);
+    this.outfitOverlay= this.add.text(0,0,'',{fontSize:'30px'}).setOrigin(.5,.5).setDepth(11);
+    this.accOverlay   = this.add.text(0,0,'',{fontSize:'32px'}).setOrigin(0,.5).setDepth(12);
+    // Rank glow ring (redrawn every frame in update)
+    this.rankGlow = this.add.graphics().setDepth(9);
+    this._curRankIdx  = 0;
+    this._maestroActive = false;
+    // Sparkle particles for 마에스트로
+    const sg = this.make.graphics({add:false});
+    sg.fillStyle(0xffffff); sg.fillCircle(3,3,3);
+    sg.generateTexture('sparkle_pt',6,6); sg.destroy();
+    this.sparkleEmitter = this.add.particles(0,0,'sparkle_pt',{
+      lifespan:700, speed:{min:20,max:70}, scale:{start:.8,end:0},
+      alpha:{start:.9,end:0}, quantity:2, frequency:80,
+      tint:[0xffd700,0xff99ff,0xffffff,0xaaffcc],
+    }).setDepth(15);
+    this.sparkleEmitter.stop();
     this._wf=0; this._wt=0;
   }
   _setupCamera() { this.cameras.main.setBounds(0,0,W,H); this.cameras.main.startFollow(this.player,true,.1,.1); }
@@ -1551,10 +1623,27 @@ class GameScene extends Phaser.Scene {
   }
   update(time, delta) {
     const hh=this.player.displayHeight/2;
+    const hw=this.player.displayWidth/2;
     // 오버레이는 항상 갱신
     this.playerLabel.setPosition(this.player.x,this.player.y-hh-4);
-    this.hatOverlay.setPosition(this.player.x,this.player.y-hh-20);
-    this.accOverlay.setPosition(this.player.x+16,this.player.y-hh/2);
+    this.hatOverlay.setPosition(this.player.x,this.player.y-hh-26);
+    if (this.outfitOverlay) this.outfitOverlay.setPosition(this.player.x,this.player.y);
+    this.accOverlay.setPosition(this.player.x+hw+4,this.player.y-hh/2);
+    // 등급 글로우 링 (매 프레임 위치 갱신)
+    if (this.rankGlow) {
+      this.rankGlow.clear();
+      if (this._curRankIdx >= 3) {
+        const color = this._curRankIdx >= 4 ? 0xff99ff : 0xffd700;
+        const alpha = this._curRankIdx >= 4 ? 0.75 : 0.55;
+        this.rankGlow.lineStyle(3,color,alpha);
+        this.rankGlow.strokeCircle(this.player.x,this.player.y,hw*1.3);
+        if (this._curRankIdx >= 4) {
+          this.rankGlow.lineStyle(2,0xffffff,0.25);
+          this.rankGlow.strokeCircle(this.player.x,this.player.y,hw*1.7);
+        }
+      }
+    }
+    if (this.sparkleEmitter) this.sparkleEmitter.setPosition(this.player.x,this.player.y);
     // 미니게임/팝업 열려 있으면 이동·입장 처리 스킵
     if (miniGameActive) return;
     const c=this.cursors, w=this.wasd; let dx=0,dy=0;
@@ -1563,7 +1652,6 @@ class GameScene extends Phaser.Scene {
     if(c.up.isDown||w.up.isDown)      dy-=3;
     if(c.down.isDown||w.down.isDown)  dy+=3;
     if(dx&&dy){ dx*=.707; dy*=.707; }
-    const hw=this.player.displayWidth/2;
     this.player.x=Phaser.Math.Clamp(this.player.x+dx,hw,W-hw);
     this.player.y=Phaser.Math.Clamp(this.player.y+dy,hh,H-hh);
     if(dx||dy){ this._wt+=delta; if(this._wt>120){ this._wf=1-this._wf; this._wt=0; this.player.y+=this._wf?1:-1; } }
