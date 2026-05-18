@@ -199,6 +199,19 @@ canvas { display:block; image-rendering:pixelated; }
 .shop-buy-btn:disabled { background:#2d2d2d; color:#666; cursor:default; }
 .shop-equip-btn { background:linear-gradient(90deg,#6b21a8,#9333ea); color:#fff; border:none; border-radius:8px; padding:8px 0; font-size:.85rem; cursor:pointer; width:100%; transition:background .2s; }
 .shop-equip-btn.on { background:linear-gradient(90deg,#22c55e,#16a34a); }
+
+/* Rank-up popup */
+#rank-up-overlay { display:none; position:fixed; inset:0; background:rgba(0,0,0,.9); z-index:600; justify-content:center; align-items:center; }
+#rank-up-overlay.active { display:flex; }
+#rank-up-box { background:linear-gradient(135deg,#2d1b69,#1a0a2e 60%,#3d1060); border:3px solid #ffd700; border-radius:22px; padding:44px 54px; text-align:center; box-shadow:0 0 80px #ffd70060,0 0 160px #ffd70020; animation:rankPop .45s cubic-bezier(.17,.67,.4,1.2); max-width:440px; width:92%; }
+@keyframes rankPop { from{transform:scale(.4);opacity:0} to{transform:scale(1);opacity:1} }
+.rank-up-big-icon { font-size:5.5rem; margin-bottom:8px; display:block; animation:rankBounce .6s ease; }
+@keyframes rankBounce { 0%{transform:scale(.3) rotate(-15deg)}70%{transform:scale(1.15) rotate(5deg)}100%{transform:scale(1) rotate(0)} }
+#rank-up-title { color:#ffd700; font-size:1.55rem; font-weight:700; text-shadow:0 0 20px #ffd700aa; margin-bottom:6px; }
+#rank-up-name  { color:#fff;    font-size:2.4rem;  font-weight:700; margin-bottom:10px; text-shadow:0 0 10px #fff5; }
+#rank-up-desc  { color:#e2c4ff; font-size:.93rem;  line-height:1.7; margin-bottom:26px; }
+#rank-up-btn { background:linear-gradient(90deg,#ffd700,#ff9900); color:#1a0a2e; border:none; border-radius:12px; padding:13px 46px; font-size:1.1rem; font-weight:700; cursor:pointer; transition:transform .1s; box-shadow:0 4px 20px #ffd70066; }
+#rank-up-btn:hover { transform:scale(1.06); }
 </style>
 </head>
 <body>
@@ -375,6 +388,17 @@ canvas { display:block; image-rendering:pixelated; }
   </div>
 </div>
 
+<!-- Rank-up popup -->
+<div id="rank-up-overlay">
+  <div id="rank-up-box">
+    <span class="rank-up-big-icon" id="rank-up-icon">🌟</span>
+    <div id="rank-up-title">🎉 등급 업!</div>
+    <div id="rank-up-name"></div>
+    <div id="rank-up-desc"></div>
+    <button id="rank-up-btn" onclick="closeRankUp()">🎊 확인!</button>
+  </div>
+</div>
+
 <!-- Shop screen -->
 <div id="shop-screen" class="mini-screen">
   <div class="mini-header">
@@ -429,11 +453,11 @@ function updateHUD() {
 //  등급 시스템
 // ─────────────────────────────────────────────
 const RANKS = [
-  { name:'견습생',     minCoins:0,   tint:0xffffff },
-  { name:'화가지망생', minCoins:50,  tint:0xaaffcc },
-  { name:'화가',       minCoins:150, tint:0xffffaa },
-  { name:'거장',       minCoins:300, tint:0xffcc88 },
-  { name:'마에스트로', minCoins:500, tint:0xff99ff },
+  { name:'견습생',     minCoins:0,   tint:0xcccccc, scale:1.9, icon:'🖌️', desc:'예술의 세계에 첫 발을 내딛었습니다!\n명화를 감상하고 미니게임을 즐겨보세요.' },
+  { name:'화가지망생', minCoins:50,  tint:0xaaffcc, scale:2.1, icon:'🎨', desc:'열정 넘치는 화가 지망생이 되었습니다!\n밀짚모자를 눌러쓰고 붓을 잡아보세요.' },
+  { name:'화가',       minCoins:150, tint:0xffffaa, scale:2.2, icon:'🖼️', desc:'실력을 인정받은 화가가 되었습니다!\n아름다운 작품으로 세상을 물들이세요.' },
+  { name:'거장',       minCoins:300, tint:0xffcc88, scale:2.35, icon:'👑', desc:'예술계의 거장으로 이름을 떨칩니다!\n황금빛 후광이 당신을 감쌉니다.' },
+  { name:'마에스트로', minCoins:500, tint:0xff99ff, scale:2.6, icon:'✨', desc:'모든 예술가의 꿈, 마에스트로 달성!\n무지개빛 파티클이 당신을 빛냅니다!' },
 ];
 let _prevRankIdx = 0;
 
@@ -444,27 +468,47 @@ function getCurrentRank() {
   return RANKS[0];
 }
 
+function showRankUpPopup(rank) {
+  document.getElementById('rank-up-icon').textContent = rank.icon;
+  document.getElementById('rank-up-name').textContent = rank.name;
+  document.getElementById('rank-up-desc').textContent = rank.desc.replace(/\n/g, ' ');
+  document.getElementById('rank-up-overlay').classList.add('active');
+}
+function closeRankUp() {
+  document.getElementById('rank-up-overlay').classList.remove('active');
+}
+
 function updateRank() {
   const rank = getCurrentRank();
   const idx  = RANKS.indexOf(rank);
   if (gameScene) {
-    gameScene.playerLabel.setText('🎨 ' + rank.name);
+    gameScene.playerLabel.setText(rank.icon + ' ' + rank.name);
     gameScene.player.setTint(rank.tint);
+    gameScene.player.setScale(rank.scale);
     updateCharacterOverlays();
   }
   if (idx > _prevRankIdx) {
     _prevRankIdx = idx;
-    const el = document.getElementById('coin-toast');
-    el.textContent = `🎉 ${rank.name} 등급 달성!`;
-    el.classList.add('show');
-    clearTimeout(window._rankToast);
-    window._rankToast = setTimeout(() => el.classList.remove('show'), 2800);
+    showRankUpPopup(rank);
   }
 }
 
 // ─────────────────────────────────────────────
 //  캐릭터 상점
 // ─────────────────────────────────────────────
+// 아이템별 캐릭터 주변 고정 오프셋 (player center 기준)
+const ITEM_POSITIONS = {
+  'beret':       { dx:-22, dy:-84 },   // 모자: 머리 위 왼쪽
+  'painter-hat': { dx:  0, dy:-96 },   // 모자: 머리 위 중앙
+  'crown':       { dx: 22, dy:-84 },   // 모자: 머리 위 오른쪽
+  'apron':       { dx:-58, dy: -8 },   // 의상: 몸 왼쪽
+  'gown':        { dx:  0, dy: 58 },   // 의상: 몸 아래
+  'noble':       { dx: 58, dy: -8 },   // 의상: 몸 오른쪽
+  'brush':       { dx: 58, dy:-32 },   // 액세서리: 오른쪽 위
+  'palette':     { dx: 66, dy:  6 },   // 액세서리: 오른쪽 중간
+  'glasses':     { dx: 58, dy: 32 },   // 액세서리: 오른쪽 아래
+};
+
 const ALL_ITEMS = [
   { id:'beret',        name:'밀짚모자', icon:'👒', price:30,  slot:'hat',       desc:'햇살을 막아주는 화가의 밀짚모자' },
   { id:'painter-hat',  name:'중절모',   icon:'🎩', price:50,  slot:'hat',       desc:'우아한 신사풍의 중절모' },
@@ -477,7 +521,7 @@ const ALL_ITEMS = [
   { id:'glasses',      name:'안경',     icon:'👓', price:45,  slot:'accessory', desc:'예술적 감각의 안경' },
 ];
 const shopOwned    = new Set();
-const shopEquipped = { hat:null, outfit:null, accessory:null };
+const shopEquipped = new Set(); // 장착 중인 아이템 ID 집합 (다중 장착 허용)
 let   curShopTab   = 'hat';
 let   previewItem  = null; // currently previewed item object
 
@@ -500,16 +544,22 @@ function clearPreview() {
 function renderShopBanner() {
   const rank = getCurrentRank();
   const idx  = RANKS.indexOf(rank);
-  document.getElementById('shop-rank-name').textContent = '🎨 ' + rank.name;
+  document.getElementById('shop-rank-name').textContent = rank.icon + ' ' + rank.name;
   const next = RANKS[idx + 1];
   document.getElementById('shop-rank-next').textContent = next
     ? `다음 등급: ${next.name} — ${next.minCoins - state.coins}코인 더 필요`
     : '✨ 최고 등급 달성!';
   const setSlot = (iconId, slotKey, slotElemId, defIcon) => {
-    const eqId = shopEquipped[slotKey];
-    const item = eqId ? ALL_ITEMS.find(i => i.id === eqId) : null;
-    document.getElementById(iconId).textContent = item ? item.icon : defIcon;
-    document.getElementById(slotElemId).classList.toggle('has-item', !!item);
+    const eqItems = ALL_ITEMS.filter(i => i.slot === slotKey && shopEquipped.has(i.id));
+    const el   = document.getElementById(iconId);
+    const slot = document.getElementById(slotElemId);
+    if (eqItems.length > 0) {
+      el.textContent = eqItems.map(i => i.icon).join('');
+      slot.classList.add('has-item');
+    } else {
+      el.textContent = defIcon;
+      slot.classList.remove('has-item');
+    }
   };
   setSlot('eq-hat-icon',    'hat',       'slot-hat',    '🎩');
   setSlot('eq-outfit-icon', 'outfit',    'slot-outfit', '👘');
@@ -521,7 +571,7 @@ function renderShopTab(tab) {
   const items = ALL_ITEMS.filter(i => i.slot === tab);
   document.getElementById('shop-grid').innerHTML = items.map(item => {
     const owned  = shopOwned.has(item.id);
-    const isEq   = shopEquipped[item.slot] === item.id;
+    const isEq   = shopEquipped.has(item.id);
     const isPrev = previewItem?.id === item.id;
     const afford = state.coins >= item.price;
     return `<div class="shop-item${owned?' owned':''}${isEq?' equipped':''}${isPrev?' previewing':''}" onclick="previewShopItem('${item.id}')">
@@ -547,41 +597,41 @@ function buyShopItem(id) {
   updateHUD(); renderShopBanner(); renderShopTab(curShopTab);
 }
 function equipShopItem(id) {
-  const item = ALL_ITEMS.find(i=>i.id===id);
-  if (!item || !shopOwned.has(id)) return;
-  shopEquipped[item.slot] = shopEquipped[item.slot] === id ? null : id;
+  if (!shopOwned.has(id)) return;
+  if (shopEquipped.has(id)) shopEquipped.delete(id);
+  else shopEquipped.add(id);
   previewItem = null;
   updateCharacterOverlays(); renderShopBanner(); renderShopTab(curShopTab);
 }
 function updateCharacterOverlays() {
-  if (!gameScene) return;
+  if (!gameScene?.itemOverlays) return;
   const rankIdx = RANKS.indexOf(getCurrentRank());
-  // Rank-based default items (shown if that slot has nothing equipped)
-  const RANK_DEFAULTS = [
-    { hat:null,          outfit:null,    acc:null      }, // 견습생
-    { hat:'beret',       outfit:null,    acc:null      }, // 화가지망생
-    { hat:'beret',       outfit:'apron', acc:'brush'   }, // 화가
-    { hat:'painter-hat', outfit:'gown',  acc:null      }, // 거장
-    { hat:'crown',       outfit:'noble', acc:'palette' }, // 마에스트로
+  // 등급별 자동 표시 아이템 (구매 없이 시각적으로만 표시)
+  const RANK_AUTO = [
+    new Set(),
+    new Set(['beret']),
+    new Set(['beret', 'apron', 'brush']),
+    new Set(['painter-hat', 'gown']),
+    new Set(['crown', 'noble', 'palette']),
   ];
-  const def = RANK_DEFAULTS[rankIdx] || RANK_DEFAULTS[0];
-  const getIcon = id => id ? (ALL_ITEMS.find(i => i.id === id)?.icon || '') : '';
-  // Preview overrides the slot's current equip; rank default fills empty slots
-  const hatId    = (previewItem?.slot === 'hat'       ? previewItem.id : shopEquipped.hat)       || def.hat;
-  const outfitId = (previewItem?.slot === 'outfit'    ? previewItem.id : shopEquipped.outfit)    || def.outfit;
-  const accId    = (previewItem?.slot === 'accessory' ? previewItem.id : shopEquipped.accessory) || def.acc;
-  gameScene.hatOverlay.setText(getIcon(hatId));
-  if (gameScene.outfitOverlay) gameScene.outfitOverlay.setText(getIcon(outfitId));
-  gameScene.accOverlay.setText(getIcon(accId));
-  // Sync rank index for glow/particles in update()
+  const autoItems = RANK_AUTO[rankIdx] || new Set();
+
+  ALL_ITEMS.forEach(item => {
+    const ov = gameScene.itemOverlays[item.id];
+    if (!ov) return;
+    const show = shopEquipped.has(item.id)   // 직접 장착
+              || autoItems.has(item.id)       // 등급 자동
+              || previewItem?.id === item.id; // 미리보기
+    ov.text.setVisible(show);
+  });
+
+  // 등급 글로우·파티클 동기화
   gameScene._curRankIdx = rankIdx;
   if (gameScene.sparkleEmitter) {
     if (rankIdx >= 4 && !gameScene._maestroActive) {
-      gameScene._maestroActive = true;
-      gameScene.sparkleEmitter.start();
+      gameScene._maestroActive = true; gameScene.sparkleEmitter.start();
     } else if (rankIdx < 4 && gameScene._maestroActive) {
-      gameScene._maestroActive = false;
-      gameScene.sparkleEmitter.stop();
+      gameScene._maestroActive = false; gameScene.sparkleEmitter.stop();
     }
   }
 }
@@ -662,6 +712,9 @@ document.getElementById('popup-overlay').addEventListener('click', e => {
 document.addEventListener('keydown', e => {
   // ESC → 열려있는 미니게임/팝업 닫기
   if (e.key === 'Escape') {
+    if (document.getElementById('rank-up-overlay').classList.contains('active')) {
+      closeRankUp(); return;
+    }
     const miniIds = ['gallery','quiz','memory','coloring','typing','shop'];
     for (const id of miniIds) {
       if (document.getElementById(id + '-screen').classList.contains('active')) {
@@ -1588,16 +1641,21 @@ class GameScene extends Phaser.Scene {
       this.add.image(c*TILE+TILE/2,r*TILE+TILE/2,'tree').setScale(1.2));
   }
   _createPlayer() {
-    this.player       = this.add.image(9*TILE+TILE/2,8*TILE+TILE/2,'player').setScale(2.2).setDepth(10);
-    this.playerLabel  = this.add.text(0,0,'🎨 견습생',{fontSize:'12px',color:'#ffd700',stroke:'#000',strokeThickness:3}).setOrigin(.5,1).setDepth(11);
-    this.hatOverlay   = this.add.text(0,0,'',{fontSize:'34px'}).setOrigin(.5,1).setDepth(12);
-    this.outfitOverlay= this.add.text(0,0,'',{fontSize:'30px'}).setOrigin(.5,.5).setDepth(11);
-    this.accOverlay   = this.add.text(0,0,'',{fontSize:'32px'}).setOrigin(0,.5).setDepth(12);
-    // Rank glow ring (redrawn every frame in update)
+    this.player      = this.add.image(9*TILE+TILE/2,8*TILE+TILE/2,'player').setScale(1.9).setDepth(10);
+    this.playerLabel = this.add.text(0,0,'🖌️ 견습생',{fontSize:'12px',color:'#ffd700',stroke:'#000',strokeThickness:3}).setOrigin(.5,1).setDepth(11);
+    // 아이템 오버레이: 아이템별 고정 오프셋으로 캐릭터 주변 배치
+    this.itemOverlays = {};
+    ALL_ITEMS.forEach(item => {
+      const pos = ITEM_POSITIONS[item.id] || { dx:0, dy:0 };
+      const t   = this.add.text(0, 0, item.icon, { fontSize:'44px' })
+                    .setOrigin(.5,.5).setDepth(13).setVisible(false);
+      this.itemOverlays[item.id] = { text:t, dx:pos.dx, dy:pos.dy };
+    });
+    // 등급 후광 링
     this.rankGlow = this.add.graphics().setDepth(9);
-    this._curRankIdx  = 0;
+    this._curRankIdx    = 0;
     this._maestroActive = false;
-    // Sparkle particles for 마에스트로
+    // 마에스트로 반짝이 파티클
     const sg = this.make.graphics({add:false});
     sg.fillStyle(0xffffff); sg.fillCircle(3,3,3);
     sg.generateTexture('sparkle_pt',6,6); sg.destroy();
@@ -1624,26 +1682,28 @@ class GameScene extends Phaser.Scene {
   update(time, delta) {
     const hh=this.player.displayHeight/2;
     const hw=this.player.displayWidth/2;
-    // 오버레이는 항상 갱신
-    this.playerLabel.setPosition(this.player.x,this.player.y-hh-4);
-    this.hatOverlay.setPosition(this.player.x,this.player.y-hh-26);
-    if (this.outfitOverlay) this.outfitOverlay.setPosition(this.player.x,this.player.y);
-    this.accOverlay.setPosition(this.player.x+hw+4,this.player.y-hh/2);
-    // 등급 글로우 링 (매 프레임 위치 갱신)
+    // 레이블 + 아이템 오버레이 위치 갱신 (항상)
+    this.playerLabel.setPosition(this.player.x, this.player.y-hh-4);
+    if (this.itemOverlays) {
+      Object.values(this.itemOverlays).forEach(ov => {
+        ov.text.setPosition(this.player.x + ov.dx, this.player.y + ov.dy);
+      });
+    }
+    // 등급 후광 링 (매 프레임 재드로우)
     if (this.rankGlow) {
       this.rankGlow.clear();
       if (this._curRankIdx >= 3) {
         const color = this._curRankIdx >= 4 ? 0xff99ff : 0xffd700;
-        const alpha = this._curRankIdx >= 4 ? 0.75 : 0.55;
-        this.rankGlow.lineStyle(3,color,alpha);
-        this.rankGlow.strokeCircle(this.player.x,this.player.y,hw*1.3);
+        const alpha = this._curRankIdx >= 4 ? 0.78 : 0.58;
+        this.rankGlow.lineStyle(4, color, alpha);
+        this.rankGlow.strokeCircle(this.player.x, this.player.y, hw * 1.35);
         if (this._curRankIdx >= 4) {
-          this.rankGlow.lineStyle(2,0xffffff,0.25);
-          this.rankGlow.strokeCircle(this.player.x,this.player.y,hw*1.7);
+          this.rankGlow.lineStyle(2, 0xffffff, 0.28);
+          this.rankGlow.strokeCircle(this.player.x, this.player.y, hw * 1.75);
         }
       }
     }
-    if (this.sparkleEmitter) this.sparkleEmitter.setPosition(this.player.x,this.player.y);
+    if (this.sparkleEmitter) this.sparkleEmitter.setPosition(this.player.x, this.player.y);
     // 미니게임/팝업 열려 있으면 이동·입장 처리 스킵
     if (miniGameActive) return;
     const c=this.cursors, w=this.wasd; let dx=0,dy=0;
