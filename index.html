@@ -116,7 +116,23 @@ canvas { display:block; image-rendering:pixelated; }
 #memory-complete-box { background:linear-gradient(135deg,#2d1b69,#1a0a2e 60%,#3d1060); border:3px solid #ffd700; border-radius:16px; padding:28px 32px; text-align:center; margin-top:16px; }
 #memory-complete-box h3 { color:#ffd700; font-size:1.45rem; margin-bottom:16px; }
 
-/* Coloring studio */
+/* Puzzle studio */
+#puzzle-inner { width:100%; max-width:700px; padding:8px 18px 36px; display:flex; flex-direction:column; align-items:center; gap:14px; }
+#puzzle-info-row { display:flex; justify-content:space-between; align-items:center; width:100%; flex-wrap:wrap; gap:8px; }
+#puzzle-title-label { color:#ffd700; font-size:1rem; font-weight:700; }
+#puzzle-move-count { color:#a78bfa; font-size:.88rem; }
+#puzzle-grid { display:grid; grid-template-columns:repeat(3,1fr); gap:4px; width:480px; height:480px; max-width:90vw; max-height:90vw; }
+.puzzle-piece { border-radius:6px; cursor:pointer; background-size:300% 300%; border:2px solid #6b21a880; transition:border-color .15s, transform .1s; }
+.puzzle-piece:hover { border-color:#ffd700; transform:scale(1.03); }
+.puzzle-piece.selected { border-color:#ffd700; box-shadow:0 0 14px #ffd70088; transform:scale(1.05); }
+.puzzle-piece.empty { background:#0f0720 !important; border:2px dashed #6b21a8; cursor:default; }
+.puzzle-piece.empty:hover { transform:none; border-color:#6b21a8; }
+#puzzle-complete-box { background:linear-gradient(135deg,#2d1b69,#1a0a2e 60%,#3d1060); border:3px solid #ffd700; border-radius:16px; padding:28px 32px; text-align:center; display:none; }
+#puzzle-complete-box h3 { color:#ffd700; font-size:1.45rem; margin-bottom:10px; }
+#puzzle-btn-row { display:flex; gap:10px; }
+.puzzle-action-btn { background:linear-gradient(90deg,#ffd700,#ff9900); color:#1a0a2e; border:none; border-radius:8px; padding:10px 24px; font-size:.93rem; font-weight:700; cursor:pointer; }
+.puzzle-action-btn.secondary { background:linear-gradient(90deg,#6b21a8,#9333ea); color:#fff; }
+/* Coloring studio (kept for quest type refs) */
 #coloring-inner { width:100%; max-width:920px; padding:8px 18px 36px; display:flex; flex-direction:column; align-items:center; }
 #coloring-toolbar { display:flex; gap:7px; margin:10px 0 8px; flex-wrap:wrap; align-items:center; width:100%; }
 .c-tool-btn { background:#2d1b69; border:2px solid #6b21a8; border-radius:8px; color:#e2c4ff; padding:7px 13px; font-size:.84rem; cursor:pointer; transition:all .15s; white-space:nowrap; }
@@ -438,34 +454,26 @@ canvas { display:block; image-rendering:pixelated; }
   </div>
 </div>
 
-<!-- Coloring screen -->
+<!-- Puzzle screen -->
 <div id="coloring-screen" class="mini-screen">
   <div class="mini-header">
-    <h2>🎨 색칠 스튜디오</h2>
+    <h2>🧩 명화 퍼즐</h2>
     <button class="close-mini" onclick="closeMiniGame('coloring')">✕ 나가기</button>
   </div>
-  <div id="coloring-inner">
-    <div id="coloring-toolbar">
-      <button class="c-tool-btn active" id="mode-fill-btn"  onclick="setColoringMode('fill')">🪣 페인트통</button>
-      <button class="c-tool-btn"        id="mode-brush-btn" onclick="setColoringMode('brush')">🖌️ 브러시</button>
-      <span style="color:#a78bfa;font-size:.8rem;margin-left:6px" id="brush-size-label">크기:</span>
-      <button class="c-tool-btn brush-size-btn active" id="bsz-s" onclick="setBrushSize(10,this)">S</button>
-      <button class="c-tool-btn brush-size-btn"        id="bsz-m" onclick="setBrushSize(20,this)">M</button>
-      <button class="c-tool-btn brush-size-btn"        id="bsz-l" onclick="setBrushSize(35,this)">L</button>
-      <button class="c-tool-btn" id="eraser-btn"       onclick="toggleEraser()">지우개</button>
-      <button class="c-tool-btn"                        onclick="clearColoringCanvas()">🗑️ 전체 지우기</button>
-      <button class="c-tool-btn save-btn"               onclick="saveColoringCanvas()">💾 저장</button>
-      <span id="coloring-coin-status">🎨 0% 색칠됨</span>
+  <div id="puzzle-inner">
+    <div id="puzzle-info-row">
+      <span id="puzzle-title-label">명화를 선택하면 퍼즐이 시작됩니다!</span>
+      <span id="puzzle-move-count"></span>
     </div>
-    <div id="coloring-workspace">
-      <div id="coloring-canvas-wrapper" class="mode-fill">
-        <canvas id="coloring-draw-canvas" width="600" height="420"></canvas>
-        <img id="coloring-overlay-img" src="starry-coloring.png" alt="starry night outline" draggable="false">
-      </div>
-      <div id="coloring-palette-panel">
-        <div id="coloring-cur-color" style="background:#1d4ed8"></div>
-        <div id="coloring-palette"></div>
-      </div>
+    <div id="puzzle-grid"></div>
+    <div id="puzzle-btn-row">
+      <button class="puzzle-action-btn" onclick="shufflePuzzle()">🔀 섞기</button>
+      <button class="puzzle-action-btn secondary" onclick="closeMiniGame('coloring')">나가기</button>
+    </div>
+    <div id="puzzle-complete-box">
+      <h3>🎉 퍼즐 완성!</h3>
+      <p id="puzzle-complete-msg" style="color:#e2c4ff;margin-bottom:16px;"></p>
+      <button class="puzzle-action-btn" onclick="shufflePuzzle()">🔀 다시 도전</button>
     </div>
   </div>
 </div>
@@ -545,7 +553,7 @@ const BUILDINGS = [
   { id:'gallery', name:'명화 갤러리', icon:'🏛️', desc:'세계 각국의 명화를 감상하세요!\n유럽·한국·일본·중남미 작품을 만날 수 있어요.', color:0xffd700, tx:5,  ty:3,  width:4, height:3 },
   { id:'quiz',    name:'퀴즈 타워',   icon:'🎯', desc:'명화 4지선다 퀴즈를 풀고 코인을 획득하세요!\n10문제, 정답당 +10 코인.',                    color:0xff6b35, tx:13, ty:3,  width:4, height:3 },
   { id:'memory',  name:'메모리 카드', icon:'🃏', desc:'명화 카드 16장의 짝을 맞추세요!\n짝 맞출 때마다 +5코인, 전체 완성 +20 보너스!',           color:0xa855f7, tx:5,  ty:11, width:4, height:3 },
-  { id:'coloring',name:'색칠 스튜디오',icon:'🎨',desc:'명화 윤곽선을 직접 색칠하세요!\n5가지 명화, 16색 팔레트, 완성시 +20 코인.',              color:0x22c55e, tx:13, ty:11, width:4, height:3 },
+  { id:'coloring',name:'명화 퍼즐',icon:'🧩',desc:'명화를 9조각 퍼즐로 맞춰보세요!\n8가지 명화, 완성시 +20 코인.',              color:0x22c55e, tx:13, ty:11, width:4, height:3 },
   { id:'typing',  name:'타자 연습장', icon:'⌨️', desc:'명화 관련 문장을 타이핑하세요!\n30초, 정확도에 따라 최대 +30 코인.',                      color:0x38bdf8, tx:9,  ty:7,  width:4, height:3 },
   { id:'shop',    name:'캐릭터 상점', icon:'🛍️', desc:'코인으로 캐릭터를 꾸며보세요!\n모자·의상·액세서리를 구매하고 장착하세요.',                    color:0xf59e0b, tx:1,  ty:7,  width:4, height:3 }
 ];
@@ -1545,229 +1553,140 @@ function flipCard(i) {
 }
 
 // ─────────────────────────────────────────────
-//  색칠 스튜디오 (페인트통 flood-fill + 브러시)
+//  명화 퍼즐 (3x3 슬라이딩 퍼즐)
 // ─────────────────────────────────────────────
-const PALETTE = ['#1d4ed8','#60a5fa','#06b6d4','#22c55e','#15803d','#fbbf24','#f97316','#ef4444','#ec4899','#a855f7','#8b5cf6','#78350f','#92400e','#d1d5db','#6b7280','#111827'];
-let selectedColor  = '#1d4ed8';
-let cBrushSize     = 10;
-let cEraser        = false;
-let cDrawing       = false;
-let cLastX = 0, cLastY = 0;
-let cReward50      = false;
-let cReward100     = false;
-let cCtx           = null;
-let cCheckTimer    = 0;
-let cMode          = 'fill'; // 'fill' | 'brush'
+let puzzleState = { pieces:[], selected:null, moves:0, imgUrl:'', title:'', solved:false };
+
+const PUZZLE_ARTWORKS = [
+  { title:'별이 빛나는 밤', url:'starry-night.jpg' },
+  { title:'모나리자', url:'mona-lisa.jpg' },
+  { title:'진주 귀걸이를 한 소녀', url:'pearlgirl.jpg' },
+  { title:'해바라기', url:'https://raw.githubusercontent.com/art-quest-game/art-quest/main/Vincent_van_Gogh_-_Sunflowers_-_VGM_F458.jpg' },
+  { title:'수련', url:'water-lilies.jpg' },
+  { title:'금강전도', url:'geumgang.jpg' },
+  { title:'씨름도', url:'ssireum.jpg' },
+  { title:'단오풍정', url:'dano.jpg' },
+];
 
 function openColoring() {
   document.getElementById('coloring-screen').classList.add('active');
   disablePhaserInput();
-  buildPalette();
-  const canvas = document.getElementById('coloring-draw-canvas');
-  cCtx = canvas.getContext('2d');
-  cCtx.clearRect(0, 0, canvas.width, canvas.height);
-  cReward50 = false; cReward100 = false;
-  setColoringMode('fill');
-  updateColoringStatus(0);
+  buildPuzzleSelector();
 }
 
-function buildPalette() {
-  document.getElementById('coloring-palette').innerHTML = PALETTE.map((c, i) => `
-    <div class="pal-color${i === 0 ? ' selected' : ''}" style="background:${c}" onclick="selectColor('${c}',this)" title="${c}"></div>
-  `).join('');
-  document.getElementById('coloring-cur-color').style.background = PALETTE[0];
-  selectedColor = PALETTE[0]; cEraser = false;
+function buildPuzzleSelector() {
+  const grid = document.getElementById('puzzle-grid');
+  grid.innerHTML = '';
+  grid.style.gridTemplateColumns = 'repeat(4,1fr)';
+  grid.style.width = '520px';
+  grid.style.height = 'auto';
+  grid.style.gap = '10px';
+  document.getElementById('puzzle-title-label').textContent = '🖼️ 퍼즐로 만들 명화를 선택하세요!';
+  document.getElementById('puzzle-move-count').textContent = '';
+  document.getElementById('puzzle-complete-box').style.display = 'none';
+
+  PUZZLE_ARTWORKS.forEach(art => {
+    const div = document.createElement('div');
+    div.style.cssText = 'cursor:pointer;border-radius:10px;overflow:hidden;border:2px solid #6b21a8;transition:transform .2s,border-color .2s;';
+    div.onmouseover = () => { div.style.transform='scale(1.05)'; div.style.borderColor='#ffd700'; };
+    div.onmouseout  = () => { div.style.transform=''; div.style.borderColor='#6b21a8'; };
+    const img = document.createElement('img');
+    img.src = art.url; img.style.cssText = 'width:100%;aspect-ratio:1;object-fit:cover;display:block;';
+    const label = document.createElement('div');
+    label.textContent = art.title;
+    label.style.cssText = 'color:#ffd700;font-size:.72rem;text-align:center;padding:4px;background:#1a0a2e;font-weight:700;';
+    div.appendChild(img); div.appendChild(label);
+    div.onclick = () => startPuzzle(art);
+    grid.appendChild(div);
+  });
 }
 
-function selectColor(c, el) {
-  selectedColor = c; cEraser = false;
-  document.getElementById('coloring-cur-color').style.background = c;
-  document.querySelectorAll('.pal-color').forEach(x => x.classList.remove('selected'));
-  el.classList.add('selected');
-  document.getElementById('eraser-btn').classList.remove('eraser-on');
+function startPuzzle(art) {
+  puzzleState = { pieces:Array.from({length:9},(_,i)=>i), selected:null, moves:0, imgUrl:art.url, title:art.title, solved:false };
+  document.getElementById('puzzle-title-label').textContent = `🧩 ${art.title}`;
+  document.getElementById('puzzle-complete-box').style.display = 'none';
+  renderPuzzle();
+  shufflePuzzle();
 }
 
-function setColoringMode(mode) {
-  cMode = mode; cEraser = false;
-  document.getElementById('eraser-btn').classList.remove('eraser-on');
-  document.getElementById('mode-fill-btn').classList.toggle('active',  mode === 'fill');
-  document.getElementById('mode-brush-btn').classList.toggle('active', mode === 'brush');
-  const wrapper = document.getElementById('coloring-canvas-wrapper');
-  wrapper.className = mode === 'fill' ? 'mode-fill' : 'mode-brush';
-  // brush-size buttons only relevant in brush mode
-  const showSize = mode === 'brush';
-  document.getElementById('brush-size-label').style.display = showSize ? '' : 'none';
-  document.querySelectorAll('.brush-size-btn').forEach(b => b.style.display = showSize ? '' : 'none');
-}
+function renderPuzzle() {
+  const grid = document.getElementById('puzzle-grid');
+  grid.innerHTML = '';
+  grid.style.gridTemplateColumns = 'repeat(3,1fr)';
+  grid.style.width = '480px';
+  grid.style.height = '480px';
+  grid.style.gap = '4px';
 
-function setBrushSize(size, el) {
-  cBrushSize = size; cEraser = false;
-  document.querySelectorAll('.brush-size-btn').forEach(b => b.classList.remove('active'));
-  el.classList.add('active');
-  document.getElementById('eraser-btn').classList.remove('eraser-on');
-}
-
-function toggleEraser() {
-  cEraser = !cEraser;
-  document.getElementById('eraser-btn').classList.toggle('eraser-on', cEraser);
-}
-
-function clearColoringCanvas() {
-  if (!cCtx) return;
-  const cv = document.getElementById('coloring-draw-canvas');
-  cCtx.clearRect(0, 0, cv.width, cv.height);
-  cReward50 = false; cReward100 = false;
-  updateColoringStatus(0);
-}
-
-function saveColoringCanvas() {
-  const cv = document.getElementById('coloring-draw-canvas');
-  const tmp = document.createElement('canvas');
-  tmp.width = cv.width; tmp.height = cv.height;
-  const ctx = tmp.getContext('2d');
-  ctx.fillStyle = '#ffffff';
-  ctx.fillRect(0, 0, tmp.width, tmp.height);
-  ctx.drawImage(cv, 0, 0);
-  try { ctx.drawImage(document.getElementById('coloring-overlay-img'), 0, 0, tmp.width, tmp.height); } catch(e) {}
-  const a = document.createElement('a');
-  a.download = 'my-artwork.png'; a.href = tmp.toDataURL('image/png'); a.click();
-}
-
-function cGetPos(e) {
-  const cv = document.getElementById('coloring-draw-canvas');
-  const r = cv.getBoundingClientRect();
-  return { x: Math.round((e.clientX-r.left)*(cv.width/r.width)),
-           y: Math.round((e.clientY-r.top)*(cv.height/r.height)) };
-}
-
-// ── Flood fill (BFS, scanline-optimized) ──
-function hexToRgb(hex) {
-  const v = parseInt(hex.slice(1), 16);
-  return [(v>>16)&255, (v>>8)&255, v&255];
-}
-
-function floodFill(startX, startY, fillColor) {
-  if (!cCtx) return;
-  const cv   = document.getElementById('coloring-draw-canvas');
-  const W    = cv.width, H = cv.height;
-  const img  = cCtx.getImageData(0, 0, W, H);
-  const data = img.data;
-  const idx  = (x, y) => (y * W + x) * 4;
-
-  const si = idx(startX, startY);
-  const sr = data[si], sg = data[si+1], sb = data[si+2], sa = data[si+3];
-
-  const [fr, fg, fb] = hexToRgb(fillColor);
-  // Already the target color (and fully opaque)
-  if (sr === fr && sg === fg && sb === fb && sa === 255) return;
-
-  const TOLERANCE = 40; // allow slight anti-alias variation
-  function matches(i) {
-    return Math.abs(data[i]-sr) + Math.abs(data[i+1]-sg) +
-           Math.abs(data[i+2]-sb) + Math.abs(data[i+3]-sa) <= TOLERANCE;
-  }
-
-  const visited = new Uint8Array(W * H);
-  const stack = [[startX, startY]];
-  visited[startY * W + startX] = 1;
-
-  while (stack.length) {
-    const [x, y] = stack.pop();
-    const i = idx(x, y);
-    data[i] = fr; data[i+1] = fg; data[i+2] = fb; data[i+3] = 255;
-
-    const neighbors = [[x-1,y],[x+1,y],[x,y-1],[x,y+1]];
-    for (const [nx, ny] of neighbors) {
-      if (nx < 0 || nx >= W || ny < 0 || ny >= H) continue;
-      if (visited[ny * W + nx]) continue;
-      if (!matches(idx(nx, ny))) continue;
-      visited[ny * W + nx] = 1;
-      stack.push([nx, ny]);
+  puzzleState.pieces.forEach((val, idx) => {
+    const piece = document.createElement('div');
+    piece.className = 'puzzle-piece' + (val === 8 ? ' empty' : '');
+    if (val !== 8) {
+      const col = val % 3, row = Math.floor(val / 3);
+      piece.style.backgroundImage = `url('${puzzleState.imgUrl}')`;
+      piece.style.backgroundSize = '300% 300%';
+      piece.style.backgroundPosition = `${col * 50}% ${row * 50}%`;
+      piece.onclick = () => onPieceClick(idx);
+      if (puzzleState.selected === idx) piece.classList.add('selected');
     }
+    grid.appendChild(piece);
+  });
+  document.getElementById('puzzle-move-count').textContent = `이동: ${puzzleState.moves}회`;
+}
+
+function onPieceClick(idx) {
+  if (puzzleState.solved) return;
+  const emptyIdx = puzzleState.pieces.indexOf(8);
+  const adjacent = getAdjacent(emptyIdx);
+
+  if (adjacent.includes(idx)) {
+    // 빈 칸과 인접 → 바로 이동
+    [puzzleState.pieces[idx], puzzleState.pieces[emptyIdx]] = [puzzleState.pieces[emptyIdx], puzzleState.pieces[idx]];
+    puzzleState.moves++;
+    puzzleState.selected = null;
+    renderPuzzle();
+    checkPuzzleSolved();
+  } else {
+    puzzleState.selected = idx;
+    renderPuzzle();
   }
-  cCtx.putImageData(img, 0, 0);
 }
 
-// ── Brush painting ──
-function cPaint(x, y) {
-  if (!cCtx) return;
-  cCtx.globalCompositeOperation = cEraser ? 'destination-out' : 'source-over';
-  cCtx.fillStyle = cEraser ? 'rgba(0,0,0,1)' : selectedColor;
-  cCtx.beginPath();
-  cCtx.arc(x, y, cBrushSize / 2, 0, Math.PI * 2);
-  cCtx.fill();
-  cCtx.globalCompositeOperation = 'source-over';
+function getAdjacent(idx) {
+  const row = Math.floor(idx / 3), col = idx % 3, adj = [];
+  if (row > 0) adj.push(idx - 3);
+  if (row < 2) adj.push(idx + 3);
+  if (col > 0) adj.push(idx - 1);
+  if (col < 2) adj.push(idx + 1);
+  return adj;
 }
 
-function cPaintLine(x0, y0, x1, y1) {
-  const d = Math.hypot(x1-x0, y1-y0);
-  const steps = Math.max(1, Math.ceil(d / Math.max(1, cBrushSize/4)));
-  for (let i = 0; i <= steps; i++) { const t=i/steps; cPaint(x0+(x1-x0)*t, y0+(y1-y0)*t); }
-}
-
-function checkColoringCoverage() {
-  if (!cCtx) return;
-  const cv = document.getElementById('coloring-draw-canvas');
-  const d  = cCtx.getImageData(0, 0, cv.width, cv.height).data;
-  let col  = 0;
-  for (let i = 3; i < d.length; i += 4) { if (d[i] > 10) col++; }
-  const pct = col / (cv.width * cv.height);
-  updateColoringStatus(pct);
-  if (!cReward50  && pct >= 0.5) { cReward50  = true; state.coins += 10; updateHUD(); showCoinToast(10); updateRank(); }
-  if (!cReward100 && pct >= 0.9) { cReward100 = true; state.coins += 20; updateHUD(); showCoinToast(20); updateRank(); }
-}
-
-function updateColoringStatus(pct) {
-  const p = Math.round((pct||0)*100);
-  document.getElementById('coloring-coin-status').textContent =
-    cReward100 ? '✅ 완성! +20코인 획득!' :
-    cReward50  ? `🎨 ${p}% — 계속 색칠하세요!` :
-    `🎨 ${p}% 색칠됨 (50%→+10🪙, 90%→+20🪙)`;
-}
-
-(function setupColoringEvents() {
-  const wrapper = document.getElementById('coloring-canvas-wrapper');
-
-  function onDown(e) {
-    if (!document.getElementById('coloring-screen').classList.contains('active')) return;
-    e.preventDefault();
-    const raw = e.touches ? e.touches[0] : e;
-    const p   = cGetPos(raw);
-
-    if (cMode === 'fill' && !cEraser) {
-      floodFill(p.x, p.y, selectedColor);
-      checkColoringCoverage();
-    } else if (cMode === 'fill' && cEraser) {
-      // eraser in fill mode: paint with transparent using brush stroke
-      cDrawing = true; cLastX = p.x; cLastY = p.y; cPaint(p.x, p.y);
-    } else {
-      cDrawing = true; cLastX = p.x; cLastY = p.y; cPaint(p.x, p.y);
-    }
+function shufflePuzzle() {
+  if (!puzzleState.imgUrl) { buildPuzzleSelector(); return; }
+  document.getElementById('puzzle-complete-box').style.display = 'none';
+  puzzleState.solved = false;
+  puzzleState.moves = 0;
+  puzzleState.selected = null;
+  // 합법적 셔플 (빈칸 랜덤 이동)
+  let emptyIdx = 8;
+  puzzleState.pieces = Array.from({length:9},(_,i)=>i);
+  for (let i = 0; i < 200; i++) {
+    const adj = getAdjacent(emptyIdx);
+    const next = adj[Math.floor(Math.random() * adj.length)];
+    [puzzleState.pieces[emptyIdx], puzzleState.pieces[next]] = [puzzleState.pieces[next], puzzleState.pieces[emptyIdx]];
+    emptyIdx = next;
   }
+  renderPuzzle();
+}
 
-  function onMove(e) {
-    if (!cDrawing) return; e.preventDefault();
-    const raw = e.touches ? e.touches[0] : e;
-    const p   = cGetPos(raw);
-    cPaintLine(cLastX, cLastY, p.x, p.y);
-    cLastX = p.x; cLastY = p.y;
-    cCheckTimer++;
-    if (cCheckTimer % 50 === 0) checkColoringCoverage();
+function checkPuzzleSolved() {
+  if (puzzleState.pieces.every((v, i) => v === i)) {
+    puzzleState.solved = true;
+    const coin = 20;
+    state.coins += coin; updateHUD(); showCoinToast(coin);
+    document.getElementById('puzzle-complete-msg').textContent = `${puzzleState.moves}번 만에 완성! +${coin}🪙 코인 획득!`;
+    document.getElementById('puzzle-complete-box').style.display = 'block';
   }
-
-  function onUp() {
-    if (!cDrawing) return;
-    cDrawing = false;
-    checkColoringCoverage();
-  }
-
-  wrapper.addEventListener('mousedown',  onDown);
-  wrapper.addEventListener('mousemove',  onMove);
-  window.addEventListener('mouseup',    onUp);
-  wrapper.addEventListener('touchstart', onDown, { passive:false });
-  wrapper.addEventListener('touchmove',  onMove, { passive:false });
-  window.addEventListener('touchend',   onUp);
-})();
+}
 
 // ─────────────────────────────────────────────
 //  타자연습 — 순수 HTML input 기반 (스페이스바 완전 지원)
