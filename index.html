@@ -611,15 +611,15 @@ function updateRank() {
 
 const ALL_ITEMS = [
   { id:'tophat',     name:'영국 탑햇',         icon:'🎩',  price:30,  slot:'hat',       desc:'우아한 영국 신사의 탑햇' },
-  { id:'sombrero',   name:'멕시코 솜브레로',   img:'https://raw.githubusercontent.com/blueberry524-star/art-quest/main/sombrero.png', price:40,  slot:'hat',       desc:'멕시코 전통 모자 솜브레로' },
-  { id:'nonla',      name:'베트남 논라',        img:'https://raw.githubusercontent.com/blueberry524-star/art-quest/main/nonla.png',    price:50,  slot:'hat',       desc:'베트남 전통 원뿔형 모자 논라' },
-  { id:'turban',     name:'인도 터번',          img:'https://raw.githubusercontent.com/blueberry524-star/art-quest/main/turban.png',   price:80,  slot:'hat',       desc:'인도 전통 머리 장식 터번' },
+  { id:'sombrero',   name:'멕시코 솜브레로',   img:'https://raw.githubusercontent.com/art-quest-game/art-quest/main/sombrero.png', price:40,  slot:'hat',       desc:'멕시코 전통 모자 솜브레로' },
+  { id:'nonla',      name:'베트남 논라',        img:'https://raw.githubusercontent.com/art-quest-game/art-quest/main/nonla.png',    price:50,  slot:'hat',       desc:'베트남 전통 원뿔형 모자 논라' },
+  { id:'turban',     name:'인도 터번',          img:'https://raw.githubusercontent.com/art-quest-game/art-quest/main/turban.png',   price:80,  slot:'hat',       desc:'인도 전통 머리 장식 터번' },
   { id:'kimono',     name:'일본 기모노',        icon:'👘',  price:30,  slot:'outfit',    desc:'아름다운 일본 전통 의상 기모노' },
   { id:'sari',       name:'인도 사리',          icon:'🥻',  price:50,  slot:'outfit',    desc:'화려한 인도 전통 의상 사리' },
-  { id:'african',    name:'아프리카 캉가',      img:'https://raw.githubusercontent.com/blueberry524-star/art-quest/main/african.png',  price:70,  slot:'outfit',    desc:'아프리카 전통 천 의상 캉가' },
-  { id:'dirndl',     name:'알프스 디른들',      img:'https://raw.githubusercontent.com/blueberry524-star/art-quest/main/dirndl.png',   price:90,  slot:'outfit',    desc:'알프스 지역 전통 의상 디른들' },
-  { id:'poncho',     name:'페루 판초',          img:'https://raw.githubusercontent.com/blueberry524-star/art-quest/main/poncho.png',   price:100, slot:'outfit',    desc:'페루 전통 망토 판초' },
-  { id:'hanbok',     name:'한국 한복',          img:'https://raw.githubusercontent.com/blueberry524-star/art-quest/main/hanbok.png',   price:120, slot:'outfit',    desc:'아름다운 한국 전통 의상 한복' },
+  { id:'african',    name:'아프리카 캉가',      img:'https://raw.githubusercontent.com/art-quest-game/art-quest/main/african.png',  price:70,  slot:'outfit',    desc:'아프리카 전통 천 의상 캉가' },
+  { id:'dirndl',     name:'알프스 디른들',      img:'https://raw.githubusercontent.com/art-quest-game/art-quest/main/dirndl.png',   price:90,  slot:'outfit',    desc:'알프스 지역 전통 의상 디른들' },
+  { id:'poncho',     name:'페루 판초',          img:'https://raw.githubusercontent.com/art-quest-game/art-quest/main/poncho.png',   price:100, slot:'outfit',    desc:'페루 전통 망토 판초' },
+  { id:'hanbok',     name:'한국 한복',          img:'https://raw.githubusercontent.com/art-quest-game/art-quest/main/hanbok.png',   price:120, slot:'outfit',    desc:'아름다운 한국 전통 의상 한복' },
   { id:'brush',      name:'이탈리아 거장의 붓', icon:'🖌️', price:30,  slot:'accessory', desc:'이탈리아 거장의 혼이 담긴 붓' },
   { id:'nazar',      name:'터키 나자르 부적',   icon:'🧿', price:50,  slot:'accessory', desc:'눈의 사악한 기운을 막는 터키의 나자르 부적' },
   { id:'beads',      name:'아프리카 구슬 목걸이',icon:'📿', price:60,  slot:'accessory', desc:'아프리카 전통 구슬 목걸이' },
@@ -989,57 +989,123 @@ const ARTWORKS = {
       desc:'혜원 신윤복의 미인도는 조선 후기 여성의 아름다움을 섬세하게 표현한 작품입니다. 치마저고리를 입은 여인의 우아한 자태와 정교한 의복 묘사가 특징입니다. 간송미술관 소장.' },
     { id:'sehando',         title:'세한도',           artist:'김정희 (추사)',      year:'1844',    country:'조선',
       url:'Sehando.jpg',
-      desc:'실학자이자 서예가 추사 김정희가 제주도 유배 중에 그린 작품입니다. 소나무와 잣나무 두 그루를 단순하게 표현하여 변치 않는 절조와 우정을 담았습니다. 국립중앙박물관 소장.' }
+      desc:'실학자이자 서예가 추사 김정희가 제주도 유배 중에 그린 작품입니다. 소나무와 잣나무 두 그루를 단순하게 표현하여 변치 않는 절조와 우정을 담았습니다. 국립중앙박물관 소장.' },
+    { id:'mudong',          title:'무동',             artist:'김홍도 (단원)',      year:'18세기',  country:'조선',
+      url:'Kim_Hong-dos_Album_of_Genre_Paintings_-_Mudong.jpg',
+      desc:'조선 후기 풍속화의 대가 단원 김홍도의 작품입니다. 악사들의 연주에 맞춰 어린 무동이 춤을 추는 생동감 있는 장면을 담았습니다. 단원풍속도첩에 수록된 작품 중 하나로 국립중앙박물관에 소장되어 있습니다.' },
+    { id:'seodang',         title:'서당',             artist:'김홍도 (단원)',      year:'18세기',  country:'조선',
+      url:'Kim_Hong-dos_Album_of_Genre_Paintings_-_Seodang.jpg',
+      desc:'김홍도의 단원풍속도첩 중 하나로 서당에서 글공부하는 아이들의 모습을 담았습니다. 훈장께 꾸중을 들은 아이가 울음을 터뜨리는 장면이 익살스럽게 표현되어 있습니다. 조선 후기 교육 현장을 생생하게 전해줍니다.' },
+    { id:'tajak',           title:'타작',             artist:'김홍도 (단원)',      year:'18세기',  country:'조선',
+      url:'Kim_Hong-dos_Album_of_Genre_Paintings_-_Tajak.jpg',
+      desc:'김홍도의 풍속화로 가을 추수 때 볏단을 타작하는 농민들의 모습을 담았습니다. 힘차게 도리깨질하는 농부들과 지주로 보이는 인물이 대비를 이루며 조선 후기 농촌 사회를 생동감 있게 보여줍니다.' },
+    { id:'yunduseo',        title:'자화상',           artist:'윤두서 (공재)',      year:'1710년경', country:'조선',
+      url:'Yun_Duseo_self_portrait.jpg',
+      desc:'조선 후기 화가 공재 윤두서의 자화상으로 우리나라 최초의 사실적 자화상입니다. 강렬한 눈빛과 세밀한 수염 묘사가 특징이며 얼굴만 집중적으로 표현한 독특한 구성이 인상적입니다. 국보 제240호로 지정되어 있습니다.' },
+    { id:'puppies',         title:'모견도 (강아지)',  artist:'이암',              year:'16세기',  country:'조선',
+      url:'Yi_Am-Puppies.jpg',
+      desc:'조선 중기 화가 이암이 그린 화조영모화입니다. 꽃 아래 강아지들이 장난치는 모습을 섬세하게 묘사했으며 동물의 생생한 움직임과 귀여운 표정이 특징입니다. 국립중앙박물관 소장.' },
+    { id:'desertedmountain', title:'공산무인도',      artist:'최북',              year:'18세기',  country:'조선',
+      url:'Choi_Buk_-_Deserted_Mountain.jpg',
+      desc:'조선 후기 화가 최북의 대표작입니다. 텅 빈 산속에 고요히 앉은 인물의 모습을 간결한 필치로 표현했습니다. 최북은 스스로 한쪽 눈을 찌른 기인으로도 유명하며 그의 작품에는 독특한 고독함이 담겨 있습니다.' },
+    { id:'plumblossom',     title:'묵매도',           artist:'어몽룡',             year:'16–17세기', country:'조선',
+      url:'Eo_Mong-ryong_Plum_Blossom.jpg',
+      desc:'조선 중기 문인화가 어몽룡의 대표작으로 먹으로 그린 매화 그림입니다. 간결하고 힘찬 필치로 매화의 기품을 표현했으며 조선 시대 묵매도의 최고 걸작으로 꼽힙니다. 간송미술관 소장.' },
+    { id:'hawk',            title:'노응도 (매)',      artist:'장승업 (오원)',      year:'19세기',  country:'조선',
+      url:'Jang_Seung-eop_-_Hawk.jpg',
+      desc:'조선 말기 화가 오원 장승업의 대표작입니다. 강렬한 눈매와 날카로운 발톱을 가진 매의 모습을 힘차고 사실적으로 표현했습니다. 김홍도, 신윤복과 함께 조선의 삼원으로 불리는 장승업의 개성 넘치는 화풍이 잘 드러납니다.' },
+    { id:'inwangjesaekdo',  title:'인왕제색도',       artist:'정선 (겸재)',        year:'1751',    country:'조선',
+      url:'Jeong_Seon-Inwangjesaekdo.jpg',
+      desc:'진경산수화의 대가 겸재 정선이 76세에 그린 걸작입니다. 비가 갠 뒤 안개에 싸인 서울 인왕산의 웅장한 모습을 표현했습니다. 먹의 농담을 자유롭게 구사한 대담한 구도가 특징이며 리움미술관 소장입니다.' },
+    { id:'pajukdo',         title:'파적도',           artist:'김득신',             year:'18세기',  country:'조선',
+      url:'Kim_Deuk-sin-Pastime.jpg',
+      desc:'조선 후기 풍속화가 긍재 김득신의 대표작입니다. 고양이가 병아리를 채어가자 놀란 사람들이 허둥대는 해학적인 장면을 담았습니다. 순간의 동작을 포착한 생생한 묘사와 익살스러운 표정이 인상적입니다.' },
+    { id:'bamboo',          title:'풍죽도',           artist:'이정',               year:'16–17세기', country:'조선',
+      url:'Lee_Jeong-Bamboo_in_Wind.jpg',
+      desc:'조선 중기 묵죽화의 대가 이정의 대표작입니다. 바람에 휘어지는 대나무를 먹으로 힘차게 표현했습니다. 군자의 절개를 상징하는 대나무를 이정만의 독자적인 화풍으로 담아낸 조선 묵죽화의 최고 걸작입니다.' },
+    { id:'yeongtong',       title:'영통골 입구',      artist:'강세황 (표암)',      year:'18세기',  country:'조선',
+      url:'Pyoam_Gang_Sehwang-Yeongtong_Valley_Entrance.jpg',
+      desc:'조선 후기 문인화가이자 평론가 표암 강세황의 작품입니다. 경기도 수원 영통골 입구 풍경에 서양화의 투시도법과 음영법을 도입하여 묘사했습니다. 서양화 기법을 접목한 조선 최초의 작품 중 하나로 평가받습니다.' },
+    { id:'gangsanmujiindo', title:'강산무진도',       artist:'이인문',             year:'18–19세기', country:'조선',
+      url:'Yi_In-mun-Rivers_and_Mountains_without_End.jpg',
+      desc:'조선 후기 화가 이인문의 대표작으로 산과 강이 끝없이 이어지는 장대한 자연 풍경을 담은 두루마리 그림입니다. 858cm에 달하는 화면에 사계절 변화와 인간 생활을 담아냈습니다. 국립중앙박물관 소장.' },
+    { id:'tiger',           title:'송하맹호도',       artist:'이재관',             year:'19세기',  country:'조선',
+      url:'Yi_Jae-gwan-Tiger_under_Pine.jpg',
+      desc:'조선 말기 화가 이재관이 소나무 아래 호랑이를 그린 작품입니다. 날카로운 눈매와 늠름한 자태의 호랑이를 힘차고 사실적으로 표현했습니다. 격조 높은 정통 화법으로 그린 조선 후기 영모화의 걸작입니다.' }
   ],
   world: [
     { id:'monalisa',        title:'모나리자',          artist:'레오나르도 다빈치', year:'1503–1519', country:'이탈리아',
       url:'mona-lisa.jpg',
       desc:'이탈리아 르네상스의 거장 레오나르도 다빈치가 그린 세계에서 가장 유명한 초상화입니다. 신비로운 미소와 스푸마토 기법으로 수백 년간 사람들을 매료시켜 왔습니다. 현재 프랑스 루브르 박물관에 소장되어 연간 900만 명 이상이 감상합니다.' },
     { id:'lastsupper',      title:'최후의 만찬',       artist:'레오나르도 다빈치', year:'1495–1498', country:'이탈리아',
-      url:'https://upload.wikimedia.org/wikipedia/commons/4/4b/%22The_Last_Supper%22_by_Leonardo_da_Vinci.jpg',
+      url:'https://raw.githubusercontent.com/art-quest-game/art-quest/main/The_Last_Supper_by_Leonardo_da_Vinci.jpg',
       desc:'레오나르도 다빈치가 밀라노 수도원 식당 벽에 그린 대형 벽화입니다. 예수가 "너희 중 한 명이 나를 배신할 것이다"라고 말하는 순간을 포착했습니다. 밀라노 산타 마리아 델레 그라치에 성당 소장.' },
     { id:'venus',           title:'비너스의 탄생',     artist:'산드로 보티첼리',   year:'1484–1486', country:'이탈리아',
-      url:'https://upload.wikimedia.org/wikipedia/commons/0/0b/Sandro_Botticelli_-_La_nascita_di_Venere_-_Google_Art_Project_-_edited.jpg',
+      url:'https://raw.githubusercontent.com/art-quest-game/art-quest/main/Sandro_Botticelli_-_La_nascita_di_Venere_-_Google_Art_Project_-_edited.jpg',
       desc:'이탈리아 르네상스 화가 보티첼리의 걸작으로 사랑의 여신 비너스가 조개껍데기에서 태어나는 장면을 묘사했습니다. 고대 신화를 주제로 한 최초의 대형 캔버스 작품 중 하나입니다. 피렌체 우피치 미술관 소장.' },
     { id:'athens',          title:'아테네 학당',       artist:'라파엘로 산치오',   year:'1509–1511', country:'이탈리아',
-      url:'https://upload.wikimedia.org/wikipedia/commons/4/49/%22The_School_of_Athens%22_by_Raffaello_Sanzio_da_Urbino.jpg',
+      url:'https://raw.githubusercontent.com/art-quest-game/art-quest/main/The_School_of_Athens_by_Raffaello_Sanzio_da_Urbino.jpg',
       desc:'교황 율리오 2세의 주문으로 라파엘로가 그린 프레스코화입니다. 플라톤과 아리스토텔레스를 중심으로 고대 그리스 철학자들이 모여 있는 장면으로, 르네상스 정신의 집대성입니다. 바티칸 궁전 서명의 방 소장.' },
     { id:'pearlgirl',       title:'진주 귀걸이를 한 소녀', artist:'요하네스 페르메이르', year:'1665', country:'네덜란드',
       url:'pearlgirl.jpg',
       desc:'"북방의 모나리자"라 불리는 걸작입니다. 신비로운 눈빛과 반짝이는 진주 귀걸이가 특징이며 소녀의 정체는 아직도 미스터리입니다. 네덜란드 마우리츠하위스 미술관 소장.' },
     { id:'nightwatch',      title:'야경',              artist:'렘브란트 판 레인',  year:'1642',      country:'네덜란드',
-      url:'https://upload.wikimedia.org/wikipedia/commons/5/5a/Rembrandt_van_Rijn_-_De_Nachtwacht_-_Google_Art_Project.jpg',
+      url:'https://raw.githubusercontent.com/art-quest-game/art-quest/main/Rembrandt_van_Rijn_-_De_Nachtwacht_-_Google_Art_Project.jpg',
       desc:'렘브란트의 대표작으로 야간 순찰을 나서는 민병대의 모습을 역동적으로 표현했습니다. 빛과 그림자의 극적인 대비가 바로크 회화의 특징을 잘 보여줍니다. 암스테르담 국립미술관(라익스무세움) 소장.' },
     { id:'starrynight',     title:'별이 빛나는 밤',    artist:'빈센트 반 고흐',    year:'1889',      country:'네덜란드',
       url:'starry-night.jpg',
       desc:'반 고흐가 생레미 드 프로방스 요양원에서 그린 걸작입니다. 소용돌이치는 밤하늘과 빛나는 별들, 고요한 마을의 대비가 인상적입니다. 뉴욕 현대미술관(MoMA) 소장.' },
     { id:'sunflowers',      title:'해바라기',          artist:'빈센트 반 고흐',    year:'1888',      country:'네덜란드',
-      url:'https://upload.wikimedia.org/wikipedia/commons/4/46/Vincent_van_Gogh_-_Sunflowers_-_VGM_F458.jpg',
+      url:'https://raw.githubusercontent.com/art-quest-game/art-quest/main/Vincent_van_Gogh_-_Sunflowers_-_VGM_F458.jpg',
       desc:'반 고흐가 남프랑스 아를에서 폴 고갱을 맞이하기 위해 그린 연작입니다. 황금빛 해바라기들을 독특한 임파스토 기법으로 표현하여 생명력과 기쁨을 담았습니다. 런던 내셔널 갤러리 소장.' },
     { id:'waterlilies',     title:'수련',              artist:'클로드 모네',        year:'1906',      country:'프랑스',
       url:'water-lilies.jpg',
       desc:'인상주의 거장 모네가 지베르니 정원의 연못을 그린 연작입니다. 빛과 색의 변화에 집중하여 수면과 수련을 몽환적으로 표현했습니다. 시카고 아트 인스티튜트 소장.' },
     { id:'americangothic',  title:'아메리칸 고딕',     artist:'그랜트 우드',        year:'1930',      country:'미국',
-      url:'https://upload.wikimedia.org/wikipedia/commons/c/cc/Grant_Wood_-_American_Gothic_-_Google_Art_Project.jpg',
+      url:'https://raw.githubusercontent.com/art-quest-game/art-quest/main/Grant_Wood_-_American_Gothic_-_Google_Art_Project.jpg',
       desc:'미국 화가 그랜트 우드의 대표작으로 미국 중서부 농가 앞에 선 남녀의 모습을 담았습니다. 근엄한 표정의 두 인물은 미국 농촌 문화와 청교도적 가치관을 상징합니다. 시카고 아트 인스티튜트 소장.' },
     { id:'greatwave',       title:'가나가와 해변의 큰 파도', artist:'가쓰시카 호쿠사이', year:'1831', country:'일본',
       url:'great-wave.jpg',
       desc:'에도 시대 목판화 거장 호쿠사이의 "후지산 36경" 연작 중 가장 유명한 작품입니다. 거대한 파도와 후지산의 대비가 인상적이며 서양 예술가에도 큰 영향을 미쳤습니다.' },
     { id:'plum',            title:'홍백매화도',        artist:'오가타 고린',        year:'1714–1716', country:'일본',
-      url:'https://upload.wikimedia.org/wikipedia/commons/c/c6/Korin_Ogata-Kuhaku_Baizu-byobu.jpg',
+      url:'https://raw.githubusercontent.com/art-quest-game/art-quest/main/Korin_Ogata-Kuhaku_Baizu-byobu.jpg',
       desc:'에도 시대 화가 오가타 고린의 대표작입니다. 흐르는 물과 홍백 매화나무를 대담하고 장식적으로 표현한 금박 병풍화로, 일본 린파 화풍의 최고 걸작으로 꼽힙니다. MOA 미술관 소장.' },
     { id:'rain-bridge',     title:'오하시 다리의 소나기', artist:'우타가와 히로시게', year:'1857',  country:'일본',
-      url:'https://upload.wikimedia.org/wikipedia/commons/4/4c/Hiroshige_Sudden_shower_over_Shin-Ohashi_bridge.jpg',
+      url:'https://raw.githubusercontent.com/art-quest-game/art-quest/main/Hiroshige_Sudden_shower_over_Shin-Ohashi_bridge.jpg',
       desc:'우타가와 히로시게의 목판화 걸작으로 소나기 내리는 다리 위 사람들의 모습을 담았습니다. 대각선 빗줄기와 움직이는 인물들의 묘사가 인상적이며, 인상주의 화가들에게 큰 영향을 주었습니다.' },
     { id:'geisha',          title:'기녀',              artist:'기타가와 우타마로', year:'1790년대',  country:'일본',
-      url:'https://upload.wikimedia.org/wikipedia/commons/1/16/Kitagawa_Utamaro_002.jpg',
+      url:'https://raw.githubusercontent.com/art-quest-game/art-quest/main/Kitagawa_Utamaro_002.jpg',
       desc:'기타가와 우타마로의 미인화로 에도 시대 여성의 아름다움을 섬세하게 표현했습니다. 특유의 오쿠비에(흉상) 형식과 은은한 색채 처리로 여성의 우아함을 극대화했습니다.' },
     { id:'qingming',        title:'청명상하도',        artist:'장쩌돤',             year:'12세기',    country:'중국',
-      url:'https://upload.wikimedia.org/wikipedia/commons/a/a9/Along_the_River_During_the_Qingming_Festival_%28Qing_Court_Version%29.jpg',
+      url:'https://raw.githubusercontent.com/art-quest-game/art-quest/main/Along_the_River_During_the_Qingming_Festival_(Qing_Court_Version).jpg',
       desc:'북송의 화가 장쩌돤이 그린 풍속화의 걸작입니다. 청명절 즈음 수도 변경의 번화한 거리 풍경을 5미터가 넘는 두루마리에 담아 12세기 중국 도시 생활을 생생하게 보여줍니다. 베이징 고궁박물원 소장.' },
     { id:'fuchun',          title:'부춘산거도',        artist:'황공망',             year:'1350',      country:'중국',
-      url:'https://upload.wikimedia.org/wikipedia/commons/f/f9/Dwelling_in_the_Fuchun_Mountains_%28remaining_scroll%29.jpg',
-      desc:'원나라 화가 황공망이 3~4년에 걸쳐 완성한 산수화의 걸작입니다. 부춘강 주변의 경치를 담백하고 자유로운 필치로 표현했으며, 중국 산수화의 최고 작품 중 하나로 꼽힙니다.' }
+      url:'https://raw.githubusercontent.com/art-quest-game/art-quest/main/Dwelling_in_the_Fuchun_Mountains_(remaining_scroll).jpg',
+      desc:'원나라 화가 황공망이 3~4년에 걸쳐 완성한 산수화의 걸작입니다. 부춘강 주변의 경치를 담백하고 자유로운 필치로 표현했으며, 중국 산수화의 최고 작품 중 하나로 꼽힙니다.' },
+    { id:'grandejatte',     title:'그랑자트 섬의 일요일 오후', artist:'조르주 쇠라', year:'1884–1886', country:'프랑스',
+      url:'A_Sunday_on_La_Grande_Jatte,_Georges_Seurat,_1884-86.jpg',
+      desc:'신인상주의 화가 조르주 쇠라의 대표작으로 점묘화 기법의 걸작입니다. 파리 근교 그랑자트 섬에서 여가를 즐기는 시민들의 모습을 수백만 개의 점으로 표현했습니다. 색점을 분리하여 배치하는 분할주의 기법을 완성시킨 작품으로 시카고 아트 인스티튜트 소장입니다.' },
+    { id:'impression',      title:'인상, 해돋이',      artist:'클로드 모네',        year:'1872',      country:'프랑스',
+      url:'Claude_Monet,_Impression,_soleil_levant.jpg',
+      desc:'인상주의 운동의 출발점이 된 모네의 걸작입니다. 프랑스 르아브르 항구의 이른 아침 안개 속 해돋이를 빠른 붓놀림으로 포착했습니다. 이 작품의 제목에서 "인상주의"라는 미술 사조의 이름이 유래했습니다. 파리 마르모탕 모네 미술관 소장.' },
+    { id:'danceclass',      title:'무용 교실',         artist:'에드가 드가',        year:'1874',      country:'프랑스',
+      url:'Edgar_Degas_-_The_Dance_Class_-_Metropolitan_Museum_of_Art.jpg',
+      desc:'인상주의 화가 에드가 드가의 대표작으로 파리 오페라 극장의 발레 연습 장면을 담았습니다. 어린 발레리나들이 선생님께 지도받는 모습을 독특한 시각으로 포착했습니다. 빛의 효과와 움직임의 순간을 탁월하게 표현한 작품으로 뉴욕 메트로폴리탄 미술관 소장입니다.' },
+    { id:'olympia',         title:'올랭피아',           artist:'에두아르 마네',      year:'1863',      country:'프랑스',
+      url:'Edouard_Manet_-_Olympia_-_Paris_Musee_dOrsay.jpg',
+      desc:'근대 회화의 아버지 에두아르 마네의 대표작입니다. 누드 여인을 비신화적으로 직접 표현하여 발표 당시 엄청난 논란을 일으켰습니다. 전통 누드화의 관습을 깨뜨린 혁신적인 작품으로 현대 미술의 출발점으로 평가됩니다. 파리 오르세 미술관 소장.' },
+    { id:'napoleon',        title:'나폴레옹 대관식',    artist:'자크-루이 다비드',   year:'1807',      country:'프랑스',
+      url:'Jacques-Louis_David_-_The_Coronation_of_Napoleon_(1807).jpg',
+      desc:'신고전주의 화가 자크-루이 다비드가 그린 나폴레옹 1세의 대관식 장면입니다. 1804년 파리 노트르담 대성당에서 거행된 대관식을 기록한 대형 역사화로 가로 10미터에 달하는 거대한 작품입니다. 루브르 박물관 소장.' },
+    { id:'creation',        title:'아담의 창조',        artist:'미켈란젤로',         year:'1508–1512', country:'이탈리아',
+      url:'Michelangelo_-_Creation_of_Adam_(cropped).jpg',
+      desc:'르네상스의 거장 미켈란젤로가 바티칸 시스티나 성당 천장에 그린 프레스코화입니다. 신이 아담에게 생명을 불어넣는 순간을 표현한 장면으로 서로 향한 두 손가락은 세계에서 가장 유명한 이미지 중 하나입니다. 바티칸 시스티나 경당 소장.' },
+    { id:'guernica',        title:'게르니카',           artist:'파블로 피카소',      year:'1937',      country:'스페인',
+      url:'PicassoGuernica.jpg',
+      desc:'스페인 화가 피카소가 나치의 게르니카 폭격을 고발한 걸작입니다. 전쟁의 공포와 고통을 입체파 양식으로 강렬하게 표현했습니다. 반전과 평화의 상징이 된 20세기 최고의 정치적 예술 작품으로 스페인 마드리드 국립소피아왕비예술센터 소장입니다.' },
+    { id:'vgoghself',       title:'자화상',             artist:'빈센트 반 고흐',     year:'1889',      country:'네덜란드',
+      url:'Vincent_van_Gogh_-_Self-Portrait_-_Google_Art_Project.jpg',
+      desc:'반 고흐가 생레미 요양원에서 그린 자화상으로 특유의 소용돌이치는 붓터치가 인상적입니다. 강렬한 눈빛과 단호한 표정에서 고흐의 예술적 의지가 느껴집니다. 평생 37점의 자화상을 남긴 고흐의 내면이 담긴 작품입니다. 파리 오르세 미술관 소장.' }
   ]
 };
 
@@ -1172,6 +1238,70 @@ const QUEST_DATA = {
     {q:'우타마로의 작품은 주로 남성을 소재로 했다.',         a:false, explain:'우타마로는 주로 아름다운 여성(미인화)을 소재로 한 작품으로 유명합니다.'},
     {q:'우타마로의 미인화는 유럽 인상주의에 영향을 미쳤다.', a:true,  explain:'우키요에는 고흐, 모네 등 서양 인상주의 화가에게 큰 영향을 주었습니다.'},
   ]},
+  // ── 한국명화 추가분 ──
+  'mudong': { type:'hidden', instruction:'무동 그림 속 숨겨진 요소 3가지를 모두 찾아보세요!', spots:[
+    {x:48, y:35, label:'💃 무동'},
+    {x:22, y:62, label:'🥁 악기'},
+    {x:72, y:58, label:'👥 구경꾼'},
+  ]},
+  'seodang': { type:'ox', instruction:'서당에 대한 OX 퀴즈를 풀어보세요!', questions:[
+    {q:'서당은 김홍도의 단원풍속도첩에 수록된 작품이다.',     a:true,  explain:'서당은 단원 김홍도의 단원풍속도첩 25점 중 하나입니다.'},
+    {q:'서당에서 가르치는 선생님을 스승이라 부른다.',         a:false, explain:'서당에서 가르치는 분은 훈장이라고 합니다.'},
+    {q:'단원 김홍도는 조선 후기를 대표하는 풍속화가이다.',    a:true,  explain:'김홍도는 18세기 조선 후기를 대표하는 풍속화가입니다.'},
+  ]},
+  'tajak': { type:'review', instruction:'타작도를 감상한 후 느낀 점을 자유롭게 써보세요. (30자 이상)' },
+  'yunduseo': { type:'review', instruction:'윤두서의 자화상을 보고 느낀 점을 자유롭게 써보세요. (30자 이상)' },
+  'puppies': { type:'coloring', instruction:'강아지 그림을 원하는 색으로 칠해보세요!', regions:['🐶 강아지', '🌸 꽃', '🌿 풀잎', '🍃 배경'] },
+  'desertedmountain': { type:'review', instruction:'공산무인도를 감상한 후 느낀 점을 자유롭게 써보세요. (30자 이상)' },
+  'plumblossom': { type:'coloring', instruction:'묵매도를 원하는 색으로 칠해보세요!', regions:['🌸 매화꽃', '🌿 가지', '⬛ 먹', '☁️ 배경'] },
+  'hawk': { type:'hidden', instruction:'매 그림 속 숨겨진 요소 3가지를 모두 찾아보세요!', spots:[
+    {x:45, y:28, label:'🦅 매'},
+    {x:68, y:52, label:'🌿 나뭇가지'},
+    {x:22, y:68, label:'🍃 나뭇잎'},
+  ]},
+  'inwangjesaekdo': { type:'review', instruction:'인왕제색도를 감상한 후 느낀 점을 자유롭게 써보세요. (30자 이상)' },
+  'pajukdo': { type:'hidden', instruction:'파적도 속 숨겨진 요소 3가지를 모두 찾아보세요!', spots:[
+    {x:55, y:35, label:'🐱 고양이'},
+    {x:28, y:60, label:'🐥 병아리'},
+    {x:74, y:48, label:'😲 놀란 사람'},
+  ]},
+  'bamboo': { type:'coloring', instruction:'풍죽도를 원하는 색으로 칠해보세요!', regions:['🎋 대나무', '🌿 잎', '💨 바람결', '🌫️ 배경'] },
+  'yeongtong': { type:'ox', instruction:'영통골 입구에 대한 OX 퀴즈를 풀어보세요!', questions:[
+    {q:'강세황은 조선 후기 문인화가이자 화평가이다.',             a:true,  explain:'강세황(1713-1791)은 그림을 잘 그리는 문인으로 동시에 뛰어난 화평가였습니다.'},
+    {q:'영통골 입구는 서양의 원근법을 전혀 사용하지 않았다.',    a:false, explain:'강세황은 이 작품에 서양화의 투시도법과 음영법을 도입했습니다.'},
+    {q:'강세황의 호는 표암이다.',                                a:true,  explain:'강세황의 호는 표암(豹菴)입니다.'},
+  ]},
+  'gangsanmujiindo': { type:'review', instruction:'강산무진도를 감상한 후 느낀 점을 자유롭게 써보세요. (30자 이상)' },
+  'tiger': { type:'hidden', instruction:'송하맹호도 속 숨겨진 요소 3가지를 모두 찾아보세요!', spots:[
+    {x:48, y:58, label:'🐯 호랑이'},
+    {x:28, y:22, label:'🌲 소나무'},
+    {x:74, y:32, label:'🌙 달'},
+  ]},
+  // ── 세계명화 추가분 ──
+  'grandejatte': { type:'review', instruction:'그랑자트 섬의 일요일 오후를 감상한 후 느낀 점을 자유롭게 써보세요. (30자 이상)' },
+  'impression': { type:'coloring', instruction:'인상, 해돋이를 원하는 색으로 칠해보세요!', regions:['🌅 해돋이', '⛵ 배', '🌊 바다', '🌫️ 안개'] },
+  'danceclass': { type:'hidden', instruction:'무용 교실 속 숨겨진 요소 3가지를 찾아보세요!', spots:[
+    {x:50, y:58, label:'🩰 발레리나'},
+    {x:24, y:38, label:'🪞 거울'},
+    {x:74, y:35, label:'🎶 악기'},
+  ]},
+  'olympia': { type:'ox', instruction:'올랭피아에 대한 OX 퀴즈를 풀어보세요!', questions:[
+    {q:'올랭피아는 에두아르 마네가 1863년에 그렸다.',              a:true,  explain:'올랭피아는 근대 회화의 아버지 마네가 1863년에 그린 작품입니다.'},
+    {q:'올랭피아는 발표 당시 아무런 논란 없이 호평을 받았다.',    a:false, explain:'올랭피아는 누드 여인을 직접적으로 표현했다는 이유로 엄청난 비판을 받았습니다.'},
+    {q:'올랭피아는 현재 파리 오르세 미술관에 소장되어 있다.',     a:true,  explain:'올랭피아는 파리 오르세 미술관에 소장되어 있습니다.'},
+  ]},
+  'napoleon': { type:'hidden', instruction:'나폴레옹 대관식 속 숨겨진 요소 3가지를 찾아보세요!', spots:[
+    {x:50, y:52, label:'👑 황관'},
+    {x:25, y:40, label:'🕯️ 촛불'},
+    {x:72, y:28, label:'🎨 화가 다비드'},
+  ]},
+  'creation': { type:'ox', instruction:'아담의 창조에 대한 OX 퀴즈를 풀어보세요!', questions:[
+    {q:'아담의 창조는 시스티나 성당 천장에 그려진 프레스코화이다.',   a:true,  explain:'아담의 창조는 바티칸 시스티나 성당 천장 중앙에 위치합니다.'},
+    {q:'아담의 창조를 그린 미켈란젤로는 본래 화가 출신이다.',        a:false, explain:'미켈란젤로는 본래 조각가로 활동했으며 벽화 제작을 즐겨 하지 않았습니다.'},
+    {q:'아담의 창조에서 신과 아담의 손가락은 살짝 떨어져 있다.',    a:true,  explain:'두 손가락 사이의 미세한 간격은 생명 탄생의 순간을 상징합니다.'},
+  ]},
+  'guernica': { type:'review', instruction:'게르니카를 감상한 후 느낀 점을 자유롭게 써보세요. (30자 이상)' },
+  'vgoghself': { type:'coloring', instruction:'반 고흐의 자화상을 원하는 색으로 칠해보세요!', regions:['👤 얼굴', '🎨 배경', '👕 옷', '🌀 소용돌이'] },
 };
 let qState = {};
 
@@ -1823,11 +1953,11 @@ class GameScene extends Phaser.Scene {
     ALL_ITEMS.filter(i => i.img).forEach(item => {
       this.load.image(item.id + '_ov', item.img);
     });
-    this.load.image('char1', 'https://raw.githubusercontent.com/blueberry524-star/art-quest/main/char1.png');
-    this.load.image('char2', 'https://raw.githubusercontent.com/blueberry524-star/art-quest/main/char2.png');
-    this.load.image('char3', 'https://raw.githubusercontent.com/blueberry524-star/art-quest/main/char3.png');
-    this.load.image('char4', 'https://raw.githubusercontent.com/blueberry524-star/art-quest/main/char4.png');
-    this.load.image('char5', 'https://raw.githubusercontent.com/blueberry524-star/art-quest/main/char5.png');
+    this.load.image('char1', 'https://raw.githubusercontent.com/art-quest-game/art-quest/main/char1.png');
+    this.load.image('char2', 'https://raw.githubusercontent.com/art-quest-game/art-quest/main/char2.png');
+    this.load.image('char3', 'https://raw.githubusercontent.com/art-quest-game/art-quest/main/char3.png');
+    this.load.image('char4', 'https://raw.githubusercontent.com/art-quest-game/art-quest/main/char4.png');
+    this.load.image('char5', 'https://raw.githubusercontent.com/art-quest-game/art-quest/main/char5.png');
   }
   create() {
     gameScene = this;
@@ -2046,7 +2176,9 @@ class GameScene extends Phaser.Scene {
 }
 
 const game = new Phaser.Game({
-  type: Phaser.AUTO, width:W, height:H, backgroundColor:'#1a0a2e',
+  type: Phaser.AUTO,
+  width: 930, height: 660,
+  backgroundColor:'#1a0a2e',
   parent:'game-container', scene:[GameScene], render:{pixelArt:true,antialias:false}
 });
 // canvas가 포커스를 받을 수 있어야 closeMiniGame에서 canvas.focus()가 동작함
