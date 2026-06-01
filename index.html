@@ -142,8 +142,8 @@ canvas { display:block; image-rendering:pixelated; }
 #coloring-coin-status { color:#a78bfa; font-size:.78rem; margin-left:auto; text-align:right; }
 #coloring-workspace { display:flex; gap:14px; align-items:flex-start; width:100%; justify-content:center; flex-wrap:wrap; }
 #coloring-canvas-wrapper { position:relative; width:560px; height:392px; max-width:100%; background:#fff; border-radius:12px; border:3px solid #ffd70060; overflow:hidden; flex-shrink:0; touch-action:none; }
-#coloring-draw-canvas { position:absolute; top:0; left:0; width:100%; height:100%; z-index:3; cursor:url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20"><circle cx="10" cy="10" r="8" fill="none" stroke="black" stroke-width="2"/></svg>') 10 10, crosshair; }
-#coloring-overlay-img { position:absolute; top:0; left:0; width:100%; height:100%; z-index:4; pointer-events:none; user-select:none; }
+#coloring-draw-canvas { position:absolute; top:0; left:0; width:100%; height:100%; z-index:2; cursor:url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20"><circle cx="10" cy="10" r="8" fill="none" stroke="black" stroke-width="2"/></svg>') 10 10, crosshair; }
+#coloring-overlay-img { position:absolute; top:0; left:0; width:100%; height:100%; z-index:3; pointer-events:none; user-select:none; mix-blend-mode:multiply; }
 #coloring-canvas-wrapper.mode-brush { cursor:crosshair; }
 #coloring-canvas-wrapper.mode-fill  { cursor:cell; }
 #coloring-palette-panel { display:flex; flex-direction:column; align-items:center; gap:10px; }
@@ -464,6 +464,7 @@ canvas { display:block; image-rendering:pixelated; }
   </div>
   <div id="coloring-inner">
     <div id="coloring-toolbar">
+      <button class="c-tool-btn" onclick="clearColoringCanvas(); document.getElementById('coloring-screen').classList.remove('active'); enablePhaserInput();">◀ 돌아가기</button>
       <span style="color:#a78bfa;font-size:.8rem;">크기:</span>
       <button class="c-tool-btn brush-size-btn active" id="bsz-s" onclick="setBrushSize(6,this)">S</button>
       <button class="c-tool-btn brush-size-btn"        id="bsz-m" onclick="setBrushSize(14,this)">M</button>
@@ -581,7 +582,7 @@ const BUILDINGS = [
 // ─────────────────────────────────────────────
 //  게임 상태
 // ─────────────────────────────────────────────
-const state = { level:1, coins:0, artworks:0 };
+const state = { level:1, coins:0, totalCoins:0, artworks:0 };
 function updateHUD() {
   document.getElementById('hud-rank').textContent     = getCurrentRank().name;
   document.getElementById('hud-coins').textContent    = state.coins;
@@ -603,7 +604,7 @@ let _prevRankIdx = 0;
 
 function getCurrentRank() {
   for (let i = RANKS.length - 1; i >= 0; i--) {
-    if (state.coins >= RANKS[i].minCoins) return RANKS[i];
+    if (state.totalCoins >= RANKS[i].minCoins) return RANKS[i];
   }
   return RANKS[0];
 }
@@ -701,7 +702,7 @@ function renderShopBanner() {
     </div>${arrow}`;
   }).join('');
   document.getElementById('shop-rank-banner').innerHTML =
-    `<div id="shop-rank-coins">🪙 보유 코인: <strong>${state.coins}</strong>코인</div>
+    `<div id="shop-rank-coins">🪙 보유 코인: <strong>${state.coins}</strong>코인 &nbsp;|&nbsp; 누적 코인: <strong>${state.totalCoins}</strong>코인 (등급 기준)</div>
      <div id="shop-rank-roadmap">${roadmap}</div>`;
   const setSlot = (iconId, slotKey, slotElemId, defIcon) => {
     const eqItems = ALL_ITEMS.filter(i => i.slot === slotKey && shopEquipped.has(i.id));
@@ -1375,7 +1376,7 @@ document.getElementById('gallery-tabs').addEventListener('click', e => {
 document.getElementById('art-appreciate-btn').addEventListener('click', () => {
   if (!currentArtwork || viewedArtworks.has(currentArtwork.id)) return;
   viewedArtworks.add(currentArtwork.id);
-  state.coins += 5; state.artworks++; updateHUD(); showCoinToast(5);
+  state.coins += 5; state.totalCoins += 5; state.artworks++; updateHUD(); showCoinToast(5);
   document.getElementById('art-appreciate-btn').disabled = true;
   document.getElementById('art-appreciate-btn').textContent = '✅ 이미 감상한 작품';
   renderGalleryTab(curGalleryTab);
@@ -1478,7 +1479,7 @@ function answerQuiz(idx) {
   btns[q.answer].classList.add('correct');
   if (idx === q.answer) {
     quizState.score += 10; quizState.correctCount++;
-    state.coins += 10; updateHUD(); showCoinToast(10);
+    state.coins += 10; state.totalCoins += 10; updateHUD(); showCoinToast(10);
   } else {
     btns[idx].classList.add('wrong');
     const exp = document.getElementById('quiz-explanation');
@@ -1552,13 +1553,13 @@ function flipCard(i) {
       memState.matched.add(a); memState.matched.add(b);
       document.getElementById('mc-' + a).classList.add('matched');
       document.getElementById('mc-' + b).classList.add('matched');
-      memState.coinsEarned += 5; state.coins += 5; updateHUD(); showCoinToast(5);
+      memState.coinsEarned += 5; state.coins += 5; state.totalCoins += 5; updateHUD(); showCoinToast(5);
       document.getElementById('mem-coins-earned').textContent = memState.coinsEarned;
       document.getElementById('mem-pairs-left').textContent = MEM_ARTS.length - memState.matched.size / 2;
       memState.flipped = []; memState.lock = false;
       if (memState.matched.size === memState.cards.length) {
         setTimeout(() => {
-          state.coins += 20; updateHUD(); showCoinToast(20);
+          state.coins += 20; state.totalCoins += 20; updateHUD(); showCoinToast(20);
           document.getElementById('memory-complete-box').style.display = 'block';
         }, 400);
       }
@@ -1608,7 +1609,8 @@ function openColoring() {
   disablePhaserInput();
   const canvas = document.getElementById('coloring-draw-canvas');
   cCtx = canvas.getContext('2d');
-  cCtx.clearRect(0, 0, canvas.width, canvas.height);
+  cCtx.fillStyle = '#ffffff';
+  cCtx.fillRect(0, 0, canvas.width, canvas.height);
   cReward50 = false; cReward100 = false;
   cEraser = false;
   buildPalette();
@@ -1758,8 +1760,8 @@ function checkColoringCoverage() {
   let colored = 0;
   for (let i = 3; i < data.length; i += 4) { if (data[i] > 10) colored++; }
   const p = Math.round(colored / (cv.width * cv.height) * 100);
-  if (!cReward50  && p >= 50) { cReward50  = true; state.coins += 10; updateHUD(); showCoinToast(10); }
-  if (!cReward100 && p >= 90) { cReward100 = true; state.coins += 20; updateHUD(); showCoinToast(20); }
+  if (!cReward50  && p >= 50) { cReward50  = true; state.coins += 10; state.totalCoins += 10; updateHUD(); showCoinToast(10); }
+  if (!cReward100 && p >= 90) { cReward100 = true; state.coins += 20; state.totalCoins += 20; updateHUD(); showCoinToast(20); }
   updateColoringStatus(p);
 }
 
@@ -2081,13 +2083,26 @@ class GameScene extends Phaser.Scene {
   }
   _createTextures() {
     const g = this.make.graphics({ x:0, y:0, add:false });
-    g.fillStyle(0x2d5a1b); g.fillRect(0,0,TILE,TILE);
-    g.fillStyle(0x3a7325,.6); g.fillRect(4,4,8,8);
-    g.fillStyle(0x1f3d12,.4); g.fillRect(TILE-10,TILE-10,8,8);
+    // 마인크래프트 잔디 타일
+    g.fillStyle(0x5a8a2a); g.fillRect(0,0,TILE,TILE);
+    g.fillStyle(0x6aaa30); g.fillRect(0,0,TILE,4);
+    g.fillStyle(0x4a7020); g.fillRect(0,TILE-4,TILE,4);
+    g.fillStyle(0x6aaa30); g.fillRect(0,0,4,TILE);
+    g.fillStyle(0x4a7020); g.fillRect(TILE-4,0,4,TILE);
+    g.fillStyle(0x7acc38); g.fillRect(4,4,4,4);
+    g.fillStyle(0x7acc38); g.fillRect(TILE-8,4,4,4);
+    g.fillStyle(0x7acc38); g.fillRect(4,TILE-8,4,4);
+    g.fillStyle(0x3d5e18); g.fillRect(TILE/2-2,TILE/2-2,4,4);
     g.generateTexture('tile_grass',TILE,TILE);
     g.clear();
-    g.fillStyle(0x8b6914); g.fillRect(0,0,TILE,TILE);
-    g.fillStyle(0xa07820,.5); g.fillRect(6,6,10,10);
+    // 마인크래프트 흙길 타일
+    g.fillStyle(0x9b7c4a); g.fillRect(0,0,TILE,TILE);
+    g.fillStyle(0xb08850); g.fillRect(2,2,TILE-4,TILE-4);
+    g.fillStyle(0x8a6c3a); g.fillRect(4,4,8,8);
+    g.fillStyle(0xc09860); g.fillRect(14,2,6,6);
+    g.fillStyle(0x8a6c3a); g.fillRect(TILE-12,8,8,6);
+    g.fillStyle(0xc09860); g.fillRect(2,TILE-10,6,8);
+    g.fillStyle(0x8a6c3a); g.fillRect(TILE-10,TILE-12,8,8);
     g.generateTexture('tile_path',TILE,TILE);
     g.destroy();
     BUILDINGS.forEach(b => this._mkBuilding(b));
@@ -2095,17 +2110,32 @@ class GameScene extends Phaser.Scene {
   _mkBuilding(b) {
     const bw=b.width*TILE, bh=b.height*TILE;
     const g=this.make.graphics({x:0,y:0,add:false});
-    g.fillStyle(this._dk(b.color,.4)); g.fillRect(0,0,bw,bh);
-    g.fillStyle(b.color,.85);           g.fillRect(4,4,bw-8,bh-8);
-    g.fillStyle(0xffeaa0,.9);
-    for(let x=12;x<bw-20;x+=28){ g.fillRect(x,12,18,18); if(bh>TILE*2) g.fillRect(x,44,18,18); }
-    const dw=22,dh=30,dx=Math.floor(bw/2)-11;
-    g.fillStyle(this._dk(b.color,.6)); g.fillRect(dx,bh-dh-4,dw,dh);
-    g.fillStyle(0xffd700,.7);          g.fillRect(dx+dw-8,bh-dh/2-4,4,4);
-    g.fillStyle(this._dk(b.color,.3)); g.fillTriangle(0,8,bw/2,-bh*.18,bw,8);
-    g.lineStyle(3,b.color,1);          g.strokeRect(2,2,bw-4,bh-4);
+    // 그림자
+    g.fillStyle(this._dk(b.color,.5)); g.fillRect(6,6,bw-2,bh-2);
+    // 메인 벽면
+    g.fillStyle(b.color); g.fillRect(0,0,bw-6,bh-6);
+    // 벽돌 픽셀 패턴
+    g.fillStyle(this._dk(b.color,.25));
+    for(let y=8;y<bh-20;y+=12){
+      for(let x=(Math.floor(y/12)%2===0?4:10);x<bw-20;x+=20){
+        g.fillRect(x,y,16,10);
+      }
+    }
+    // 지붕
+    g.fillStyle(this._dk(b.color,.3)); g.fillRect(0,0,bw-6,10);
+    // 창문
+    g.fillStyle(0xffee88);
+    for(let x=10;x<bw-24;x+=24){ g.fillRect(x,14,14,14); }
+    if(bh>TILE*2){ for(let x=10;x<bw-24;x+=24){ g.fillRect(x,36,14,14); } }
+    // 문
+    const dw=16,dh=22,dx=Math.floor((bw-6)/2)-8;
+    g.fillStyle(0x8b5e2a); g.fillRect(dx,bh-6-dh,dw,dh);
+    g.fillStyle(0xffd700); g.fillRect(dx+dw-5,bh-6-dh/2,3,3);
+    // 외곽선
+    g.lineStyle(4,0x000000,.6); g.strokeRect(0,0,bw-6,bh-6);
     g.generateTexture('building_'+b.id,bw,bh); g.destroy();
   }
+  _lt(hex,a){ return Math.min(0xffffff,(((hex>>16)&0xff)+Math.round(255*a))<<16|(((hex>>8)&0xff)+Math.round(255*a))<<8|((hex&0xff)+Math.round(255*a))); }
   _dk(hex,a){ return (((hex>>16)&0xff)*(1-a)<<16)|(((hex>>8)&0xff)*(1-a)<<8)|((hex&0xff)*(1-a)); }
   _buildMap() {
     for(let r=0;r<ROWS;r++) for(let c=0;c<COLS;c++) this.add.image(c*TILE+TILE/2,r*TILE+TILE/2,'tile_grass');
@@ -2118,18 +2148,49 @@ class GameScene extends Phaser.Scene {
     BUILDINGS.forEach(b=>{
       const spr=this.add.image(b.tx*TILE,b.ty*TILE,'building_'+b.id).setOrigin(0,0);
       this.buildingSprites[b.id]=spr;
-      this.add.text(b.tx*TILE+b.width*TILE/2,(b.ty+b.height)*TILE+5,b.icon+' '+b.name,{fontSize:'13px',color:'#ffd700',stroke:'#000',strokeThickness:3}).setOrigin(.5,0);
+      this.add.text(b.tx*TILE+b.width*TILE/2,(b.ty+b.height)*TILE+5,b.icon+' '+b.name,{fontSize:'13px',color:'#ffd700',stroke:'#000000',strokeThickness:4,fontStyle:'bold'}).setOrigin(.5,0);
     });
     this._plantTrees();
+    this._addPixelDetails();
   }
   _plantTrees() {
     const g=this.make.graphics({x:0,y:0,add:false});
-    g.fillStyle(0x1a5c0a); g.fillTriangle(16,0,32,28,0,28);
-    g.fillStyle(0x0f3d06); g.fillTriangle(16,8,28,28,4,28);
-    g.fillStyle(0x5c3d11); g.fillRect(12,28,8,10);
-    g.generateTexture('tree',32,38); g.destroy();
-    [[1,1],[2,1],[1,2],[20,1],[20,2],[19,1],[1,15],[2,15],[1,14],[20,15],[19,15],[20,14]].forEach(([c,r])=>
-      this.add.image(c*TILE+TILE/2,r*TILE+TILE/2,'tree').setScale(1.2));
+    // 마인크래프트 나무 - 픽셀 블록 스타일
+    g.fillStyle(0x5c3d11); g.fillRect(10,24,12,16); // 줄기
+    g.fillStyle(0x2d8a10); g.fillRect(0,0,32,16);   // 잎 1층
+    g.fillStyle(0x3aaa18); g.fillRect(4,4,24,12);
+    g.fillStyle(0x2d8a10); g.fillRect(4,12,24,16);  // 잎 2층
+    g.fillStyle(0x3aaa18); g.fillRect(8,14,16,14);
+    g.fillStyle(0x1f6008); g.fillRect(0,0,4,4);
+    g.fillStyle(0x1f6008); g.fillRect(28,0,4,4);
+    g.generateTexture('tree',32,40); g.destroy();
+    [[1,1],[2,1],[1,2],[20,1],[20,2],[19,1],[1,15],[2,15],[1,14],[20,15],[19,15],[20,14],[0,8],[21,8]].forEach(([c,r])=>
+      this.add.image(c*TILE+TILE/2,r*TILE+TILE/2,'tree').setScale(1.3));
+  }
+  _addPixelDetails() {
+    const dg=this.make.graphics({x:0,y:0,add:false});
+    // 픽셀 꽃
+    dg.fillStyle(0xff4499); dg.fillRect(6,0,4,4);
+    dg.fillStyle(0xff4499); dg.fillRect(0,6,4,4);
+    dg.fillStyle(0xff4499); dg.fillRect(12,6,4,4);
+    dg.fillStyle(0xff4499); dg.fillRect(6,12,4,4);
+    dg.fillStyle(0xffff00); dg.fillRect(6,6,4,4);
+    dg.fillStyle(0x2d8a10); dg.fillRect(7,16,2,6);
+    dg.generateTexture('flower',20,22); dg.clear();
+    // 픽셀 바위
+    dg.fillStyle(0x777777); dg.fillRect(4,6,16,10);
+    dg.fillStyle(0x999999); dg.fillRect(6,4,12,8);
+    dg.fillStyle(0x555555); dg.fillRect(4,12,16,4);
+    dg.fillStyle(0xaaaaaa); dg.fillRect(8,4,4,4);
+    dg.generateTexture('rock',24,18); dg.clear();
+    // 픽셀 풀
+    dg.fillStyle(0x4aaa20); dg.fillRect(2,6,4,8);
+    dg.fillStyle(0x5acc28); dg.fillRect(6,2,4,12);
+    dg.fillStyle(0x4aaa20); dg.fillRect(10,4,4,10);
+    dg.generateTexture('grass_tuft',16,14); dg.destroy();
+    [[3,3],[5,2],[17,3],[18,5],[3,13],[5,14],[17,12],[18,13]].forEach(([c,r])=>this.add.image(c*TILE+TILE/2,r*TILE+TILE/2,'flower'));
+    [[2,5],[19,4],[2,11],[19,11]].forEach(([c,r])=>this.add.image(c*TILE+TILE/2,r*TILE+TILE/2,'rock'));
+    [[4,5],[6,3],[15,4],[17,5],[4,11],[6,13],[15,12],[17,11]].forEach(([c,r])=>this.add.image(c*TILE+TILE/2,r*TILE+TILE/2,'grass_tuft'));
   }
   _createPlayer() {
     this.player      = this.add.image(9*TILE+TILE/2,8*TILE+TILE/2,'char1').setDisplaySize(192,224).setDepth(10);
@@ -2323,7 +2384,7 @@ function closeQuest() { document.getElementById('quest-overlay').classList.remov
 
 function finishQuest() {
   markQuestDone(qState.artId);
-  state.coins += 20; updateHUD(); showCoinToast(20);
+  state.coins += 20; state.totalCoins += 20; updateHUD(); showCoinToast(20);
   closeQuest();
   const qBtn = document.getElementById('art-quest-btn');
   if (qBtn) qBtn.textContent = '✅ 오늘 퀘스트 완료';
