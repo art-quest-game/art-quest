@@ -374,11 +374,13 @@ canvas { display:block; image-rendering:pixelated; }
       </div>
       <div id="quest-hidden-status"></div>
     </div>
-    <!-- coloring -->
+    <!-- puzzle (구 coloring) -->
     <div id="quest-coloring" style="display:none">
-      <div id="quest-color-palette"></div>
-      <div id="quest-svg-area"></div>
-      <div id="quest-color-status"></div>
+      <div id="quest-puzzle-info" style="color:#a78bfa;font-size:.88rem;margin-bottom:8px;"></div>
+      <div id="quest-puzzle-grid" style="display:grid;grid-template-columns:repeat(3,1fr);gap:3px;width:360px;height:360px;max-width:90vw;max-height:90vw;margin:0 auto;"></div>
+      <div style="display:flex;gap:10px;justify-content:center;margin-top:12px;">
+        <button onclick="shuffleQuestPuzzle()" style="background:linear-gradient(90deg,#ffd700,#ff9900);color:#1a0a2e;border:none;border-radius:8px;padding:8px 20px;font-size:.88rem;font-weight:700;cursor:pointer;">🔀 섞기</button>
+      </div>
     </div>
     <!-- ox quiz -->
     <div id="quest-ox" style="display:none">
@@ -454,26 +456,41 @@ canvas { display:block; image-rendering:pixelated; }
   </div>
 </div>
 
-<!-- Puzzle screen -->
+<!-- Coloring screen -->
 <div id="coloring-screen" class="mini-screen">
   <div class="mini-header">
-    <h2>🧩 명화 퍼즐</h2>
+    <h2>🎨 색칠 스튜디오</h2>
     <button class="close-mini" onclick="closeMiniGame('coloring')">✕ 나가기</button>
   </div>
-  <div id="puzzle-inner">
-    <div id="puzzle-info-row">
-      <span id="puzzle-title-label">명화를 선택하면 퍼즐이 시작됩니다!</span>
-      <span id="puzzle-move-count"></span>
+  <div id="coloring-inner">
+    <div id="coloring-toolbar">
+      <button class="c-tool-btn active" id="mode-fill-btn"  onclick="setColoringMode('fill')">🪣 페인트통</button>
+      <button class="c-tool-btn"        id="mode-brush-btn" onclick="setColoringMode('brush')">🖌️ 브러시</button>
+      <span style="color:#a78bfa;font-size:.8rem;margin-left:6px" id="brush-size-label">크기:</span>
+      <button class="c-tool-btn brush-size-btn active" id="bsz-s" onclick="setBrushSize(10,this)">S</button>
+      <button class="c-tool-btn brush-size-btn"        id="bsz-m" onclick="setBrushSize(20,this)">M</button>
+      <button class="c-tool-btn brush-size-btn"        id="bsz-l" onclick="setBrushSize(35,this)">L</button>
+      <button class="c-tool-btn" id="eraser-btn"       onclick="toggleEraser()">지우개</button>
+      <button class="c-tool-btn"                        onclick="clearColoringCanvas()">🗑️ 전체 지우기</button>
+      <button class="c-tool-btn save-btn"               onclick="saveColoringCanvas()">💾 저장</button>
+      <span id="coloring-coin-status">🎨 0% 색칠됨</span>
     </div>
-    <div id="puzzle-grid"></div>
-    <div id="puzzle-btn-row">
-      <button class="puzzle-action-btn" onclick="shufflePuzzle()">🔀 섞기</button>
-      <button class="puzzle-action-btn secondary" onclick="closeMiniGame('coloring')">나가기</button>
+    <div id="coloring-select-row" style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:8px;">
+      <button class="c-tool-btn active" onclick="changeColoringImg('starry-coloring.png',this)">별이 빛나는 밤</button>
+      <button class="c-tool-btn" onclick="changeColoringImg('monalisa-coloring.png',this)">모나리자</button>
+      <button class="c-tool-btn" onclick="changeColoringImg('ssireum-coloring.png',this)">씨름도</button>
+      <button class="c-tool-btn" onclick="changeColoringImg('waterlily-coloring.png',this)">수련</button>
+      <button class="c-tool-btn" onclick="changeColoringImg('peral-coloring.png',this)">진주 귀걸이</button>
     </div>
-    <div id="puzzle-complete-box">
-      <h3>🎉 퍼즐 완성!</h3>
-      <p id="puzzle-complete-msg" style="color:#e2c4ff;margin-bottom:16px;"></p>
-      <button class="puzzle-action-btn" onclick="shufflePuzzle()">🔀 다시 도전</button>
+    <div id="coloring-workspace">
+      <div id="coloring-canvas-wrapper" class="mode-fill">
+        <canvas id="coloring-draw-canvas" width="600" height="420"></canvas>
+        <img id="coloring-overlay-img" src="https://raw.githubusercontent.com/art-quest-game/art-quest/main/starry-coloring.png" alt="coloring outline" draggable="false">
+      </div>
+      <div id="coloring-palette-panel">
+        <div id="coloring-cur-color" style="background:#1d4ed8"></div>
+        <div id="coloring-palette"></div>
+      </div>
     </div>
   </div>
 </div>
@@ -553,7 +570,7 @@ const BUILDINGS = [
   { id:'gallery', name:'명화 갤러리', icon:'🏛️', desc:'세계 각국의 명화를 감상하세요!\n유럽·한국·일본·중남미 작품을 만날 수 있어요.', color:0xffd700, tx:5,  ty:3,  width:4, height:3 },
   { id:'quiz',    name:'퀴즈 타워',   icon:'🎯', desc:'명화 4지선다 퀴즈를 풀고 코인을 획득하세요!\n10문제, 정답당 +10 코인.',                    color:0xff6b35, tx:13, ty:3,  width:4, height:3 },
   { id:'memory',  name:'메모리 카드', icon:'🃏', desc:'명화 카드 16장의 짝을 맞추세요!\n짝 맞출 때마다 +5코인, 전체 완성 +20 보너스!',           color:0xa855f7, tx:5,  ty:11, width:4, height:3 },
-  { id:'coloring',name:'명화 퍼즐',icon:'🧩',desc:'명화를 9조각 퍼즐로 맞춰보세요!\n8가지 명화, 완성시 +20 코인.',              color:0x22c55e, tx:13, ty:11, width:4, height:3 },
+  { id:'coloring',name:'색칠 스튜디오',icon:'🎨',desc:'명화 윤곽선을 직접 색칠하세요!\n5가지 명화, 16색 팔레트, 완성시 +20 코인.',              color:0x22c55e, tx:13, ty:11, width:4, height:3 },
   { id:'typing',  name:'타자 연습장', icon:'⌨️', desc:'명화 관련 문장을 타이핑하세요!\n30초, 정확도에 따라 최대 +30 코인.',                      color:0x38bdf8, tx:9,  ty:7,  width:4, height:3 },
   { id:'shop',    name:'캐릭터 상점', icon:'🛍️', desc:'코인으로 캐릭터를 꾸며보세요!\n모자·의상·액세서리를 구매하고 장착하세요.',                    color:0xf59e0b, tx:1,  ty:7,  width:4, height:3 }
 ];
@@ -1557,22 +1574,213 @@ function flipCard(i) {
 // ─────────────────────────────────────────────
 let puzzleState = { pieces:[], selected:null, moves:0, imgUrl:'', title:'', solved:false };
 
+const BASE = 'https://raw.githubusercontent.com/art-quest-game/art-quest/main/';
 const PUZZLE_ARTWORKS = [
-  { title:'별이 빛나는 밤', url:'starry-night.jpg' },
-  { title:'모나리자', url:'mona-lisa.jpg' },
-  { title:'진주 귀걸이를 한 소녀', url:'pearlgirl.jpg' },
-  { title:'해바라기', url:'https://raw.githubusercontent.com/art-quest-game/art-quest/main/Vincent_van_Gogh_-_Sunflowers_-_VGM_F458.jpg' },
-  { title:'수련', url:'water-lilies.jpg' },
-  { title:'금강전도', url:'geumgang.jpg' },
-  { title:'씨름도', url:'ssireum.jpg' },
-  { title:'단오풍정', url:'dano.jpg' },
+  { title:'별이 빛나는 밤', url:BASE+'starry-night.jpg' },
+  { title:'모나리자', url:BASE+'mona-lisa.jpg' },
+  { title:'진주 귀걸이를 한 소녀', url:BASE+'pearlgirl.jpg' },
+  { title:'해바라기', url:BASE+'Vincent_van_Gogh_-_Sunflowers_-_VGM_F458.jpg' },
+  { title:'수련', url:BASE+'water-lilies.jpg' },
+  { title:'금강전도', url:BASE+'geumgang.jpg' },
+  { title:'씨름도', url:BASE+'ssireum.jpg' },
+  { title:'단오풍정', url:BASE+'dano.jpg' },
 ];
+
+// ─────────────────────────────────────────────
+//  색칠 스튜디오 (페인트통 flood-fill + 브러시)
+// ─────────────────────────────────────────────
+const PALETTE = ['#1d4ed8','#60a5fa','#06b6d4','#22c55e','#15803d','#fbbf24','#f97316','#ef4444','#ec4899','#a855f7','#8b5cf6','#78350f','#92400e','#d1d5db','#6b7280','#111827'];
+let selectedColor = '#1d4ed8';
+let cBrushSize    = 10;
+let cEraser       = false;
+let cDrawing      = false;
+let cLastX = 0, cLastY = 0;
+let cReward50     = false;
+let cReward100    = false;
+let cCtx          = null;
+let cCheckTimer   = 0;
+let cMode         = 'fill';
 
 function openColoring() {
   document.getElementById('coloring-screen').classList.add('active');
   disablePhaserInput();
-  buildPuzzleSelector();
+  buildPalette();
+  const canvas = document.getElementById('coloring-draw-canvas');
+  cCtx = canvas.getContext('2d');
+  cCtx.clearRect(0, 0, canvas.width, canvas.height);
+  cReward50 = false; cReward100 = false;
+  setColoringMode('fill');
+  updateColoringStatus(0);
 }
+
+function changeColoringImg(filename, btn) {
+  const BASE = 'https://raw.githubusercontent.com/art-quest-game/art-quest/main/';
+  document.getElementById('coloring-overlay-img').src = BASE + filename;
+  clearColoringCanvas();
+  document.querySelectorAll('#coloring-select-row .c-tool-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+}
+
+function buildPalette() {
+  document.getElementById('coloring-palette').innerHTML = PALETTE.map((c,i) =>
+    `<div class="pal-color${i===0?' selected':''}" style="background:${c}" onclick="selectColor('${c}',this)" title="${c}"></div>`
+  ).join('');
+  document.getElementById('coloring-cur-color').style.background = PALETTE[0];
+  selectedColor = PALETTE[0]; cEraser = false;
+}
+
+function selectColor(c, el) {
+  selectedColor = c; cEraser = false;
+  document.getElementById('coloring-cur-color').style.background = c;
+  document.querySelectorAll('.pal-color').forEach(x => x.classList.remove('selected'));
+  el.classList.add('selected');
+  document.getElementById('eraser-btn').classList.remove('eraser-on');
+}
+
+function setColoringMode(mode) {
+  cMode = mode; cEraser = false;
+  document.getElementById('eraser-btn').classList.remove('eraser-on');
+  document.getElementById('mode-fill-btn').classList.toggle('active', mode==='fill');
+  document.getElementById('mode-brush-btn').classList.toggle('active', mode==='brush');
+  const wrapper = document.getElementById('coloring-canvas-wrapper');
+  wrapper.className = mode==='fill' ? 'mode-fill' : 'mode-brush';
+  const showSize = mode==='brush';
+  document.getElementById('brush-size-label').style.display = showSize ? '' : 'none';
+  document.querySelectorAll('.brush-size-btn').forEach(b => b.style.display = showSize ? '' : 'none');
+}
+
+function setBrushSize(size, el) {
+  cBrushSize = size; cEraser = false;
+  document.querySelectorAll('.brush-size-btn').forEach(b => b.classList.remove('active'));
+  el.classList.add('active');
+  document.getElementById('eraser-btn').classList.remove('eraser-on');
+}
+
+function toggleEraser() {
+  cEraser = !cEraser;
+  document.getElementById('eraser-btn').classList.toggle('eraser-on', cEraser);
+}
+
+function clearColoringCanvas() {
+  if (!cCtx) return;
+  const cv = document.getElementById('coloring-draw-canvas');
+  cCtx.clearRect(0, 0, cv.width, cv.height);
+  cReward50 = false; cReward100 = false;
+  updateColoringStatus(0);
+}
+
+function saveColoringCanvas() {
+  const cv = document.getElementById('coloring-draw-canvas');
+  const tmp = document.createElement('canvas');
+  tmp.width = cv.width; tmp.height = cv.height;
+  const ctx = tmp.getContext('2d');
+  ctx.fillStyle = '#ffffff'; ctx.fillRect(0,0,tmp.width,tmp.height);
+  ctx.drawImage(cv,0,0);
+  try { ctx.drawImage(document.getElementById('coloring-overlay-img'),0,0,tmp.width,tmp.height); } catch(e){}
+  const a = document.createElement('a');
+  a.download = 'my-artwork.png'; a.href = tmp.toDataURL('image/png'); a.click();
+}
+
+function hexToRgb(hex) {
+  const v = parseInt(hex.slice(1),16);
+  return [(v>>16)&255,(v>>8)&255,v&255];
+}
+
+function floodFill(startX, startY, fillColor) {
+  if (!cCtx) return;
+  const cv = document.getElementById('coloring-draw-canvas');
+  const W = cv.width, H = cv.height;
+  const img = cCtx.getImageData(0,0,W,H);
+  const data = img.data;
+  const idx = (x,y) => (y*W+x)*4;
+  const si = idx(startX,startY);
+  const sr=data[si],sg=data[si+1],sb=data[si+2],sa=data[si+3];
+  const [fr,fg,fb] = hexToRgb(fillColor);
+  if (sr===fr&&sg===fg&&sb===fb&&sa===255) return;
+  const TOLERANCE = 40;
+  function matches(i) { return Math.abs(data[i]-sr)+Math.abs(data[i+1]-sg)+Math.abs(data[i+2]-sb)+Math.abs(data[i+3]-sa)<=TOLERANCE; }
+  const visited = new Uint8Array(W*H);
+  const stack = [[startX,startY]];
+  visited[startY*W+startX] = 1;
+  while (stack.length) {
+    const [x,y] = stack.pop();
+    const i = idx(x,y);
+    data[i]=fr; data[i+1]=fg; data[i+2]=fb; data[i+3]=255;
+    for (const [nx,ny] of [[x-1,y],[x+1,y],[x,y-1],[x,y+1]]) {
+      if (nx<0||nx>=W||ny<0||ny>=H) continue;
+      if (visited[ny*W+nx]) continue;
+      if (!matches(idx(nx,ny))) continue;
+      visited[ny*W+nx]=1; stack.push([nx,ny]);
+    }
+  }
+  cCtx.putImageData(img,0,0);
+}
+
+function cGetPos(e) {
+  const cv = document.getElementById('coloring-draw-canvas');
+  const r = cv.getBoundingClientRect();
+  return { x:Math.round((e.clientX-r.left)*(cv.width/r.width)), y:Math.round((e.clientY-r.top)*(cv.height/r.height)) };
+}
+
+function cPaint(x,y) {
+  if (!cCtx) return;
+  cCtx.globalCompositeOperation = cEraser ? 'destination-out' : 'source-over';
+  cCtx.fillStyle = cEraser ? 'rgba(0,0,0,1)' : selectedColor;
+  cCtx.beginPath(); cCtx.arc(x,y,cBrushSize/2,0,Math.PI*2); cCtx.fill();
+  cCtx.globalCompositeOperation = 'source-over';
+}
+
+function cPaintLine(x1,y1,x2,y2) {
+  const steps = Math.max(Math.abs(x2-x1),Math.abs(y2-y1));
+  for (let i=0;i<=steps;i++) { cPaint(Math.round(x1+(x2-x1)*i/steps), Math.round(y1+(y2-y1)*i/steps)); }
+}
+
+function updateColoringStatus(p) {
+  const el = document.getElementById('coloring-coin-status');
+  if (!el) return;
+  if (cReward100) { el.textContent = `🎨 ${p}% — 완성! 🎉`; return; }
+  if (cReward50)  { el.textContent = `🎨 ${p}% — 계속 색칠하세요!`; return; }
+  el.textContent = `🎨 ${p}% 색칠됨 (50%→+10🪙, 90%→+20🪙)`;
+}
+
+function checkColoringCoverage() {
+  if (!cCtx) return;
+  const cv = document.getElementById('coloring-draw-canvas');
+  const data = cCtx.getImageData(0,0,cv.width,cv.height).data;
+  let colored = 0;
+  for (let i=3;i<data.length;i+=4) { if (data[i]>10) colored++; }
+  const p = Math.round(colored/(cv.width*cv.height)*100);
+  if (!cReward50 && p>=50)  { cReward50=true;  state.coins+=10; updateHUD(); showCoinToast(10); }
+  if (!cReward100 && p>=90) { cReward100=true; state.coins+=20; updateHUD(); showCoinToast(20); }
+  updateColoringStatus(p);
+}
+
+(function() {
+  const wrapper = document.getElementById('coloring-canvas-wrapper');
+  function onDown(e) {
+    e.preventDefault();
+    const raw = e.touches ? e.touches[0] : e;
+    const p = cGetPos(raw);
+    if (cMode==='fill' && !cEraser) { floodFill(p.x,p.y,selectedColor); checkColoringCoverage(); }
+    else { cDrawing=true; cLastX=p.x; cLastY=p.y; cPaint(p.x,p.y); }
+  }
+  function onMove(e) {
+    if (!cDrawing) return; e.preventDefault();
+    const raw = e.touches ? e.touches[0] : e;
+    const p = cGetPos(raw);
+    cPaintLine(cLastX,cLastY,p.x,p.y);
+    cLastX=p.x; cLastY=p.y;
+    cCheckTimer++;
+    if (cCheckTimer%50===0) checkColoringCoverage();
+  }
+  function onUp() { if (!cDrawing) return; cDrawing=false; checkColoringCoverage(); }
+  wrapper.addEventListener('mousedown',  onDown);
+  wrapper.addEventListener('mousemove',  onMove);
+  window.addEventListener('mouseup',    onUp);
+  wrapper.addEventListener('touchstart', onDown, {passive:false});
+  wrapper.addEventListener('touchmove',  onMove, {passive:false});
+  window.addEventListener('touchend',   onUp);
+})();
 
 function buildPuzzleSelector() {
   const grid = document.getElementById('puzzle-grid');
@@ -2118,7 +2326,7 @@ function openQuestScreen(artId) {
   disablePhaserInput();
   qState = { artId, type: def.type, def };
   document.getElementById('quest-art-title').textContent = currentArtwork.title;
-  const labels = { review:'✍️ 감상문 쓰기', hidden:'🔍 숨은 요소 찾기', coloring:'🎨 색칠하기', ox:'⭕❌ OX 퀴즈' };
+  const labels = { review:'✍️ 감상문 쓰기', hidden:'🔍 숨은 요소 찾기', coloring:'🧩 명화 퍼즐', ox:'⭕❌ OX 퀴즈' };
   document.getElementById('quest-type-label').textContent = labels[def.type] || '';
   document.getElementById('quest-instruction').textContent = def.instruction || '';
   ['quest-review','quest-hidden','quest-coloring','quest-ox'].forEach(id => document.getElementById(id).style.display = 'none');
@@ -2183,39 +2391,78 @@ function initHidden() {
   document.getElementById('quest-hidden-status').textContent = `발견: 0 / ${qState.def.spots.length}`;
 }
 
-// ── 색칠하기 ──
+// ── 퀘스트 퍼즐 (구 색칠하기) ──
+let qPuzzle = { pieces:[], selected:null, moves:0, solved:false, imgUrl:'' };
+
 function initColoring() {
   document.getElementById('quest-coloring').style.display = 'block';
-  qState.painted = new Set(); qState.selColor = '#e91e63';
-  const colors = ['#e91e63','#ff5722','#ff9800','#ffd700','#4caf50','#2196f3','#9c27b0','#ffffff','#000000'];
-  const palette = document.getElementById('quest-color-palette');
-  palette.innerHTML = '';
-  colors.forEach(c => {
-    const sw = document.createElement('div');
-    sw.className = 'quest-color-swatch' + (c === qState.selColor ? ' selected' : '');
-    sw.style.background = c;
-    sw.onclick = () => { qState.selColor = c; palette.querySelectorAll('.quest-color-swatch').forEach(s => s.classList.remove('selected')); sw.classList.add('selected'); };
-    palette.appendChild(sw);
+  const BASE2 = 'https://raw.githubusercontent.com/art-quest-game/art-quest/main/';
+  const src = currentArtwork?.url || '';
+  const imgUrl = src.startsWith('http') ? src : BASE2 + src;
+  qPuzzle = { pieces: Array.from({length:9},(_,i)=>i), selected:null, moves:0, solved:false, imgUrl };
+  shuffleQuestPuzzle();
+}
+
+function renderQuestPuzzle() {
+  const grid = document.getElementById('quest-puzzle-grid');
+  grid.innerHTML = '';
+  qPuzzle.pieces.forEach((val, idx) => {
+    const piece = document.createElement('div');
+    piece.style.cssText = `border-radius:5px;border:2px solid ${val===8?'#6b21a8':'#6b21a880'};cursor:${val===8?'default':'pointer'};transition:border-color .15s,transform .1s;`;
+    if (val === 8) {
+      piece.style.background = '#0f0720';
+      piece.style.borderStyle = 'dashed';
+    } else {
+      const col = val % 3, row = Math.floor(val / 3);
+      piece.style.backgroundImage = `url('${qPuzzle.imgUrl}')`;
+      piece.style.backgroundSize = '300% 300%';
+      piece.style.backgroundPosition = `${col * 50}% ${row * 50}%`;
+      if (qPuzzle.selected === idx) { piece.style.borderColor='#ffd700'; piece.style.transform='scale(1.05)'; }
+      piece.onmouseover = () => { if(qPuzzle.selected!==idx) piece.style.borderColor='#ffd700aa'; };
+      piece.onmouseout  = () => { if(qPuzzle.selected!==idx) piece.style.borderColor='#6b21a880'; };
+      piece.onclick = () => onQuestPieceClick(idx);
+    }
+    grid.appendChild(piece);
   });
-  const baseBg = ['#f8bbd0','#c8e6c9','#bbdefb','#fff9c4'];
-  const svgArea = document.getElementById('quest-svg-area');
-  svgArea.innerHTML = '';
-  qState.def.regions.forEach((label, i) => {
-    const el = document.createElement('div');
-    el.className = 'quest-color-region'; el.style.background = baseBg[i % baseBg.length];
-    el.innerHTML = `<span>${label}</span>`;
-    el.onclick = () => {
-      const hex = qState.selColor;
-      el.style.background = hex;
-      const r=parseInt(hex.slice(1,3),16),g=parseInt(hex.slice(3,5),16),b=parseInt(hex.slice(5,7),16);
-      el.style.color = (0.299*r+0.587*g+0.114*b) > 128 ? '#333' : '#fff';
-      qState.painted.add(i);
-      document.getElementById('quest-color-status').textContent = `색칠 완료: ${qState.painted.size} / ${qState.def.regions.length}`;
-      if (qState.painted.size >= qState.def.regions.length) setTimeout(finishQuest, 600);
-    };
-    svgArea.appendChild(el);
-  });
-  document.getElementById('quest-color-status').textContent = `색칠 완료: 0 / ${qState.def.regions.length}`;
+  document.getElementById('quest-puzzle-info').textContent = `이동: ${qPuzzle.moves}회 — 조각을 클릭해서 빈 칸 옆으로 이동하세요!`;
+}
+
+function onQuestPieceClick(idx) {
+  if (qPuzzle.solved) return;
+  const emptyIdx = qPuzzle.pieces.indexOf(8);
+  const adj = getQuestAdj(emptyIdx);
+  if (adj.includes(idx)) {
+    [qPuzzle.pieces[idx], qPuzzle.pieces[emptyIdx]] = [qPuzzle.pieces[emptyIdx], qPuzzle.pieces[idx]];
+    qPuzzle.moves++; qPuzzle.selected = null;
+    renderQuestPuzzle();
+    if (qPuzzle.pieces.every((v,i) => v===i)) {
+      qPuzzle.solved = true;
+      setTimeout(finishQuest, 600);
+    }
+  } else {
+    qPuzzle.selected = idx;
+    renderQuestPuzzle();
+  }
+}
+
+function getQuestAdj(idx) {
+  const row=Math.floor(idx/3), col=idx%3, adj=[];
+  if(row>0) adj.push(idx-3); if(row<2) adj.push(idx+3);
+  if(col>0) adj.push(idx-1); if(col<2) adj.push(idx+1);
+  return adj;
+}
+
+function shuffleQuestPuzzle() {
+  qPuzzle.solved=false; qPuzzle.moves=0; qPuzzle.selected=null;
+  qPuzzle.pieces = Array.from({length:9},(_,i)=>i);
+  let emptyIdx=8;
+  for(let i=0;i<200;i++){
+    const adj=getQuestAdj(emptyIdx);
+    const next=adj[Math.floor(Math.random()*adj.length)];
+    [qPuzzle.pieces[emptyIdx],qPuzzle.pieces[next]]=[qPuzzle.pieces[next],qPuzzle.pieces[emptyIdx]];
+    emptyIdx=next;
+  }
+  renderQuestPuzzle();
 }
 
 // ── OX 퀴즈 ──
