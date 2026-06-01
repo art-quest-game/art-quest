@@ -2061,14 +2061,30 @@ const W = COLS * TILE, H = ROWS * TILE;
 class GameScene extends Phaser.Scene {
   constructor() { super('GameScene'); }
   preload() {
+    const BASE = 'https://raw.githubusercontent.com/art-quest-game/art-quest/main/';
     ALL_ITEMS.filter(i => i.img).forEach(item => {
       this.load.image(item.id + '_ov', item.img);
     });
-    this.load.image('char1', 'https://raw.githubusercontent.com/art-quest-game/art-quest/main/char1.png');
-    this.load.image('char2', 'https://raw.githubusercontent.com/art-quest-game/art-quest/main/char2.png');
-    this.load.image('char3', 'https://raw.githubusercontent.com/art-quest-game/art-quest/main/char3.png');
-    this.load.image('char4', 'https://raw.githubusercontent.com/art-quest-game/art-quest/main/char4.png');
-    this.load.image('char5', 'https://raw.githubusercontent.com/art-quest-game/art-quest/main/char5.png');
+    this.load.image('char1', BASE+'char1.png');
+    this.load.image('char2', BASE+'char2.png');
+    this.load.image('char3', BASE+'char3.png');
+    this.load.image('char4', BASE+'char4.png');
+    this.load.image('char5', BASE+'char5.png');
+    // 맵 이미지
+    this.load.image('tile_grass',        BASE+'tile_grass.png');
+    this.load.image('tile_path',         BASE+'tile_path.png');
+    this.load.image('building_gallery',  BASE+'building_gallery.png');
+    this.load.image('building_quiz',     BASE+'building_quiz.png');
+    this.load.image('building_shop',     BASE+'building_shop.png');
+    this.load.image('building_typing',   BASE+'building_typing.png');
+    this.load.image('building_memory',   BASE+'building_memory.png');
+    this.load.image('building_coloring', BASE+'building_coloring.png');
+    this.load.image('deco_tree',         BASE+'deco_tree.png');
+    this.load.image('deco_tree2',        BASE+'deco_tree2.png');
+    this.load.image('deco_flower',       BASE+'deco_flower.png');
+    this.load.image('deco_rock',         BASE+'deco_rock.png');
+    this.load.image('deco_bush',         BASE+'deco_bush.png');
+    this.load.image('deco_mushroom',     BASE+'deco_mushroom.png');
   }
   create() {
     gameScene = this;
@@ -2082,115 +2098,58 @@ class GameScene extends Phaser.Scene {
     updateCharacterOverlays();
   }
   _createTextures() {
-    const g = this.make.graphics({ x:0, y:0, add:false });
-    // 마인크래프트 잔디 타일
-    g.fillStyle(0x5a8a2a); g.fillRect(0,0,TILE,TILE);
-    g.fillStyle(0x6aaa30); g.fillRect(0,0,TILE,4);
-    g.fillStyle(0x4a7020); g.fillRect(0,TILE-4,TILE,4);
-    g.fillStyle(0x6aaa30); g.fillRect(0,0,4,TILE);
-    g.fillStyle(0x4a7020); g.fillRect(TILE-4,0,4,TILE);
-    g.fillStyle(0x7acc38); g.fillRect(4,4,4,4);
-    g.fillStyle(0x7acc38); g.fillRect(TILE-8,4,4,4);
-    g.fillStyle(0x7acc38); g.fillRect(4,TILE-8,4,4);
-    g.fillStyle(0x3d5e18); g.fillRect(TILE/2-2,TILE/2-2,4,4);
-    g.generateTexture('tile_grass',TILE,TILE);
-    g.clear();
-    // 마인크래프트 흙길 타일
-    g.fillStyle(0x9b7c4a); g.fillRect(0,0,TILE,TILE);
-    g.fillStyle(0xb08850); g.fillRect(2,2,TILE-4,TILE-4);
-    g.fillStyle(0x8a6c3a); g.fillRect(4,4,8,8);
-    g.fillStyle(0xc09860); g.fillRect(14,2,6,6);
-    g.fillStyle(0x8a6c3a); g.fillRect(TILE-12,8,8,6);
-    g.fillStyle(0xc09860); g.fillRect(2,TILE-10,6,8);
-    g.fillStyle(0x8a6c3a); g.fillRect(TILE-10,TILE-12,8,8);
-    g.generateTexture('tile_path',TILE,TILE);
-    g.destroy();
-    BUILDINGS.forEach(b => this._mkBuilding(b));
-  }
-  _mkBuilding(b) {
-    const bw=b.width*TILE, bh=b.height*TILE;
-    const g=this.make.graphics({x:0,y:0,add:false});
-    // 그림자
-    g.fillStyle(this._dk(b.color,.5)); g.fillRect(6,6,bw-2,bh-2);
-    // 메인 벽면
-    g.fillStyle(b.color); g.fillRect(0,0,bw-6,bh-6);
-    // 벽돌 픽셀 패턴
-    g.fillStyle(this._dk(b.color,.25));
-    for(let y=8;y<bh-20;y+=12){
-      for(let x=(Math.floor(y/12)%2===0?4:10);x<bw-20;x+=20){
-        g.fillRect(x,y,16,10);
-      }
+    // 이미지 로드 실패 대비 폴백 텍스처만 생성
+    if (!this.textures.exists('tile_grass')) {
+      const g = this.make.graphics({x:0,y:0,add:false});
+      g.fillStyle(0x5a8a2a); g.fillRect(0,0,TILE,TILE);
+      g.generateTexture('tile_grass',TILE,TILE); g.destroy();
     }
-    // 지붕
-    g.fillStyle(this._dk(b.color,.3)); g.fillRect(0,0,bw-6,10);
-    // 창문
-    g.fillStyle(0xffee88);
-    for(let x=10;x<bw-24;x+=24){ g.fillRect(x,14,14,14); }
-    if(bh>TILE*2){ for(let x=10;x<bw-24;x+=24){ g.fillRect(x,36,14,14); } }
-    // 문
-    const dw=16,dh=22,dx=Math.floor((bw-6)/2)-8;
-    g.fillStyle(0x8b5e2a); g.fillRect(dx,bh-6-dh,dw,dh);
-    g.fillStyle(0xffd700); g.fillRect(dx+dw-5,bh-6-dh/2,3,3);
-    // 외곽선
-    g.lineStyle(4,0x000000,.6); g.strokeRect(0,0,bw-6,bh-6);
-    g.generateTexture('building_'+b.id,bw,bh); g.destroy();
   }
-  _lt(hex,a){ return Math.min(0xffffff,(((hex>>16)&0xff)+Math.round(255*a))<<16|(((hex>>8)&0xff)+Math.round(255*a))<<8|((hex&0xff)+Math.round(255*a))); }
   _dk(hex,a){ return (((hex>>16)&0xff)*(1-a)<<16)|(((hex>>8)&0xff)*(1-a)<<8)|((hex&0xff)*(1-a)); }
   _buildMap() {
-    for(let r=0;r<ROWS;r++) for(let c=0;c<COLS;c++) this.add.image(c*TILE+TILE/2,r*TILE+TILE/2,'tile_grass');
+    // 잔디 타일 배경
+    for(let r=0;r<ROWS;r++) for(let c=0;c<COLS;c++)
+      this.add.image(c*TILE+TILE/2, r*TILE+TILE/2, 'tile_grass').setDisplaySize(TILE,TILE);
+    // 길 타일
     const pt=new Set();
     for(let c=0;c<COLS;c++) pt.add(`${c},8`);
     for(let r=0;r<ROWS;r++) pt.add(`9,${r}`);
     BUILDINGS.forEach(b=>{ const cx=b.tx+Math.floor(b.width/2); for(let r=Math.min(b.ty+b.height,8);r<=Math.max(b.ty+b.height,8);r++) pt.add(`${cx},${r}`); });
-    pt.forEach(k=>{ const[c,r]=k.split(',').map(Number); this.add.image(c*TILE+TILE/2,r*TILE+TILE/2,'tile_path'); });
+    pt.forEach(k=>{ const[c,r]=k.split(',').map(Number); this.add.image(c*TILE+TILE/2,r*TILE+TILE/2,'tile_path').setDisplaySize(TILE,TILE); });
+    // 건물 이미지
     this.buildingSprites={};
     BUILDINGS.forEach(b=>{
-      const spr=this.add.image(b.tx*TILE,b.ty*TILE,'building_'+b.id).setOrigin(0,0);
+      const bw=b.width*TILE, bh=b.height*TILE;
+      const spr=this.add.image(b.tx*TILE+bw/2, b.ty*TILE+bh/2, 'building_'+b.id)
+        .setDisplaySize(bw, bh).setOrigin(.5,.5);
       this.buildingSprites[b.id]=spr;
-      this.add.text(b.tx*TILE+b.width*TILE/2,(b.ty+b.height)*TILE+5,b.icon+' '+b.name,{fontSize:'13px',color:'#ffd700',stroke:'#000000',strokeThickness:4,fontStyle:'bold'}).setOrigin(.5,0);
+      this.add.text(b.tx*TILE+bw/2,(b.ty+b.height)*TILE+5,b.icon+' '+b.name,
+        {fontSize:'13px',color:'#ffd700',stroke:'#000000',strokeThickness:4,fontStyle:'bold'}).setOrigin(.5,0);
     });
     this._plantTrees();
     this._addPixelDetails();
   }
   _plantTrees() {
-    const g=this.make.graphics({x:0,y:0,add:false});
-    // 마인크래프트 나무 - 픽셀 블록 스타일
-    g.fillStyle(0x5c3d11); g.fillRect(10,24,12,16); // 줄기
-    g.fillStyle(0x2d8a10); g.fillRect(0,0,32,16);   // 잎 1층
-    g.fillStyle(0x3aaa18); g.fillRect(4,4,24,12);
-    g.fillStyle(0x2d8a10); g.fillRect(4,12,24,16);  // 잎 2층
-    g.fillStyle(0x3aaa18); g.fillRect(8,14,16,14);
-    g.fillStyle(0x1f6008); g.fillRect(0,0,4,4);
-    g.fillStyle(0x1f6008); g.fillRect(28,0,4,4);
-    g.generateTexture('tree',32,40); g.destroy();
-    [[1,1],[2,1],[1,2],[20,1],[20,2],[19,1],[1,15],[2,15],[1,14],[20,15],[19,15],[20,14],[0,8],[21,8]].forEach(([c,r])=>
-      this.add.image(c*TILE+TILE/2,r*TILE+TILE/2,'tree').setScale(1.3));
+    // 일반 나무 배치
+    [[1,1],[1,2],[20,1],[20,2],[0,7],[21,7],[0,9],[21,9]].forEach(([c,r])=>
+      this.add.image(c*TILE+TILE/2, r*TILE+TILE/2, 'deco_tree').setDisplaySize(TILE*1.4,TILE*1.8));
+    // 꽃나무 배치
+    [[1,14],[1,15],[20,14],[20,15],[0,5],[21,5],[0,11],[21,11]].forEach(([c,r])=>
+      this.add.image(c*TILE+TILE/2, r*TILE+TILE/2, 'deco_tree2').setDisplaySize(TILE*1.4,TILE*1.8));
   }
   _addPixelDetails() {
-    const dg=this.make.graphics({x:0,y:0,add:false});
-    // 픽셀 꽃
-    dg.fillStyle(0xff4499); dg.fillRect(6,0,4,4);
-    dg.fillStyle(0xff4499); dg.fillRect(0,6,4,4);
-    dg.fillStyle(0xff4499); dg.fillRect(12,6,4,4);
-    dg.fillStyle(0xff4499); dg.fillRect(6,12,4,4);
-    dg.fillStyle(0xffff00); dg.fillRect(6,6,4,4);
-    dg.fillStyle(0x2d8a10); dg.fillRect(7,16,2,6);
-    dg.generateTexture('flower',20,22); dg.clear();
-    // 픽셀 바위
-    dg.fillStyle(0x777777); dg.fillRect(4,6,16,10);
-    dg.fillStyle(0x999999); dg.fillRect(6,4,12,8);
-    dg.fillStyle(0x555555); dg.fillRect(4,12,16,4);
-    dg.fillStyle(0xaaaaaa); dg.fillRect(8,4,4,4);
-    dg.generateTexture('rock',24,18); dg.clear();
-    // 픽셀 풀
-    dg.fillStyle(0x4aaa20); dg.fillRect(2,6,4,8);
-    dg.fillStyle(0x5acc28); dg.fillRect(6,2,4,12);
-    dg.fillStyle(0x4aaa20); dg.fillRect(10,4,4,10);
-    dg.generateTexture('grass_tuft',16,14); dg.destroy();
-    [[3,3],[5,2],[17,3],[18,5],[3,13],[5,14],[17,12],[18,13]].forEach(([c,r])=>this.add.image(c*TILE+TILE/2,r*TILE+TILE/2,'flower'));
-    [[2,5],[19,4],[2,11],[19,11]].forEach(([c,r])=>this.add.image(c*TILE+TILE/2,r*TILE+TILE/2,'rock'));
-    [[4,5],[6,3],[15,4],[17,5],[4,11],[6,13],[15,12],[17,11]].forEach(([c,r])=>this.add.image(c*TILE+TILE/2,r*TILE+TILE/2,'grass_tuft'));
+    // 꽃 배치
+    [[3,3],[5,2],[17,3],[18,5],[3,13],[5,14],[17,12],[18,13],[7,2],[14,2],[7,14],[14,14]].forEach(([c,r])=>
+      this.add.image(c*TILE+TILE/2, r*TILE+TILE/2, 'deco_flower').setDisplaySize(TILE*0.9,TILE*0.9));
+    // 바위 배치
+    [[2,4],[19,4],[2,12],[19,12],[2,8],[19,8]].forEach(([c,r])=>
+      this.add.image(c*TILE+TILE/2, r*TILE+TILE/2, 'deco_rock').setDisplaySize(TILE*0.8,TILE*0.8));
+    // 덤불 배치
+    [[4,2],[16,2],[4,14],[16,14],[2,6],[19,6],[2,10],[19,10]].forEach(([c,r])=>
+      this.add.image(c*TILE+TILE/2, r*TILE+TILE/2, 'deco_bush').setDisplaySize(TILE,TILE));
+    // 버섯 배치
+    [[3,5],[18,5],[3,11],[18,11],[6,2],[15,2]].forEach(([c,r])=>
+      this.add.image(c*TILE+TILE/2, r*TILE+TILE/2, 'deco_mushroom').setDisplaySize(TILE*0.7,TILE*0.7));
   }
   _createPlayer() {
     this.player      = this.add.image(9*TILE+TILE/2,8*TILE+TILE/2,'char1').setDisplaySize(192,224).setDepth(10);
