@@ -464,16 +464,14 @@ canvas { display:block; image-rendering:pixelated; }
   </div>
   <div id="coloring-inner">
     <div id="coloring-toolbar">
-      <button class="c-tool-btn active" id="mode-fill-btn"  onclick="setColoringMode('fill')">🪣 페인트통</button>
-      <button class="c-tool-btn"        id="mode-brush-btn" onclick="setColoringMode('brush')">🖌️ 브러시</button>
-      <span style="color:#a78bfa;font-size:.8rem;margin-left:6px" id="brush-size-label">크기:</span>
-      <button class="c-tool-btn brush-size-btn active" id="bsz-s" onclick="setBrushSize(10,this)">S</button>
-      <button class="c-tool-btn brush-size-btn"        id="bsz-m" onclick="setBrushSize(20,this)">M</button>
-      <button class="c-tool-btn brush-size-btn"        id="bsz-l" onclick="setBrushSize(35,this)">L</button>
-      <button class="c-tool-btn" id="eraser-btn"       onclick="toggleEraser()">지우개</button>
-      <button class="c-tool-btn"                        onclick="clearColoringCanvas()">🗑️ 전체 지우기</button>
-      <button class="c-tool-btn save-btn"               onclick="saveColoringCanvas()">💾 저장</button>
-      <span id="coloring-coin-status">🎨 0% 색칠됨</span>
+      <span style="color:#a78bfa;font-size:.8rem;">크기:</span>
+      <button class="c-tool-btn brush-size-btn active" id="bsz-s" onclick="setBrushSize(6,this)">S</button>
+      <button class="c-tool-btn brush-size-btn"        id="bsz-m" onclick="setBrushSize(14,this)">M</button>
+      <button class="c-tool-btn brush-size-btn"        id="bsz-l" onclick="setBrushSize(28,this)">L</button>
+      <button class="c-tool-btn" id="eraser-btn" onclick="toggleEraser()">지우개</button>
+      <button class="c-tool-btn" onclick="clearColoringCanvas()">🗑️ 전체 지우기</button>
+      <button class="c-tool-btn save-btn" onclick="saveColoringCanvas()">💾 저장</button>
+      <span id="coloring-coin-status" style="color:#a78bfa;font-size:.78rem;margin-left:auto;">🎨 0% 색칠됨</span>
     </div>
     <div id="coloring-select-row" style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:8px;">
       <button class="c-tool-btn active" onclick="changeColoringImg('starry-coloring.png',this)">별이 빛나는 밤</button>
@@ -490,6 +488,11 @@ canvas { display:block; image-rendering:pixelated; }
       <div id="coloring-palette-panel">
         <div id="coloring-cur-color" style="background:#1d4ed8"></div>
         <div id="coloring-palette"></div>
+        <div style="margin-top:8px;text-align:center;">
+          <div style="color:#a78bfa;font-size:.75rem;margin-bottom:4px;">직접 색상 선택</div>
+          <input type="color" id="color-picker" value="#1d4ed8" oninput="onPickerChange(this.value)"
+            style="width:52px;height:52px;border:3px solid #ffd700;border-radius:8px;cursor:pointer;background:none;padding:2px;">
+        </div>
       </div>
     </div>
   </div>
@@ -1587,30 +1590,66 @@ const PUZZLE_ARTWORKS = [
 ];
 
 // ─────────────────────────────────────────────
-//  색칠 스튜디오 (페인트통 flood-fill + 브러시)
+//  색칠 스튜디오 (브러시 전용)
 // ─────────────────────────────────────────────
-const PALETTE = ['#1d4ed8','#60a5fa','#06b6d4','#22c55e','#15803d','#fbbf24','#f97316','#ef4444','#ec4899','#a855f7','#8b5cf6','#78350f','#92400e','#d1d5db','#6b7280','#111827'];
+const PALETTE = ['#f5cba7','#e8a87c','#d4956a','#c47c4a','#a0522d','#1d4ed8','#60a5fa','#06b6d4','#22c55e','#15803d','#fbbf24','#f97316','#ef4444','#ec4899','#a855f7','#8b5cf6','#78350f','#d1d5db','#6b7280','#111827'];
 let selectedColor = '#1d4ed8';
 let cBrushSize    = 10;
 let cEraser       = false;
 let cDrawing      = false;
 let cLastX = 0, cLastY = 0;
-let cReward50     = false;
-let cReward100    = false;
-let cCtx          = null;
-let cCheckTimer   = 0;
-let cMode         = 'fill';
+let cReward50  = false;
+let cReward100 = false;
+let cCtx       = null;
+let cCheckTimer = 0;
 
 function openColoring() {
   document.getElementById('coloring-screen').classList.add('active');
   disablePhaserInput();
-  buildPalette();
   const canvas = document.getElementById('coloring-draw-canvas');
   cCtx = canvas.getContext('2d');
   cCtx.clearRect(0, 0, canvas.width, canvas.height);
   cReward50 = false; cReward100 = false;
-  setColoringMode('fill');
+  cEraser = false;
+  buildPalette();
   updateColoringStatus(0);
+  initColoringEvents();
+}
+
+let coloringEventsInit = false;
+function initColoringEvents() {
+  if (coloringEventsInit) return;
+  coloringEventsInit = true;
+  const wrapper = document.getElementById('coloring-canvas-wrapper');
+  function onDown(e) {
+    if (!cCtx) return;
+    e.preventDefault();
+    const raw = e.touches ? e.touches[0] : e;
+    const p = cGetPos(raw);
+    cDrawing = true; cLastX = p.x; cLastY = p.y;
+    cPaint(p.x, p.y);
+  }
+  function onMove(e) {
+    if (!cDrawing || !cCtx) return;
+    e.preventDefault();
+    const raw = e.touches ? e.touches[0] : e;
+    const p = cGetPos(raw);
+    cPaintLine(cLastX, cLastY, p.x, p.y);
+    cLastX = p.x; cLastY = p.y;
+    cCheckTimer++;
+    if (cCheckTimer % 50 === 0) checkColoringCoverage();
+  }
+  function onUp() {
+    if (!cDrawing) return;
+    cDrawing = false;
+    checkColoringCoverage();
+  }
+  wrapper.addEventListener('mousedown',  onDown);
+  wrapper.addEventListener('mousemove',  onMove);
+  window.addEventListener('mouseup',    onUp);
+  wrapper.addEventListener('touchstart', onDown, { passive: false });
+  wrapper.addEventListener('touchmove',  onMove, { passive: false });
+  window.addEventListener('touchend',   onUp);
 }
 
 function changeColoringImg(filename, btn) {
@@ -1622,31 +1661,28 @@ function changeColoringImg(filename, btn) {
 }
 
 function buildPalette() {
-  document.getElementById('coloring-palette').innerHTML = PALETTE.map((c,i) =>
+  const palette = document.getElementById('coloring-palette');
+  palette.innerHTML = PALETTE.map((c, i) =>
     `<div class="pal-color${i===0?' selected':''}" style="background:${c}" onclick="selectColor('${c}',this)" title="${c}"></div>`
   ).join('');
   document.getElementById('coloring-cur-color').style.background = PALETTE[0];
-  selectedColor = PALETTE[0]; cEraser = false;
+  selectedColor = PALETTE[0];
 }
 
 function selectColor(c, el) {
   selectedColor = c; cEraser = false;
   document.getElementById('coloring-cur-color').style.background = c;
   document.querySelectorAll('.pal-color').forEach(x => x.classList.remove('selected'));
-  el.classList.add('selected');
+  if (el) el.classList.add('selected');
   document.getElementById('eraser-btn').classList.remove('eraser-on');
+  document.getElementById('color-picker').value = c;
 }
 
-function setColoringMode(mode) {
-  cMode = mode; cEraser = false;
+function onPickerChange(val) {
+  selectedColor = val; cEraser = false;
+  document.getElementById('coloring-cur-color').style.background = val;
+  document.querySelectorAll('.pal-color').forEach(x => x.classList.remove('selected'));
   document.getElementById('eraser-btn').classList.remove('eraser-on');
-  document.getElementById('mode-fill-btn').classList.toggle('active', mode==='fill');
-  document.getElementById('mode-brush-btn').classList.toggle('active', mode==='brush');
-  const wrapper = document.getElementById('coloring-canvas-wrapper');
-  wrapper.className = mode==='fill' ? 'mode-fill' : 'mode-brush';
-  const showSize = mode==='brush';
-  document.getElementById('brush-size-label').style.display = showSize ? '' : 'none';
-  document.querySelectorAll('.brush-size-btn').forEach(b => b.style.display = showSize ? '' : 'none');
 }
 
 function setBrushSize(size, el) {
@@ -1674,65 +1710,32 @@ function saveColoringCanvas() {
   const tmp = document.createElement('canvas');
   tmp.width = cv.width; tmp.height = cv.height;
   const ctx = tmp.getContext('2d');
-  ctx.fillStyle = '#ffffff'; ctx.fillRect(0,0,tmp.width,tmp.height);
-  ctx.drawImage(cv,0,0);
-  try { ctx.drawImage(document.getElementById('coloring-overlay-img'),0,0,tmp.width,tmp.height); } catch(e){}
+  ctx.fillStyle = '#ffffff'; ctx.fillRect(0, 0, tmp.width, tmp.height);
+  ctx.drawImage(cv, 0, 0);
+  try { ctx.drawImage(document.getElementById('coloring-overlay-img'), 0, 0, tmp.width, tmp.height); } catch(e){}
   const a = document.createElement('a');
   a.download = 'my-artwork.png'; a.href = tmp.toDataURL('image/png'); a.click();
-}
-
-function hexToRgb(hex) {
-  const v = parseInt(hex.slice(1),16);
-  return [(v>>16)&255,(v>>8)&255,v&255];
-}
-
-function floodFill(startX, startY, fillColor) {
-  if (!cCtx) return;
-  const cv = document.getElementById('coloring-draw-canvas');
-  const W = cv.width, H = cv.height;
-  const img = cCtx.getImageData(0,0,W,H);
-  const data = img.data;
-  const idx = (x,y) => (y*W+x)*4;
-  const si = idx(startX,startY);
-  const sr=data[si],sg=data[si+1],sb=data[si+2],sa=data[si+3];
-  const [fr,fg,fb] = hexToRgb(fillColor);
-  if (sr===fr&&sg===fg&&sb===fb&&sa===255) return;
-  const TOLERANCE = 40;
-  function matches(i) { return Math.abs(data[i]-sr)+Math.abs(data[i+1]-sg)+Math.abs(data[i+2]-sb)+Math.abs(data[i+3]-sa)<=TOLERANCE; }
-  const visited = new Uint8Array(W*H);
-  const stack = [[startX,startY]];
-  visited[startY*W+startX] = 1;
-  while (stack.length) {
-    const [x,y] = stack.pop();
-    const i = idx(x,y);
-    data[i]=fr; data[i+1]=fg; data[i+2]=fb; data[i+3]=255;
-    for (const [nx,ny] of [[x-1,y],[x+1,y],[x,y-1],[x,y+1]]) {
-      if (nx<0||nx>=W||ny<0||ny>=H) continue;
-      if (visited[ny*W+nx]) continue;
-      if (!matches(idx(nx,ny))) continue;
-      visited[ny*W+nx]=1; stack.push([nx,ny]);
-    }
-  }
-  cCtx.putImageData(img,0,0);
 }
 
 function cGetPos(e) {
   const cv = document.getElementById('coloring-draw-canvas');
   const r = cv.getBoundingClientRect();
-  return { x:Math.round((e.clientX-r.left)*(cv.width/r.width)), y:Math.round((e.clientY-r.top)*(cv.height/r.height)) };
+  return { x: Math.round((e.clientX - r.left) * (cv.width / r.width)), y: Math.round((e.clientY - r.top) * (cv.height / r.height)) };
 }
 
-function cPaint(x,y) {
+function cPaint(x, y) {
   if (!cCtx) return;
   cCtx.globalCompositeOperation = cEraser ? 'destination-out' : 'source-over';
   cCtx.fillStyle = cEraser ? 'rgba(0,0,0,1)' : selectedColor;
-  cCtx.beginPath(); cCtx.arc(x,y,cBrushSize/2,0,Math.PI*2); cCtx.fill();
+  cCtx.beginPath(); cCtx.arc(x, y, cBrushSize / 2, 0, Math.PI * 2); cCtx.fill();
   cCtx.globalCompositeOperation = 'source-over';
 }
 
-function cPaintLine(x1,y1,x2,y2) {
-  const steps = Math.max(Math.abs(x2-x1),Math.abs(y2-y1));
-  for (let i=0;i<=steps;i++) { cPaint(Math.round(x1+(x2-x1)*i/steps), Math.round(y1+(y2-y1)*i/steps)); }
+function cPaintLine(x1, y1, x2, y2) {
+  const steps = Math.max(Math.abs(x2 - x1), Math.abs(y2 - y1));
+  for (let i = 0; i <= steps; i++) {
+    cPaint(Math.round(x1 + (x2 - x1) * i / steps), Math.round(y1 + (y2 - y1) * i / steps));
+  }
 }
 
 function updateColoringStatus(p) {
@@ -1746,41 +1749,15 @@ function updateColoringStatus(p) {
 function checkColoringCoverage() {
   if (!cCtx) return;
   const cv = document.getElementById('coloring-draw-canvas');
-  const data = cCtx.getImageData(0,0,cv.width,cv.height).data;
+  const data = cCtx.getImageData(0, 0, cv.width, cv.height).data;
   let colored = 0;
-  for (let i=3;i<data.length;i+=4) { if (data[i]>10) colored++; }
-  const p = Math.round(colored/(cv.width*cv.height)*100);
-  if (!cReward50 && p>=50)  { cReward50=true;  state.coins+=10; updateHUD(); showCoinToast(10); }
-  if (!cReward100 && p>=90) { cReward100=true; state.coins+=20; updateHUD(); showCoinToast(20); }
+  for (let i = 3; i < data.length; i += 4) { if (data[i] > 10) colored++; }
+  const p = Math.round(colored / (cv.width * cv.height) * 100);
+  if (!cReward50  && p >= 50) { cReward50  = true; state.coins += 10; updateHUD(); showCoinToast(10); }
+  if (!cReward100 && p >= 90) { cReward100 = true; state.coins += 20; updateHUD(); showCoinToast(20); }
   updateColoringStatus(p);
 }
 
-(function() {
-  const wrapper = document.getElementById('coloring-canvas-wrapper');
-  function onDown(e) {
-    e.preventDefault();
-    const raw = e.touches ? e.touches[0] : e;
-    const p = cGetPos(raw);
-    if (cMode==='fill' && !cEraser) { floodFill(p.x,p.y,selectedColor); checkColoringCoverage(); }
-    else { cDrawing=true; cLastX=p.x; cLastY=p.y; cPaint(p.x,p.y); }
-  }
-  function onMove(e) {
-    if (!cDrawing) return; e.preventDefault();
-    const raw = e.touches ? e.touches[0] : e;
-    const p = cGetPos(raw);
-    cPaintLine(cLastX,cLastY,p.x,p.y);
-    cLastX=p.x; cLastY=p.y;
-    cCheckTimer++;
-    if (cCheckTimer%50===0) checkColoringCoverage();
-  }
-  function onUp() { if (!cDrawing) return; cDrawing=false; checkColoringCoverage(); }
-  wrapper.addEventListener('mousedown',  onDown);
-  wrapper.addEventListener('mousemove',  onMove);
-  window.addEventListener('mouseup',    onUp);
-  wrapper.addEventListener('touchstart', onDown, {passive:false});
-  wrapper.addEventListener('touchmove',  onMove, {passive:false});
-  window.addEventListener('touchend',   onUp);
-})();
 
 function buildPuzzleSelector() {
   const grid = document.getElementById('puzzle-grid');
