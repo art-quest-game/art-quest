@@ -2,7 +2,7 @@
 <html lang="ko">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <title>명화 퀘스트</title>
 <style>
 * { margin:0; padding:0; box-sizing:border-box; }
@@ -102,8 +102,8 @@ canvas { display:block; image-rendering:pixelated; position:fixed; top:0; left:0
 #memory-inner { width:100%; max-width:700px; padding:14px 18px 36px; }
 #memory-info-row { display:flex; justify-content:space-between; align-items:center; margin-bottom:14px; flex-wrap:wrap; gap:8px; }
 .mem-info-chip { background:#2d1b69; border:2px solid #a855f7; border-radius:16px; padding:6px 16px; color:#ffd700; font-size:.88rem; font-weight:700; }
-#memory-grid { display:grid; grid-template-columns:repeat(4,1fr); gap:10px; }
-.mem-card { aspect-ratio:3/4; cursor:pointer; perspective:600px; }
+#memory-grid { display:grid; grid-template-columns:repeat(4,1fr); gap:8px; width:100%; max-width:680px; margin:0 auto; }
+.mem-card { aspect-ratio:3/4; cursor:pointer; perspective:600px; min-height:80px; max-height:140px; }
 .mem-card-inner { width:100%; height:100%; position:relative; transform-style:preserve-3d; transition:transform .45s; }
 .mem-card.flipped .mem-card-inner { transform:rotateY(180deg); }
 .mem-card.matched .mem-card-inner { transform:rotateY(180deg); }
@@ -143,6 +143,7 @@ canvas { display:block; image-rendering:pixelated; position:fixed; top:0; left:0
 #coloring-coin-status { color:#a78bfa; font-size:.78rem; margin-left:auto; text-align:right; }
 #coloring-workspace { display:flex; gap:14px; align-items:flex-start; width:100%; justify-content:center; flex-wrap:wrap; }
 #coloring-canvas-wrapper { position:relative; width:560px; height:392px; max-width:100%; background:#fff; border-radius:12px; border:3px solid #ffd70060; overflow:hidden; flex-shrink:0; touch-action:none; }
+#coloring-zoom-container { position:absolute; top:0; left:0; transform-origin:top left; cursor:crosshair; }
 #coloring-draw-canvas { position:absolute; top:0; left:0; width:100%; height:100%; z-index:2; cursor:url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20"><circle cx="10" cy="10" r="8" fill="none" stroke="black" stroke-width="2"/></svg>') 10 10, crosshair; }
 #coloring-overlay-img { position:absolute; top:0; left:0; width:100%; height:100%; z-index:3; pointer-events:none; user-select:none; mix-blend-mode:multiply; }
 #coloring-canvas-wrapper.mode-brush { cursor:crosshair; }
@@ -302,7 +303,7 @@ canvas { display:block; image-rendering:pixelated; position:fixed; top:0; left:0
 <div id="hud">
   <div class="hud-chip">🎨 <span id="hud-rank">견습생</span></div>
   <div class="hud-chip">🪙 <span id="hud-coins">0</span></div>
-  <div class="hud-chip">🖼️ <span id="hud-artworks">0</span>/50</div>
+  <div class="hud-chip">🖼️ <span id="hud-artworks">0</span>/48</div>
 </div>
 <div id="hint">Space / Enter 키로 입장</div>
 <div id="coin-toast"></div>
@@ -473,6 +474,11 @@ canvas { display:block; image-rendering:pixelated; position:fixed; top:0; left:0
       <button class="c-tool-btn" id="eraser-btn" onclick="toggleEraser()">지우개</button>
       <button class="c-tool-btn" onclick="clearColoringCanvas()">🗑️ 전체 지우기</button>
       <button class="c-tool-btn save-btn" onclick="saveColoringCanvas()">💾 저장</button>
+      <span style="color:#6b21a8;font-size:.8rem;margin-left:4px;">|</span>
+      <button class="c-tool-btn" onclick="zoomColoring(1.3)" title="확대">🔍+</button>
+      <button class="c-tool-btn" onclick="zoomColoring(0.77)" title="축소">🔍-</button>
+      <button class="c-tool-btn" onclick="resetZoomColoring()" title="원래 크기">⟳ 초기화</button>
+      <span id="coloring-zoom-label" style="color:#a78bfa;font-size:.78rem;">100%</span>
       <span id="coloring-coin-status" style="color:#a78bfa;font-size:.78rem;margin-left:auto;">🎨 0% 색칠됨</span>
     </div>
     <div id="coloring-select-row" style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:8px;">
@@ -480,12 +486,14 @@ canvas { display:block; image-rendering:pixelated; position:fixed; top:0; left:0
       <button class="c-tool-btn" onclick="changeColoringImg('monalisa-coloring.png',this)">모나리자</button>
       <button class="c-tool-btn" onclick="changeColoringImg('ssireum-coloring.png',this)">씨름도</button>
       <button class="c-tool-btn" onclick="changeColoringImg('waterlily-coloring.png',this)">수련</button>
-      <button class="c-tool-btn" onclick="changeColoringImg('peral-coloring.png',this)">진주 귀걸이</button>
+      <button class="c-tool-btn" onclick="changeColoringImg('peral-coloring.png',this)">진주 귀걸이를 한 소녀</button>
     </div>
     <div id="coloring-workspace">
       <div id="coloring-canvas-wrapper" class="mode-brush">
-        <canvas id="coloring-draw-canvas" width="600" height="420"></canvas>
-        <img id="coloring-overlay-img" src="https://raw.githubusercontent.com/art-quest-game/art-quest/main/starry-coloring.png" alt="coloring outline" draggable="false">
+        <div id="coloring-zoom-container">
+          <canvas id="coloring-draw-canvas" width="600" height="420"></canvas>
+          <img id="coloring-overlay-img" src="https://raw.githubusercontent.com/art-quest-game/art-quest/main/starry-coloring.png" alt="coloring outline" draggable="false">
+        </div>
       </div>
       <div id="coloring-palette-panel">
         <div id="coloring-cur-color" style="background:#1d4ed8"></div>
@@ -572,12 +580,12 @@ canvas { display:block; image-rendering:pixelated; position:fixed; top:0; left:0
 //  건물 데이터
 // ─────────────────────────────────────────────
 const BUILDINGS = [
-  { id:'gallery', name:'명화 갤러리', icon:'🏛️', desc:'세계 각국의 명화를 감상하세요!\n유럽·한국·일본·중남미 작품을 만날 수 있어요.', color:0xffd700, tx:17, ty:7,  width:6, height:5 },
-  { id:'quiz',    name:'퀴즈 타워',   icon:'🎯', desc:'명화 4지선다 퀴즈를 풀고 코인을 획득하세요!\n10문제, 정답당 +10 코인.',                    color:0xff6b35, tx:29, ty:6,  width:6, height:5 },
-  { id:'shop',    name:'캐릭터 상점', icon:'🛍️', desc:'코인으로 캐릭터를 꾸며보세요!\n모자·의상·액세서리를 구매하고 장착하세요.',                    color:0xf59e0b, tx:5,  ty:6,  width:6, height:5 },
-  { id:'typing',  name:'타자 연습장', icon:'⌨️', desc:'명화 관련 문장을 타이핑하세요!\n30초, 정확도에 따라 최대 +30 코인.',                      color:0x38bdf8, tx:29, ty:20, width:6, height:5 },
-  { id:'memory',  name:'메모리 카드', icon:'🃏', desc:'명화 카드 16장의 짝을 맞추세요!\n짝 맞출 때마다 +5코인, 전체 완성 +20 보너스!',           color:0xa855f7, tx:5,  ty:20, width:6, height:5 },
-  { id:'coloring',name:'색칠 스튜디오',icon:'🎨',desc:'명화 윤곽선을 직접 색칠하세요!\n5가지 명화, 16색 팔레트, 완성시 +20 코인.',              color:0x22c55e, tx:17, ty:21, width:6, height:5 }
+  { id:'gallery', name:'명화 갤러리', icon:'🏛️', desc:'세계 각국의 명화를 감상하세요!\n유럽·한국·일본·중남미 작품을 만날 수 있어요.', color:0xffd700, tx:22, ty:6,  width:6, height:5 },
+  { id:'quiz',    name:'퀴즈 타워',   icon:'🎯', desc:'명화 4지선다 퀴즈를 풀고 코인을 획득하세요!\n10문제, 정답당 +10 코인.',                    color:0xff6b35, tx:35, ty:5,  width:6, height:5 },
+  { id:'shop',    name:'캐릭터 상점', icon:'🛍️', desc:'코인으로 캐릭터를 꾸며보세요!\n모자·의상·액세서리를 구매하고 장착하세요.',                    color:0xf59e0b, tx:10, ty:5,  width:6, height:5 },
+  { id:'typing',  name:'타자 연습장', icon:'⌨️', desc:'명화 관련 문장을 타이핑하세요!\n30초, 정확도에 따라 최대 +30 코인.',                      color:0x38bdf8, tx:35, ty:17, width:6, height:5 },
+  { id:'memory',  name:'메모리 카드', icon:'🃏', desc:'명화 카드 16장의 짝을 맞추세요!\n짝 맞출 때마다 +5코인, 전체 완성 +20 보너스!',           color:0xa855f7, tx:10, ty:17, width:6, height:5 },
+  { id:'coloring',name:'색칠 스튜디오',icon:'🎨',desc:'명화 윤곽선을 직접 색칠하세요!\n5가지 명화, 16색 팔레트, 완성시 +20 코인.',              color:0x22c55e, tx:22, ty:18, width:6, height:5 }
 ];
 
 // ─────────────────────────────────────────────
@@ -771,10 +779,10 @@ function updateCharacterOverlays() {
   const rankIdx = RANKS.indexOf(getCurrentRank());
   const RANK_AUTO = [
     new Set(),
-    new Set(['tophat']),
-    new Set(['tophat', 'kimono', 'brush']),
-    new Set(['sombrero', 'sari']),
-    new Set(['turban', 'hanbok', 'nazar']),
+    new Set(),
+    new Set(),
+    new Set(),
+    new Set(),
   ];
   const autoItems = RANK_AUTO[rankIdx] || new Set();
 
@@ -783,35 +791,31 @@ function updateCharacterOverlays() {
   const visOutfits = ALL_ITEMS.filter(i => i.slot === 'outfit'    && isVis(i.id));
   const visAccs    = ALL_ITEMS.filter(i => i.slot === 'accessory' && isVis(i.id));
 
-  // 레이아웃 상수 (64×112px 표시 기준)
-  const STEP = 22;   // 뱃지 간격 (20px + 2px gap)
-  const HW   = 96;   // 플레이어 반폭
-  const HH   = 112;  // 플레이어 반높이
+  const STEP = 22;
+  const HW   = 96;
+  const HH   = 112;
 
   const newPos = {};
 
-  // 모자: 플레이어 위쪽 가로 나열 (중앙 정렬)
+  // 모자: 플레이어 위쪽 가로 나열
   const hatY = -(HH - 14);
   visHats.forEach((item, i) => {
     const sx = -((visHats.length - 1) * STEP / 2);
     newPos[item.id] = { dx: sx + i * STEP, dy: hatY };
   });
 
-  // 의상: 왼쪽 컬럼(0-2) / 오른쪽 컬럼(3-5), 각 컬럼 세로 중앙 정렬
-  const outXL = -(HW + 18), outXR = HW + 18;
+  // 의상: 캐릭터 왼쪽 바로 붙여서
+  const outXL = -(HW - 50);
   visOutfits.forEach((item, i) => {
-    const right    = i >= 3;
-    const rowInCol = i % 3;
-    const colSize  = right ? Math.min(visOutfits.length - 3, 3) : Math.min(visOutfits.length, 3);
-    const sy       = -((colSize - 1) * STEP / 2);
-    newPos[item.id] = { dx: right ? outXR : outXL, dy: sy + rowInCol * STEP };
+    const sy = -((visOutfits.length - 1) * STEP / 2);
+    newPos[item.id] = { dx: outXL, dy: sy + i * STEP };
   });
 
-  // 액세서리: 플레이어 아래쪽 가로 나열 (중앙 정렬)
-  const accY = HH + 16;
+  // 액세서리: 캐릭터 오른쪽 바로 붙여서
+  const accXR = HW - 50;
   visAccs.forEach((item, i) => {
-    const sx = -((visAccs.length - 1) * STEP / 2);
-    newPos[item.id] = { dx: sx + i * STEP, dy: accY };
+    const sy = -((visAccs.length - 1) * STEP / 2);
+    newPos[item.id] = { dx: accXR, dy: sy + i * STEP };
   });
 
   // 오버레이 오브젝트에 위치·가시성 적용
@@ -1509,8 +1513,7 @@ function showQuizResult() {
 // ─────────────────────────────────────────────
 // 메모리카드는 로컬 파일 보유 작품만 사용 (이미지 즉시 표시 보장)
 const MEM_ARTS = Object.values(ARTWORKS).flat().filter(a => a.url);
-
-let memState = { cards:[], flipped:[], matched:new Set(), lock:false, coinsEarned:0, attempts:0 };
+const MEM_PAIR_COUNT = 8;
 
 function openMemory() {
   document.getElementById('memory-screen').classList.add('active');
@@ -1520,9 +1523,12 @@ function openMemory() {
 function startMemory() {
   document.getElementById('memory-complete-box').style.display = 'none';
   memState = { cards:[], flipped:[], matched:new Set(), lock:false, coinsEarned:0, attempts:0 };
-  const pairs = [...MEM_ARTS, ...MEM_ARTS].sort(() => Math.random() - .5);
+  // 전체 명화에서 랜덤으로 8개 선택
+  const shuffled = [...MEM_ARTS].sort(() => Math.random() - .5);
+  const selected = shuffled.slice(0, MEM_PAIR_COUNT);
+  const pairs = [...selected, ...selected].sort(() => Math.random() - .5);
   memState.cards = pairs;
-  document.getElementById('mem-pairs-left').textContent   = MEM_ARTS.length;
+  document.getElementById('mem-pairs-left').textContent   = MEM_PAIR_COUNT;
   document.getElementById('mem-coins-earned').textContent = 0;
   document.getElementById('mem-attempts').textContent     = 0;
   const grid = document.getElementById('memory-grid');
@@ -1556,7 +1562,7 @@ function flipCard(i) {
       document.getElementById('mc-' + b).classList.add('matched');
       memState.coinsEarned += 5; state.coins += 5; state.totalCoins += 5; updateHUD(); showCoinToast(5);
       document.getElementById('mem-coins-earned').textContent = memState.coinsEarned;
-      document.getElementById('mem-pairs-left').textContent = MEM_ARTS.length - memState.matched.size / 2;
+      document.getElementById('mem-pairs-left').textContent = MEM_PAIR_COUNT - memState.matched.size / 2;
       memState.flipped = []; memState.lock = false;
       if (memState.matched.size === memState.cards.length) {
         setTimeout(() => {
@@ -1614,6 +1620,8 @@ function openColoring() {
   cCtx.fillRect(0, 0, canvas.width, canvas.height);
   cReward50 = false; cReward100 = false;
   cEraser = false;
+  cZoom = 1; cPanX = 0; cPanY = 0;
+  applyColoringZoom();
   buildPalette();
   updateColoringStatus(0);
   initColoringEvents();
@@ -2001,7 +2009,45 @@ function showTypingResult() {
   if (coins > 0) { state.coins += coins; updateHUD(); showCoinToast(coins); }
 }
 
-// ── IME 조합 추적 ─────────────────────────────
+// ── 색칠 확대/축소 ──
+let cZoom = 1;
+let cPanX = 0, cPanY = 0;
+let cPanning = false, cPanStartX = 0, cPanStartY = 0;
+
+function zoomColoring(factor) {
+  cZoom = Math.min(4, Math.max(0.5, cZoom * factor));
+  applyColoringZoom();
+}
+function resetZoomColoring() {
+  cZoom = 1; cPanX = 0; cPanY = 0;
+  applyColoringZoom();
+}
+function applyColoringZoom() {
+  const zc = document.getElementById('coloring-zoom-container');
+  if (!zc) return;
+  zc.style.transform = `translate(${cPanX}px,${cPanY}px) scale(${cZoom})`;
+  document.getElementById('coloring-zoom-label').textContent = Math.round(cZoom*100)+'%';
+}
+
+// 마우스 휠로도 확대/축소
+(function(){
+  const wrapper = document.getElementById('coloring-canvas-wrapper');
+  if (!wrapper) return;
+  wrapper.addEventListener('wheel', e => {
+    e.preventDefault();
+    zoomColoring(e.deltaY < 0 ? 1.15 : 0.87);
+  }, { passive: false });
+  // 스페이스바+드래그로 팬
+  wrapper.addEventListener('mousedown', e => {
+    if (e.button === 1 || e.spaceKey) { cPanning=true; cPanStartX=e.clientX-cPanX; cPanStartY=e.clientY-cPanY; }
+  });
+  window.addEventListener('mousemove', e => {
+    if (!cPanning) return;
+    cPanX=e.clientX-cPanStartX; cPanY=e.clientY-cPanStartY;
+    applyColoringZoom();
+  });
+  window.addEventListener('mouseup', () => { cPanning=false; });
+})();
 typingInput.addEventListener('compositionstart', () => { _composing = true; });
 typingInput.addEventListener('compositionend',   function() {
   _composing = false;
@@ -2056,7 +2102,7 @@ typingInput.addEventListener('keydown', function(e) {
 // ─────────────────────────────────────────────
 //  Phaser 씬
 // ─────────────────────────────────────────────
-const TILE = 32, COLS = 42, ROWS = 30;
+const TILE = 32, COLS = 52, ROWS = 28;
 const W = COLS * TILE, H = ROWS * TILE;
 
 class GameScene extends Phaser.Scene {
@@ -2099,79 +2145,25 @@ class GameScene extends Phaser.Scene {
     updateCharacterOverlays();
   }
   _createTextures() {
-    const T = TILE;
-    const g = this.make.graphics({x:0,y:0,add:false});
-
-    // 잔디 타일 - 깔끔하고 예쁘게
-    g.fillStyle(0x52aa22); g.fillRect(0,0,T,T);
-    // 밝은 영역
-    g.fillStyle(0x5ebb28); g.fillRect(0,0,T,T/2);
-    g.fillStyle(0x52aa22); g.fillRect(0,T/2,T,T/2);
-    // 테두리 음영
-    g.fillStyle(0x5ebb28); g.fillRect(0,0,T,2);
-    g.fillStyle(0x3d8818); g.fillRect(0,T-2,T,2);
-    g.fillStyle(0x5ebb28); g.fillRect(0,0,2,T);
-    g.fillStyle(0x3d8818); g.fillRect(T-2,0,2,T);
-    // 작은 풀잎 픽셀 (2x3)
-    const gp=[[0.12,0.15],[0.35,0.08],[0.58,0.18],[0.78,0.10],[0.22,0.38],[0.48,0.32],[0.70,0.42],[0.90,0.28],[0.08,0.55],[0.32,0.62],[0.55,0.52],[0.75,0.65],[0.92,0.55],[0.18,0.78],[0.42,0.85],[0.65,0.75],[0.85,0.82]];
-    gp.forEach(([x,y],i)=>{ g.fillStyle(i%2?0x6acc30:0x3d8818); g.fillRect(Math.round(T*x),Math.round(T*y),2,3); });
-    // 귀여운 꽃 2개
-    [[0.28,0.28],[0.72,0.68]].forEach(([x,y])=>{
-      const fx=Math.round(T*x),fy=Math.round(T*y);
-      g.fillStyle(0xffbbdd); g.fillRect(fx-1,fy,1,3); g.fillRect(fx+1,fy,1,3); g.fillRect(fx,fy-1,3,1); g.fillRect(fx,fy+2,3,1);
-      g.fillStyle(0xffee44); g.fillRect(fx,fy,1,2);
-    });
-    g.generateTexture('tile_grass',T,T);
-    g.clear();
-
-    // 흙길 타일 - 따뜻하고 예쁘게
-    g.fillStyle(0xc8a055); g.fillRect(0,0,T,T);
-    // 밝은/어두운 영역으로 깊이감
-    g.fillStyle(0xd4aa62); g.fillRect(0,0,T,T/2);
-    g.fillStyle(0xbc9448); g.fillRect(0,T/2,T,T/2);
-    // 테두리
-    g.fillStyle(0xd4aa62); g.fillRect(0,0,T,2);
-    g.fillStyle(0xa88038); g.fillRect(0,T-2,T,2);
-    // 자갈 픽셀 (3x2)
-    const pp=[[0.08,0.10],[0.28,0.06],[0.50,0.12],[0.72,0.07],[0.88,0.14],[0.16,0.30],[0.40,0.28],[0.62,0.32],[0.84,0.26],[0.06,0.50],[0.24,0.52],[0.46,0.48],[0.68,0.52],[0.90,0.50],[0.14,0.68],[0.36,0.72],[0.58,0.68],[0.80,0.70],[0.10,0.85],[0.32,0.88],[0.54,0.84],[0.76,0.88],[0.92,0.82]];
-    pp.forEach(([x,y],i)=>{ 
-      g.fillStyle(i%3?0xa07030:0xb08040); g.fillRect(Math.round(T*x),Math.round(T*y),3,2);
-      g.fillStyle(0xdcb870); g.fillRect(Math.round(T*x),Math.round(T*y),1,1);
-    });
-    g.generateTexture('tile_path',T,T);
-    g.destroy();
+    // tile_grass, tile_path는 GitHub 이미지 사용 (preload에서 로드됨)
+    // 이미지 로드 실패 대비 폴백만 생성
+    if (!this.textures.exists('tile_grass')) {
+      const g = this.make.graphics({x:0,y:0,add:false});
+      g.fillStyle(0x58b824); g.fillRect(0,0,TILE,TILE);
+      g.generateTexture('tile_grass',TILE,TILE); g.destroy();
+    }
+    if (!this.textures.exists('tile_path')) {
+      const g = this.make.graphics({x:0,y:0,add:false});
+      g.fillStyle(0xc8a055); g.fillRect(0,0,TILE,TILE);
+      g.generateTexture('tile_path',TILE,TILE); g.destroy();
+    }
   }
-  _dk(hex,a){ return (((hex>>16)&0xff)*(1-a)<<16)|(((hex>>8)&0xff)*(1-a)<<8)|((hex&0xff)*(1-a)); }
+    _dk(hex,a){ return (((hex>>16)&0xff)*(1-a)<<16)|(((hex>>8)&0xff)*(1-a)<<8)|((hex&0xff)*(1-a)); }
   _buildMap() {
-    // 잔디+길 타일을 렌더텍스처로 한번에 그려서 경계 완전 제거
-    const rt = this.add.renderTexture(0, 0, COLS*TILE, ROWS*TILE);
+    // 잔디 타일 직접 배치 (경계선 없음)
     for(let r=0;r<ROWS;r++) for(let c=0;c<COLS;c++)
-      rt.draw('tile_grass', c*TILE, r*TILE);
-    const pt=new Set();
-    const road=(c1,r1,c2,r2,w=3)=>{
-      if(c1===c2) for(let r=Math.min(r1,r2);r<=Math.max(r1,r2);r++) for(let i=0;i<w;i++) pt.add(`${c1+i},${r}`);
-      else        for(let c=Math.min(c1,c2);c<=Math.max(c1,c2);c++) for(let i=0;i<w;i++) pt.add(`${c},${r1+i}`);
-    };
-    // 중앙 광장
-    for(let c=19;c<=24;c++) for(let r=13;r<=19;r++) pt.add(`${c},${r}`);
-    // 갤러리(ty7+h5=12) → 광장 위쪽 직결
-    road(19,12,19,13,4);
-    // 상점(ty6+h5=11) → 광장: 상점 앞 세로 → 광장까지 가로
-    road(7,11,7,16,3);    // 상점 앞 세로길
-    road(7,16,19,16,3);   // 광장까지 가로길
-    // 퀴즈(ty6+h5=11) → 광장: 퀴즈 앞 세로 → 광장까지 가로
-    road(31,11,31,16,3);  // 퀴즈 앞 세로길
-    road(23,16,31,16,3);  // 광장까지 가로길
-    // 메모리(ty20) → 광장: 메모리 앞 세로 → 광장까지 가로
-    road(7,17,7,22,3);    // 메모리 앞 세로길
-    road(7,17,19,17,3);   // 광장까지 가로길
-    // 색칠(ty21) → 광장 아래쪽 직결
-    road(19,19,19,23,4);
-    // 타자(ty20) → 광장: 타자 앞 세로 → 광장까지 가로
-    road(31,17,31,22,3);  // 타자 앞 세로길
-    road(23,17,31,17,3);  // 광장까지 가로길
-    pt.forEach(k=>{ const[c,r]=k.split(',').map(Number); rt.draw('tile_path', c*TILE, r*TILE); });
-    rt.setOrigin(0,0);
+      this.add.image(c*TILE+TILE/2, r*TILE+TILE/2, 'tile_grass')
+        .setDisplaySize(TILE+1, TILE+1);
     // 건물 이미지
     this.buildingSprites={};
     BUILDINGS.forEach(b=>{
@@ -2188,40 +2180,92 @@ class GameScene extends Phaser.Scene {
     this._addPixelDetails();
   }
   _plantTrees() {
-    const topTrees=[], botTrees=[], leftTrees=[], rightTrees=[];
+    const trees = [];
+    // 색칠스튜디오 위치 (tx:18~23, ty:18~22) 아래 제외 구역
+    const isColoringArea = (c,r) => c>=21 && c<=29 && r>=23 && r<=26;
+
+    // 위쪽 숲 - 4줄
     for(let c=0;c<COLS;c++){
-      topTrees.push([c,0,c%2===0?'t':'t2']);
-      if(c%2===0) topTrees.push([c,1,'t2']); else topTrees.push([c,1,'t']);
-      if(c%3===0) topTrees.push([c,2,'t']);
-      botTrees.push([c,ROWS-1,c%2===0?'t2':'t']);
-      if(c%2===0) botTrees.push([c,ROWS-2,'t']); else botTrees.push([c,ROWS-2,'t2']);
-      if(c%3===1) botTrees.push([c,ROWS-3,'t2']);
+      trees.push([c,0,c%2===0?'t':'t2']);
+      trees.push([c,1,c%2===0?'t2':'t']);
+      if(c%2===0||c%3===0) trees.push([c,2,'t']);
+      if(c%3===0||c%4===0) trees.push([c,3,'t2']);
     }
-    for(let r=3;r<ROWS-3;r++){
-      leftTrees.push([0,r,r%2===0?'t':'t2']);
-      if(r%3!==0) leftTrees.push([1,r,r%2===0?'t2':'t']);
-      if(r%4===0) leftTrees.push([2,r,'t']);
-      rightTrees.push([COLS-1,r,r%2===0?'t2':'t']);
-      if(r%3!==1) rightTrees.push([COLS-2,r,r%2===0?'t':'t2']);
-      if(r%4===1) rightTrees.push([COLS-3,r,'t2']);
+    // 아래쪽 숲 - 4줄 (색칠스튜디오 아래 제외)
+    for(let c=0;c<COLS;c++){
+      trees.push([c,ROWS-1,c%2===0?'t2':'t']);
+      trees.push([c,ROWS-2,c%2===0?'t':'t2']);
+      if(c%2===0||c%3===1) trees.push([c,ROWS-3,'t2']);
+      if((c%3===0||c%4===1) && !isColoringArea(c,ROWS-4)) trees.push([c,ROWS-4,'t']);
     }
-    [...topTrees,...botTrees,...leftTrees,...rightTrees].forEach(([c,r,type])=>{
+    // 왼쪽 숲 - 4열
+    for(let r=4;r<ROWS-4;r++){
+      trees.push([0,r,r%2===0?'t':'t2']);
+      trees.push([1,r,r%2===0?'t2':'t']);
+      if(r%2===0||r%3===0) trees.push([2,r,'t']);
+      if(r%3===0||r%4===0) trees.push([3,r,'t2']);
+    }
+    // 오른쪽 숲 - 화면 끝까지 완전히 채우기
+    for(let r=4;r<ROWS-4;r++){
+      for(let c=COLS-6;c<COLS;c++){
+        trees.push([c,r,((c+r)%2===0)?'t':'t2']);
+      }
+    }
+    trees.forEach(([c,r,type])=>{
       this.add.image(c*TILE+TILE/2, r*TILE+TILE/2, type==='t'?'deco_tree':'deco_tree2')
-        .setDisplaySize(TILE*2.2, TILE*2.8).setDepth(r*10+2);
+        .setDisplaySize(TILE*2.4, TILE*3.0).setDepth(r*10+1);
     });
   }
   _addPixelDetails() {
-    [[5,4],[10,3],[30,4],[36,3],[5,18],[10,25],[30,18],[36,25],[15,3],[25,3],[15,26],[25,26]].forEach(([c,r])=>
-      this.add.image(c*TILE+TILE/2,r*TILE+TILE/2,'deco_flower').setDisplaySize(TILE*1.2,TILE*1.2).setBlendMode(Phaser.BlendModes.MULTIPLY));
-    [[3,8],[38,8],[3,20],[38,20],[3,14],[38,14]].forEach(([c,r])=>
-      this.add.image(c*TILE+TILE/2,r*TILE+TILE/2,'deco_rock').setDisplaySize(TILE*1.1,TILE*1.1).setBlendMode(Phaser.BlendModes.MULTIPLY));
-    [[6,3],[12,4],[28,3],[35,4],[6,25],[12,24],[28,25],[35,24]].forEach(([c,r])=>
-      this.add.image(c*TILE+TILE/2,r*TILE+TILE/2,'deco_bush').setDisplaySize(TILE*1.6,TILE*1.6).setBlendMode(Phaser.BlendModes.MULTIPLY));
-    [[4,10],[38,10],[4,18],[38,18],[10,4],[30,4]].forEach(([c,r])=>
-      this.add.image(c*TILE+TILE/2,r*TILE+TILE/2,'deco_mushroom').setDisplaySize(TILE*1.3,TILE*1.3).setBlendMode(Phaser.BlendModes.MULTIPLY));
+    [[16,5],[22,4],[28,5],[34,4],[40,5],[10,10],[42,10],
+     [10,20],[42,20],[16,24],[22,24],[30,24],[38,24],[26,4],[26,24]
+    ].forEach(([c,r])=>
+      this.add.image(c*TILE+TILE/2, r*TILE+TILE/2, 'deco_flower')
+        .setDisplaySize(TILE*1.2,TILE*1.2).setBlendMode(Phaser.BlendModes.MULTIPLY));
+    [[18,9],[36,9],[18,19],[36,19],[8,14],[44,14],[26,6],[26,22]
+    ].forEach(([c,r])=>
+      this.add.image(c*TILE+TILE/2, r*TILE+TILE/2, 'deco_rock')
+        .setDisplaySize(TILE*1.2,TILE*1.2).setBlendMode(Phaser.BlendModes.MULTIPLY));
+    [[8,7],[18,6],[32,6],[44,7],[8,21],[18,23],[32,23],[44,21],
+     [8,12],[44,12],[8,17],[44,17],[26,8]
+    ].forEach(([c,r])=>
+      this.add.image(c*TILE+TILE/2, r*TILE+TILE/2, 'deco_bush')
+        .setDisplaySize(TILE*2.0,TILE*2.0).setBlendMode(Phaser.BlendModes.MULTIPLY));
+    [[12,7],[40,7],[12,21],[40,21],[8,10],[44,10],[8,19],[44,19]
+    ].forEach(([c,r])=>
+      this.add.image(c*TILE+TILE/2, r*TILE+TILE/2, 'deco_mushroom')
+        .setDisplaySize(TILE*1.2,TILE*1.2).setBlendMode(Phaser.BlendModes.MULTIPLY));
+  }
+  _addPixelDetails() {
+    // 꽃 - 건물 사이 빈 공간에 자연스럽게
+    [[12,6],[18,5],[22,6],[28,6],[34,5],[40,6],[46,5],[50,6],
+     [12,14],[16,16],[20,12],[28,14],[34,16],[40,12],[46,14],[50,16],
+     [12,24],[16,26],[20,22],[28,24],[34,26],[40,22],[46,24],[50,26],
+     [8,10],[8,20],[48,10],[48,20],[22,20],[32,8],[22,28],[32,28]
+    ].forEach(([c,r])=>
+      this.add.image(c*TILE+TILE/2, r*TILE+TILE/2, 'deco_flower')
+        .setDisplaySize(TILE*1.1,TILE*1.1).setBlendMode(Phaser.BlendModes.MULTIPLY));
+    // 바위
+    [[14,10],[40,10],[14,24],[40,24],[27,8],[27,28],[8,17],[48,17],
+     [20,17],[34,17],[10,13],[44,13]
+    ].forEach(([c,r])=>
+      this.add.image(c*TILE+TILE/2, r*TILE+TILE/2, 'deco_rock')
+        .setDisplaySize(TILE*1.0,TILE*1.0).setBlendMode(Phaser.BlendModes.MULTIPLY));
+    // 덤불
+    [[16,7],[22,8],[32,7],[38,8],[16,27],[22,26],[32,27],[38,26],
+     [8,14],[48,14],[8,22],[48,22],[20,14],[34,14],[20,22],[34,22]
+    ].forEach(([c,r])=>
+      this.add.image(c*TILE+TILE/2, r*TILE+TILE/2, 'deco_bush')
+        .setDisplaySize(TILE*1.3,TILE*1.3).setBlendMode(Phaser.BlendModes.MULTIPLY));
+    // 버섯
+    [[10,7],[44,7],[10,27],[44,27],[18,10],[36,10],[18,24],[36,24],
+     [27,6],[8,16],[48,16],[22,16],[32,16]
+    ].forEach(([c,r])=>
+      this.add.image(c*TILE+TILE/2, r*TILE+TILE/2, 'deco_mushroom')
+        .setDisplaySize(TILE*1.1,TILE*1.1).setBlendMode(Phaser.BlendModes.MULTIPLY));
   }
   _createPlayer() {
-    this.player = this.add.image(21*TILE+TILE/2, 16*TILE+TILE/2,'char1').setDisplaySize(192,224).setDepth(1100);
+    this.player = this.add.image(25*TILE+TILE/2, 13*TILE+TILE/2,'char1').setDisplaySize(192,224).setDepth(1100);
     this.playerLabel = this.add.text(0,0,'견습생',{fontSize:'12px',color:'#ffd700',stroke:'#000',strokeThickness:3}).setOrigin(.5,1).setDepth(11);
     // 아이템 오버레이: 작은 뱃지(16~20px)로 캐릭터 주변 배치
     this.itemOverlays = {};
@@ -2387,6 +2431,10 @@ const game = new Phaser.Game({
   width: document.documentElement.clientWidth,
   height: document.documentElement.clientHeight,
   backgroundColor:'#5aaa28',
+  scale: {
+    mode: Phaser.Scale.FIT,
+    autoCenter: Phaser.Scale.CENTER_BOTH,
+  },
   parent:'game-container', scene:[GameScene], render:{pixelArt:true, antialias:false, roundPixels:true}
 });
 // canvas가 포커스를 받을 수 있어야 closeMiniGame에서 canvas.focus()가 동작함
