@@ -142,10 +142,10 @@ canvas { display:block; image-rendering:pixelated; position:fixed; top:0; left:0
 .c-tool-btn.save-btn { background:linear-gradient(90deg,#22c55e,#16a34a); color:#fff; border-color:#22c55e; }
 #coloring-coin-status { color:#a78bfa; font-size:.78rem; margin-left:auto; text-align:right; }
 #coloring-workspace { display:flex; gap:14px; align-items:flex-start; width:100%; justify-content:center; flex-wrap:wrap; }
-#coloring-canvas-wrapper { position:relative; width:560px; height:392px; max-width:100%; background:#fff; border-radius:12px; border:3px solid #ffd70060; overflow:hidden; flex-shrink:0; touch-action:none; }
-#coloring-zoom-container { position:absolute; top:0; left:0; transform-origin:top left; cursor:crosshair; }
+#coloring-canvas-wrapper { position:relative; width:560px; height:392px; max-width:100%; background:#f5f5f5; border-radius:12px; border:3px solid #ffd70060; overflow:hidden; flex-shrink:0; touch-action:none; }
+#coloring-zoom-container { position:absolute; top:0; left:0; width:100%; height:100%; transform-origin:top left; cursor:crosshair; }
 #coloring-draw-canvas { position:absolute; top:0; left:0; width:100%; height:100%; z-index:2; cursor:url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20"><circle cx="10" cy="10" r="8" fill="none" stroke="black" stroke-width="2"/></svg>') 10 10, crosshair; }
-#coloring-overlay-img { position:absolute; top:0; left:0; width:100%; height:100%; z-index:3; pointer-events:none; user-select:none; mix-blend-mode:multiply; }
+#coloring-overlay-img { position:absolute; top:0; left:0; width:100%; height:100%; z-index:3; pointer-events:none; user-select:none; }
 #coloring-canvas-wrapper.mode-brush { cursor:crosshair; }
 #coloring-canvas-wrapper.mode-fill  { cursor:cell; }
 #coloring-palette-panel { display:flex; flex-direction:column; align-items:center; gap:10px; }
@@ -293,9 +293,253 @@ canvas { display:block; image-rendering:pixelated; position:fixed; top:0; left:0
 #mobile-enter-btn { position:fixed; bottom:28px; right:20px; background:linear-gradient(135deg,#ffd700,#ff9900); color:#1a0a2e; border:none; border-radius:50%; width:72px; height:72px; font-size:.88rem; font-weight:700; cursor:pointer; z-index:60; display:none; flex-direction:column; align-items:center; justify-content:center; line-height:1.4; text-align:center; box-shadow:0 4px 22px #ffd70077; transition:transform .15s,box-shadow .15s; }
 #mobile-enter-btn.visible { display:flex; }
 #mobile-enter-btn:active { transform:scale(.93); box-shadow:0 2px 10px #ffd70055; }
+/* 조이스틱 */
+#joystick-zone { position:fixed; bottom:20px; left:20px; width:120px; height:120px; z-index:60; display:none; touch-action:none; }
+#joystick-base { position:absolute; width:120px; height:120px; border-radius:50%; background:rgba(0,0,0,.35); border:3px solid rgba(255,255,255,.3); }
+#joystick-stick { position:absolute; width:52px; height:52px; border-radius:50%; background:rgba(255,255,255,.65); border:3px solid rgba(255,255,255,.9); top:34px; left:34px; transition:none; box-shadow:0 2px 8px rgba(0,0,0,.4); }
+body.is-mobile #joystick-zone { display:block; }
 #touch-drag-ring { position:fixed; pointer-events:none; z-index:55; display:none; width:52px; height:52px; border-radius:50%; border:3px solid #a855f7; box-shadow:0 0 12px #a855f7aa; transform:translate(-50%,-50%); transition:opacity .2s; opacity:0; }
 #touch-drag-ring.active { display:block; opacity:1; }
 </style>
+<!-- Firebase SDK (compat 버전 - 전역 함수 지원) -->
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
+<script>
+const firebaseConfig = {
+  apiKey: "AIzaSyA9dq8u8KHPBBrRyLst-2yuM_xYnj5bBwY",
+  authDomain: "art-quest-2bfb0.firebaseapp.com",
+  projectId: "art-quest-2bfb0",
+  storageBucket: "art-quest-2bfb0.firebasestorage.app",
+  messagingSenderId: "257884820581",
+  appId: "1:257884820581:web:62569857046eb832d5628c"
+};
+firebase.initializeApp(firebaseConfig);
+const auth = firebase.auth();
+const db = firebase.firestore();
+
+auth.onAuthStateChanged(async (user) => {
+  if (user) {
+    // 상태 초기화
+    state.coins = 0; state.totalCoins = 0; state.artworks = 0;
+    shopOwned.clear(); shopEquipped.clear();
+    const snap = await db.collection('users').doc(user.uid).get();
+    if (snap.exists) {
+      const data = snap.data();
+      if (typeof data.coins === 'number') state.coins = data.coins;
+      if (typeof data.totalCoins === 'number') state.totalCoins = data.totalCoins;
+      if (typeof data.artworks === 'number') state.artworks = data.artworks;
+      if (data.equipped) data.equipped.forEach(id => shopEquipped.add(id));
+      if (data.owned) data.owned.forEach(id => shopOwned.add(id));
+      updateHUD();
+    }
+    window._currentUser = user;
+    window._isTeacher = snap.exists && snap.data()?.role === 'teacher';
+    document.getElementById('login-overlay').style.display = 'none';
+    document.getElementById('user-info-bar').style.display = 'flex';
+    const nameLabel = snap.exists ? (snap.data().name || user.email) : user.email;
+    document.getElementById('user-email-label').textContent = nameLabel;
+    if (window._isTeacher) document.getElementById('teacher-btn').style.display = 'inline-block';
+    if (typeof enablePhaserInput === 'function') enablePhaserInput();
+  } else {
+    // 로그아웃 시 상태 초기화
+    state.coins = 0; state.totalCoins = 0; state.artworks = 0;
+    shopOwned.clear(); shopEquipped.clear();
+    if (typeof updateHUD === 'function') updateHUD();
+    window._currentUser = null;
+    document.getElementById('login-overlay').style.display = 'flex';
+    document.getElementById('user-info-bar').style.display = 'none';
+    if (typeof disablePhaserInput === 'function') disablePhaserInput();
+  }
+});
+
+async function doLogin(isSignup) {
+  const email = document.getElementById('login-email').value.trim();
+  const pw    = document.getElementById('login-pw').value;
+  const name  = document.getElementById('login-name').value.trim();
+  const role  = document.getElementById('login-role').value;
+  const msg   = document.getElementById('login-msg');
+  msg.textContent = '';
+  if (!email || !pw) { msg.textContent = '이메일과 비밀번호를 입력하세요.'; return; }
+  try {
+    if (isSignup) {
+      if (!name) { msg.textContent = '이름을 입력하세요.'; return; }
+      const cred = await auth.createUserWithEmailAndPassword(email, pw);
+      await db.collection('users').doc(cred.user.uid).set({
+        email, name, role, coins:0, totalCoins:0, artworks:0, equipped:[], createdAt: new Date().toISOString()
+      });
+    } else {
+      await auth.signInWithEmailAndPassword(email, pw);
+    }
+  } catch(e) {
+    const errs = {
+      'auth/email-already-in-use':'이미 사용 중인 이메일입니다.',
+      'auth/wrong-password':'비밀번호가 틀렸습니다.',
+      'auth/invalid-credential':'이메일 또는 비밀번호가 틀렸습니다.',
+      'auth/user-not-found':'등록되지 않은 이메일입니다.',
+      'auth/weak-password':'비밀번호는 6자 이상이어야 합니다.',
+      'auth/invalid-email':'올바른 이메일 형식이 아닙니다.'
+    };
+    msg.textContent = errs[e.code] || e.message;
+  }
+}
+
+async function doLogout() {
+  await auth.signOut();
+}
+
+async function saveUserData() {
+  if (!window._currentUser) return;
+  try {
+    await db.collection('users').doc(window._currentUser.uid).update({
+      coins: state.coins, totalCoins: state.totalCoins, artworks: state.artworks,
+      equipped: [...shopEquipped]
+    });
+  } catch(e) {}
+}
+window.saveUserData = saveUserData;
+window.doLogin = doLogin;
+window.doLogout = doLogout;
+</script>
+
+<!-- 로그인 오버레이 -->
+<!-- 로그인 팝업 -->
+<style>
+@import url('https://fonts.googleapis.com/css2?family=DotGothic16&display=swap');
+#login-overlay * { box-sizing:border-box; }
+#login-overlay {
+  font-family: 'DotGothic16', 'Segoe UI', sans-serif;
+  image-rendering: pixelated;
+}
+.px-panel {
+  background: #2d5a1b;
+  border: 4px solid #1a3a0a;
+  outline: 4px solid #5aad2a;
+  box-shadow: 6px 6px 0 #0a1a04, inset 0 0 0 2px #7dde3a;
+  border-radius: 4px;
+  padding: 0;
+  overflow: hidden;
+}
+.px-title-bar {
+  background: linear-gradient(180deg, #8bc34a 0%, #558b2f 40%, #33691e 100%);
+  border-bottom: 4px solid #1a3a0a;
+  padding: 16px 24px 12px;
+  text-align: center;
+  position: relative;
+}
+.px-title-bar::before {
+  content:'';
+  position:absolute; top:0;left:0;right:0;bottom:0;
+  background: repeating-linear-gradient(0deg, transparent, transparent 3px, rgba(255,255,255,.04) 3px, rgba(255,255,255,.04) 4px),
+              repeating-linear-gradient(90deg, transparent, transparent 3px, rgba(255,255,255,.04) 3px, rgba(255,255,255,.04) 4px);
+}
+.px-form-area {
+  background: #1a2a10;
+  padding: 20px 22px 18px;
+}
+.px-tab {
+  flex:1; padding:9px 6px; font-family:inherit;
+  font-size:.85rem; font-weight:700; cursor:pointer;
+  border: 3px solid; border-radius:3px;
+  transition: all .1s; letter-spacing:.5px;
+  box-shadow: 0 3px 0;
+}
+.px-tab-on  { background:#5aad2a; color:#fff; border-color:#2d6a0a; box-shadow:0 3px 0 #1a3a04; }
+.px-tab-off { background:#1a2a10; color:#5aad2a; border-color:#3a5a1a; box-shadow:0 3px 0 #0a1004; }
+.px-input {
+  width:100%; padding:10px 14px;
+  background:#0d1a06; color:#a8e063;
+  border: 3px solid #3a5a1a;
+  border-radius:3px; font-family:inherit;
+  font-size:.88rem; margin-bottom:9px; outline:none;
+  transition: border-color .15s;
+  caret-color: #7dde3a;
+}
+.px-input:focus { border-color:#7dde3a; background:#111f08; }
+.px-input::placeholder { color:#3a5a1a; }
+.px-btn-main {
+  width:100%; padding:13px; font-family:inherit;
+  background: linear-gradient(180deg,#7dde3a,#4caf1a);
+  color:#fff; font-size:.98rem; font-weight:900;
+  border: 3px solid #1a5a04; border-radius:3px;
+  cursor:pointer; letter-spacing:.5px;
+  box-shadow: 0 4px 0 #0d2a02;
+  transition: transform .1s;
+  margin-bottom:9px; text-shadow: 1px 1px 0 #0d2a02;
+}
+.px-btn-main:active { transform:translateY(3px); box-shadow:0 1px 0 #0d2a02; }
+.px-btn-ghost {
+  width:100%; padding:9px; font-family:inherit;
+  background:transparent; color:#5aad2a;
+  border: 2px solid #3a5a1a; border-radius:3px;
+  cursor:pointer; font-size:.82rem; letter-spacing:.5px;
+}
+.px-btn-ghost:hover { background:#1a2a10; border-color:#5aad2a; }
+.px-select { appearance:none; cursor:pointer; }
+</style>
+
+<div id="login-overlay" style="display:none;position:fixed;top:0;left:0;width:100%;height:100%;z-index:9999;justify-content:center;align-items:center;background:rgba(0,0,0,.65);">
+  <div style="width:min(420px,92vw);">
+
+    <div class="px-panel">
+      <!-- 타이틀 -->
+      <div class="px-title-bar">
+        <div style="font-size:.7rem;color:#c5e1a5;letter-spacing:4px;margin-bottom:6px;position:relative;">✦ WELCOME TO ✦</div>
+        <div style="font-size:1.8rem;font-weight:900;color:#fff;text-shadow:3px 3px 0 #1a3a0a;letter-spacing:2px;line-height:1;position:relative;">명화의 숲</div>
+        <div style="font-size:.82rem;color:#dcedc8;margin-top:6px;letter-spacing:1px;position:relative;">세계 명화 퀘스트</div>
+      </div>
+
+      <!-- 폼 -->
+      <div class="px-form-area">
+        <div style="display:flex;gap:6px;margin-bottom:16px;">
+          <button onclick="switchTab('login')" id="tab-login" class="px-tab px-tab-on">▶ 로그인</button>
+          <button onclick="switchTab('signup')" id="tab-signup" class="px-tab px-tab-off">✎ 회원가입</button>
+        </div>
+
+        <div id="signup-fields" style="display:none;">
+          <input id="login-name" class="px-input" placeholder="▸ 이름">
+          <select id="login-role" class="px-input px-select">
+            <option value="student">▸ 학생</option>
+            <option value="teacher">▸ 교사</option>
+          </select>
+        </div>
+
+      <input id="login-email" type="email" class="px-input" placeholder="▸ 이메일" onfocus="if(gameScene)gameScene.input.keyboard.enabled=false;">
+      <input id="login-pw" type="password" class="px-input" placeholder="▸ 비밀번호 (6자 이상)" onfocus="if(gameScene)gameScene.input.keyboard.enabled=false;">
+
+        <div id="login-msg" style="color:#ff6b6b;font-size:.8rem;min-height:18px;margin-bottom:8px;"></div>
+
+        <button id="login-btn" class="px-btn-main" onclick="doLogin(false)">▶ 게임 시작!</button>
+        <button onclick="document.getElementById('login-overlay').style.display='none'; if(typeof enablePhaserInput==='function') enablePhaserInput();" class="px-btn-ghost">◦ 비회원으로 둘러보기</button>
+      </div>
+    </div>
+
+    <!-- 버전 표시 -->
+    <div style="text-align:center;color:#3a5a1a;font-size:.7rem;margin-top:8px;letter-spacing:1px;">v1.0 · 명화의 숲</div>
+  </div>
+</div>
+
+<!-- 상단 유저 정보 바 -->
+<div id="user-info-bar" style="display:none;position:fixed;top:8px;right:12px;z-index:8000;align-items:center;gap:6px;background:rgba(0,0,0,.75);border:2px solid #5aad2a;border-radius:20px;padding:4px 10px;">
+  <span style="font-size:.75rem;">🌿</span>
+  <span id="user-email-label" style="color:#fff;font-size:.78rem;font-weight:700;max-width:150px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;"></span>
+  <button onclick="doLogout()" style="padding:4px 10px;border-radius:12px;border:1px solid #5aad2a;background:#1a2a10;color:#a8e063;font-size:.75rem;cursor:pointer;font-weight:600;">로그아웃</button>
+  <button id="teacher-btn" onclick="openTeacherDashboard()" style="display:none;padding:4px 10px;border-radius:12px;border:1px solid #a78bfa;background:#1a0a2e;color:#c084fc;font-size:.75rem;cursor:pointer;">📊 학생 현황</button>
+</div>
+
+<script>
+function switchTab(tab) {
+  const isSignup = tab === 'signup';
+  document.getElementById('signup-fields').style.display = isSignup ? 'block' : 'none';
+  document.getElementById('login-btn').textContent = isSignup ? '✎ 회원가입 완료!' : '▶ 게임 시작!';
+  document.getElementById('login-btn').onclick = () => doLogin(isSignup);
+  document.getElementById('tab-login').className  = 'px-tab ' + (isSignup ? 'px-tab-off' : 'px-tab-on');
+  document.getElementById('tab-signup').className = 'px-tab ' + (isSignup ? 'px-tab-on'  : 'px-tab-off');
+}
+function openTeacherDashboard() {
+  alert('교사 대시보드 준비 중입니다.');
+}
+</script>
 </head>
 <body>
 <div id="game-container"></div>
@@ -305,10 +549,14 @@ canvas { display:block; image-rendering:pixelated; position:fixed; top:0; left:0
   <div class="hud-chip">🪙 <span id="hud-coins">0</span></div>
   <div class="hud-chip">🖼️ <span id="hud-artworks">0</span>/48</div>
 </div>
-<div id="hint">Space / Enter 키로 입장</div>
+<div id="hint" onclick="if(gameScene&&gameScene.nearBuilding&&!miniGameActive)showPopup(gameScene.nearBuilding)" style="cursor:pointer;">Space / Enter 키로 입장</div>
 <div id="coin-toast"></div>
 <button id="mobile-enter-btn" onclick="mobileEnter()">🚪<br>입장</button>
 <div id="touch-drag-ring"></div>
+<div id="joystick-zone">
+  <div id="joystick-base"></div>
+  <div id="joystick-stick"></div>
+</div>
 
 <!-- Building popup -->
 <div id="popup-overlay">
@@ -597,6 +845,8 @@ function updateHUD() {
   document.getElementById('hud-coins').textContent    = state.coins;
   document.getElementById('hud-artworks').textContent = state.artworks;
   updateRank();
+  // Firebase 자동 저장
+  if (window.saveUserData) window.saveUserData();
 }
 
 // ─────────────────────────────────────────────
@@ -666,14 +916,14 @@ const ALL_ITEMS = [
 const shopOwned    = new Set();
 const shopEquipped = new Set(); // 장착 중인 아이템 ID 집합 (다중 장착 허용)
 function saveEquipped() {
-  localStorage.setItem('aq_owned',    JSON.stringify([...shopOwned]));
-  localStorage.setItem('aq_equipped', JSON.stringify([...shopEquipped]));
+  localStorage.setItem(_aqPrefix()+'owned',    JSON.stringify([...shopOwned]));
+  localStorage.setItem(_aqPrefix()+'equipped', JSON.stringify([...shopEquipped]));
 }
 function loadEquipped() {
   try {
     const validIds = new Set(ALL_ITEMS.map(i => i.id));
-    const ow = JSON.parse(localStorage.getItem('aq_owned')    || '[]');
-    const eq = JSON.parse(localStorage.getItem('aq_equipped') || '[]');
+    const ow = JSON.parse(localStorage.getItem(_aqPrefix()+'owned')    || '[]');
+    const eq = JSON.parse(localStorage.getItem(_aqPrefix()+'equipped') || '[]');
     ow.filter(id => validIds.has(id)).forEach(id => shopOwned.add(id));
     eq.filter(id => validIds.has(id)).forEach(id => shopEquipped.add(id));
   } catch(e) {}
@@ -861,6 +1111,47 @@ let activeBuilding = null;
 let gameScene      = null;
 let miniGameActive = false; // 미니게임/팝업 열림 여부 — Phaser update 가드에 사용
 const isMobile = ('ontouchstart' in window) || (navigator.maxTouchPoints > 0);
+if (isMobile) document.body.classList.add('is-mobile');
+
+// 조이스틱 로직
+(function() {
+  const zone  = document.getElementById('joystick-zone');
+  const stick = document.getElementById('joystick-stick');
+  if (!zone || !stick) return;
+  let active = false, baseX = 0, baseY = 0;
+  const MAX_R = 34;
+  window._joystickVec = { x: 0, y: 0 };
+
+  zone.addEventListener('touchstart', e => {
+    e.preventDefault();
+    active = true;
+    const t = e.touches[0];
+    const rect = zone.getBoundingClientRect();
+    baseX = rect.left + rect.width / 2;
+    baseY = rect.top  + rect.height / 2;
+    updateStick(t.clientX, t.clientY);
+  }, { passive: false });
+
+  zone.addEventListener('touchmove', e => {
+    e.preventDefault();
+    if (!active) return;
+    updateStick(e.touches[0].clientX, e.touches[0].clientY);
+  }, { passive: false });
+
+  zone.addEventListener('touchend', () => {
+    active = false;
+    stick.style.transform = '';
+    window._joystickVec = { x: 0, y: 0 };
+  });
+
+  function updateStick(cx, cy) {
+    let dx = cx - baseX, dy = cy - baseY;
+    const dist = Math.sqrt(dx*dx + dy*dy);
+    if (dist > MAX_R) { dx = dx/dist*MAX_R; dy = dy/dist*MAX_R; }
+    stick.style.transform = `translate(${dx}px,${dy}px)`;
+    window._joystickVec = { x: dx/MAX_R, y: dy/MAX_R };
+  }
+})();
 
 function mobileEnter() {
   if (gameScene && gameScene.nearBuilding && !miniGameActive) {
@@ -2307,6 +2598,28 @@ class GameScene extends Phaser.Scene {
     this.wasd=this.input.keyboard.addKeys({up:87,down:83,left:65,right:68});
     this.enterKey=this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.ENTER, false);
     this.spaceKey=this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.SPACE, false);
+    // Phaser가 키 이벤트를 가로채지 않도록 설정
+    this.input.keyboard.removeAllKeys(false);
+    this.cursors=this.input.keyboard.createCursorKeys();
+    this.wasd=this.input.keyboard.addKeys({up:87,down:83,left:65,right:68});
+    // HTML 입력창 포커스 시 Phaser 키보드 완전 차단
+    document.addEventListener('focusin', e => {
+      if (['INPUT','TEXTAREA','SELECT'].includes(e.target.tagName)) {
+        this.input.keyboard.enabled = false;
+        this.input.keyboard.preventDefault = false;
+      }
+    });
+    document.addEventListener('focusout', e => {
+      if (['INPUT','TEXTAREA','SELECT'].includes(e.target.tagName)) {
+        const overlay = document.getElementById('login-overlay');
+        if (!overlay || overlay.style.display === 'none') {
+          if (!miniGameActive) {
+            this.input.keyboard.enabled = true;
+            this.input.keyboard.preventDefault = true;
+          }
+        }
+      }
+    });
     this.enterKey.on('down',()=>{ if(this.nearBuilding && !miniGameActive) showPopup(this.nearBuilding); });
     this.spaceKey.on('down',()=>{ if(this.nearBuilding && !miniGameActive) showPopup(this.nearBuilding); });
     this._setupTouchInput();
@@ -2396,6 +2709,12 @@ class GameScene extends Phaser.Scene {
     if(c.right.isDown||w.right.isDown) dx+=3;
     if(c.up.isDown||w.up.isDown)      dy-=3;
     if(c.down.isDown||w.down.isDown)  dy+=3;
+    // 조이스틱 입력
+    if(window._joystickVec && !this._dragging) {
+      const jx = window._joystickVec.x, jy = window._joystickVec.y;
+      if(Math.abs(jx)>0.1) dx += jx * 3;
+      if(Math.abs(jy)>0.1) dy += jy * 3;
+    }
     if(dx&&dy){ dx*=.707; dy*=.707; }
     this.player.x=Phaser.Math.Clamp(this.player.x+dx,hw,W-hw);
     this.player.y=Phaser.Math.Clamp(this.player.y+dy,hh,H-hh);
@@ -2428,12 +2747,18 @@ class GameScene extends Phaser.Scene {
 
 const game = new Phaser.Game({
   type: Phaser.AUTO,
-  width: document.documentElement.clientWidth,
-  height: document.documentElement.clientHeight,
+  width: W,
+  height: H,
   backgroundColor:'#5aaa28',
   scale: {
     mode: Phaser.Scale.FIT,
     autoCenter: Phaser.Scale.CENTER_BOTH,
+    width: W,
+    height: H,
+  },
+  input: {
+    keyboard: { },
+    touch: true,
   },
   parent:'game-container', scene:[GameScene], render:{pixelArt:true, antialias:false, roundPixels:true}
 });
@@ -2446,9 +2771,10 @@ setTimeout(() => { if (game.canvas) game.canvas.setAttribute('tabindex', '0'); }
 
 // ── 유틸리티 ──
 function todayStr() { const d = new Date(); return `${d.getFullYear()}-${d.getMonth()+1}-${d.getDate()}`; }
-function questDoneToday(artId) { return localStorage.getItem(`q_${artId}`) === todayStr(); }
-function questEverDone(artId)  { return localStorage.getItem(`qd_${artId}`) === '1'; }
-function markQuestDone(artId)  { localStorage.setItem(`q_${artId}`, todayStr()); localStorage.setItem(`qd_${artId}`, '1'); }
+function _aqPrefix() { return window._currentUser ? `aq_${window._currentUser.uid}_` : 'aq_guest_'; }
+function questDoneToday(artId) { return localStorage.getItem(`${_aqPrefix()}q_${artId}`) === todayStr(); }
+function questEverDone(artId)  { return localStorage.getItem(`${_aqPrefix()}qd_${artId}`) === '1'; }
+function markQuestDone(artId)  { localStorage.setItem(`${_aqPrefix()}q_${artId}`, todayStr()); localStorage.setItem(`${_aqPrefix()}qd_${artId}`, '1'); }
 
 function openQuestScreen(artId) {
   const def = QUEST_DATA[artId]; if (!def) return;
