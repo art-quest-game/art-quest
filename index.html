@@ -799,6 +799,7 @@ async function openTeacherDashboard() {
       <span id="coloring-zoom-label" style="color:#a78bfa;font-size:.78rem;">100%</span>
       <span id="coloring-coin-status" style="color:#a78bfa;font-size:.78rem;margin-left:auto;">🎨 0% 색칠됨</span>
     </div>
+    <div style="font-size:.72rem;color:#a78bfa;margin:-2px 0 5px;width:100%;text-align:right;">🖱️ 스페이스+드래그: 이동 &nbsp;|&nbsp; 핀치: 줌</div>
     <div id="coloring-select-row" style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:8px;">
       <button class="c-tool-btn active" onclick="changeColoringImg('starry-coloring.png',this)">별이 빛나는 밤</button>
       <button class="c-tool-btn" onclick="changeColoringImg('monalisa-coloring.png',this)">모나리자</button>
@@ -1980,12 +1981,17 @@ function openColoring() {
   document.getElementById('coloring-screen').classList.add('active');
   disablePhaserInput();
   cReward50 = false; cReward100 = false;
-  cEraser = false; cZoom = 1;
+  cEraser = false; cZoom = 1; cPanX = 0; cPanY = 0;
   coloringEventsInit = false;
   cCtx = null;
   buildPalette();
   updateColoringStatus(0);
-  requestAnimationFrame(() => requestAnimationFrame(() => initColoringEvents()));
+  // 두 프레임 후 초기화 (display:flex 전환 완료 후 캔버스 크기 확정)
+  requestAnimationFrame(function() {
+    requestAnimationFrame(function() {
+      initColoringEvents();
+    });
+  });
 }
 
 let coloringEventsInit = false;
@@ -1997,103 +2003,94 @@ function initColoringEvents() {
   const outlineCv = document.getElementById('coloring-outline-canvas');
   if (!colorCv || !outlineCv) return;
 
-  // wrapper 실제 크기로 캔버스 해상도 설정
+  // wrapper 실제 픽셀 크기로 캔버스 해상도 설정
   const wrapper = document.getElementById('coloring-canvas-wrapper');
-  const W = wrapper.clientWidth  || 560;
-  const H = wrapper.clientHeight || 392;
-  colorCv.width = W;   colorCv.height = H;
+  const W = Math.round(wrapper.getBoundingClientRect().width)  || 560;
+  const H = Math.round(wrapper.getBoundingClientRect().height) || 392;
+  colorCv.width   = W; colorCv.height   = H;
   outlineCv.width = W; outlineCv.height = H;
 
   cCtx = colorCv.getContext('2d');
   cCtx.clearRect(0, 0, W, H);
 
-  const outlineCtx = outlineCv.getContext('2d');
-
-  // 밑그림 이미지를 outline 캔버스에 그리기
-  function drawOutline(src) {
+  // 밑그림 outline 캔버스에 그리기
+  const outCtx = outlineCv.getContext('2d');
+  function drawOutline(filename) {
     const img = new Image();
     img.crossOrigin = 'anonymous';
     img.onload = function() {
-      outlineCtx.clearRect(0, 0, outlineCv.width, outlineCv.height);
-      outlineCtx.drawImage(img, 0, 0, outlineCv.width, outlineCv.height);
+      outCtx.clearRect(0, 0, outlineCv.width, outlineCv.height);
+      outCtx.drawImage(img, 0, 0, outlineCv.width, outlineCv.height);
     };
-    img.src = src;
+    img.src = 'https://raw.githubusercontent.com/art-quest-game/art-quest/main/' + filename;
   }
-  const BASE = 'https://raw.githubusercontent.com/art-quest-game/art-quest/main/';
-  drawOutline(BASE + 'starry-coloring.png');
+  drawOutline('starry-coloring.png');
   window._drawColoringOutline = drawOutline;
 
+  // 좌표 계산 - 캔버스 실제 화면 위치 기준
   function getPos(e) {
-    const r = colorCv.getBoundingClientRect();
+    const r   = colorCv.getBoundingClientRect();
     const src = e.touches ? e.touches[0] : e;
     return {
-      x: Math.round((src.clientX - r.left) * (colorCv.width  / r.width)),
-      y: Math.round((src.clientY - r.top)  * (colorCv.height / r.height))
+      x: (src.clientX - r.left) * colorCv.width  / r.width,
+      y: (src.clientY - r.top)  * colorCv.height / r.height
     };
   }
+
   function doPaint(x, y) {
-    if (cEraser) {
-      cCtx.globalCompositeOperation = 'destination-out';
-      cCtx.fillStyle = 'rgba(0,0,0,1)';
-    } else {
-      cCtx.globalCompositeOperation = 'source-over';
-      cCtx.fillStyle = selectedColor;
-    }
+    if (!cCtx) return;
+    cCtx.globalCompositeOperation = cEraser ? 'destination-out' : 'source-over';
+    cCtx.fillStyle = cEraser ? 'rgba(0,0,0,1)' : selectedColor;
     cCtx.beginPath();
     cCtx.arc(x, y, cBrushSize / 2, 0, Math.PI * 2);
     cCtx.fill();
     cCtx.globalCompositeOperation = 'source-over';
   }
 
+  function paintLine(x1, y1, x2, y2) {
+    var steps = Math.ceil(Math.hypot(x2-x1, y2-y1));
+    if (steps < 1) steps = 1;
+    for (var i = 0; i <= steps; i++) {
+      doPaint(x1 + (x2-x1)*i/steps, y1 + (y2-y1)*i/steps);
+    }
+  }
+
   colorCv.addEventListener('mousedown', function(e) {
+    if (e.button !== 0) return;
     e.preventDefault();
-    const p = getPos(e);
+    var p = getPos(e);
     cDrawing = true; cLastX = p.x; cLastY = p.y;
     doPaint(p.x, p.y);
   });
   colorCv.addEventListener('mousemove', function(e) {
     if (!cDrawing) return;
     e.preventDefault();
-    const p = getPos(e);
-    const steps = Math.max(Math.abs(p.x-cLastX), Math.abs(p.y-cLastY));
-    for (let i = 0; i <= steps; i++) {
-      doPaint(
-        Math.round(cLastX + (p.x-cLastX)*i/steps),
-        Math.round(cLastY + (p.y-cLastY)*i/steps)
-      );
-    }
+    var p = getPos(e);
+    paintLine(cLastX, cLastY, p.x, p.y);
     cLastX = p.x; cLastY = p.y;
-    cCheckTimer++;
-    if (cCheckTimer % 50 === 0) checkColoringCoverage();
+    if (++cCheckTimer % 50 === 0) checkColoringCoverage();
   });
   window.addEventListener('mouseup', function() {
     if (!cDrawing) return;
-    cDrawing = false;
-    checkColoringCoverage();
+    cDrawing = false; checkColoringCoverage();
   });
   colorCv.addEventListener('touchstart', function(e) {
+    if (e.touches.length !== 1) return;
     e.preventDefault();
-    const p = getPos(e);
+    var p = getPos(e);
     cDrawing = true; cLastX = p.x; cLastY = p.y;
     doPaint(p.x, p.y);
   }, { passive: false });
   colorCv.addEventListener('touchmove', function(e) {
-    if (!cDrawing) return;
+    if (!cDrawing || e.touches.length !== 1) return;
     e.preventDefault();
-    const p = getPos(e);
-    const steps = Math.max(Math.abs(p.x-cLastX), Math.abs(p.y-cLastY));
-    for (let i = 0; i <= steps; i++) {
-      doPaint(
-        Math.round(cLastX + (p.x-cLastX)*i/steps),
-        Math.round(cLastY + (p.y-cLastY)*i/steps)
-      );
-    }
+    var p = getPos(e);
+    paintLine(cLastX, cLastY, p.x, p.y);
     cLastX = p.x; cLastY = p.y;
   }, { passive: false });
   window.addEventListener('touchend', function() {
     if (!cDrawing) return;
-    cDrawing = false;
-    checkColoringCoverage();
+    cDrawing = false; checkColoringCoverage();
   });
 
   coloringEventsInit = true;
@@ -2441,30 +2438,22 @@ function showTypingResult() {
 let cZoom = 1, cPanX = 0, cPanY = 0, cPanning = false, cPanStartX = 0, cPanStartY = 0;
 
 function applyColoringZoom() {
-  const cc = document.getElementById('coloring-draw-canvas');
-  const oc = document.getElementById('coloring-outline-canvas');
-  const t  = `scale(${cZoom}) translate(${cPanX}px,${cPanY}px)`;
+  var t = 'scale(' + cZoom + ') translate(' + cPanX + 'px,' + cPanY + 'px)';
+  var cc = document.getElementById('coloring-draw-canvas');
+  var oc = document.getElementById('coloring-outline-canvas');
   if (cc) { cc.style.transform = t; cc.style.transformOrigin = '0 0'; }
   if (oc) { oc.style.transform = t; oc.style.transformOrigin = '0 0'; }
-  const lbl = document.getElementById('coloring-zoom-label');
+  var lbl = document.getElementById('coloring-zoom-label');
   if (lbl) lbl.textContent = Math.round(cZoom * 100) + '%';
 }
+function zoomColoring(f) { cZoom = Math.min(3, Math.max(0.5, cZoom*f)); applyColoringZoom(); }
+function resetZoomColoring() { cZoom=1; cPanX=0; cPanY=0; applyColoringZoom(); }
 
-function zoomColoring(f) {
-  cZoom = Math.min(3, Math.max(0.5, cZoom * f));
-  applyColoringZoom();
-}
-
-function resetZoomColoring() {
-  cZoom = 1; cPanX = 0; cPanY = 0;
-  applyColoringZoom();
-}
-
-// 휠 줌 + 스페이스 팬
+// 휠 줌 + 스페이스/중간버튼 팬
 (function(){
-  const wrapper = document.getElementById('coloring-canvas-wrapper');
+  var wrapper = document.getElementById('coloring-canvas-wrapper');
   if (!wrapper) return;
-  let spaceDown = false;
+  var spaceDown = false;
 
   document.addEventListener('keydown', function(e) {
     if (e.code === 'Space' && document.getElementById('coloring-screen').classList.contains('active')) {
@@ -2473,14 +2462,12 @@ function resetZoomColoring() {
     }
   });
   document.addEventListener('keyup', function(e) {
-    if (e.code === 'Space') { spaceDown = false; wrapper.style.cursor = ''; cPanning = false; }
+    if (e.code === 'Space') { spaceDown = false; cPanning = false; wrapper.style.cursor = ''; }
   });
-
   wrapper.addEventListener('wheel', function(e) {
     e.preventDefault();
     zoomColoring(e.deltaY < 0 ? 1.15 : 0.87);
   }, { passive: false });
-
   wrapper.addEventListener('mousedown', function(e) {
     if (e.button === 1 || spaceDown) {
       e.preventDefault(); cPanning = true;
@@ -2496,28 +2483,17 @@ function resetZoomColoring() {
     applyColoringZoom();
   });
   window.addEventListener('mouseup', function() {
-    if (cPanning) { cPanning = false; wrapper.style.cursor = ''; }
+    if (cPanning) { cPanning = false; wrapper.style.cursor = spaceDown ? 'grab' : ''; }
   });
-
-  // 모바일 핀치 줌
-  let lastPinchDist = 0;
+  var lastPinch = 0;
   wrapper.addEventListener('touchstart', function(e) {
-    if (e.touches.length === 2) {
-      lastPinchDist = Math.hypot(
-        e.touches[0].clientX - e.touches[1].clientX,
-        e.touches[0].clientY - e.touches[1].clientY
-      );
-    }
+    if (e.touches.length === 2) lastPinch = Math.hypot(e.touches[0].clientX-e.touches[1].clientX, e.touches[0].clientY-e.touches[1].clientY);
   }, { passive: true });
   wrapper.addEventListener('touchmove', function(e) {
     if (e.touches.length === 2) {
-      const d = Math.hypot(
-        e.touches[0].clientX - e.touches[1].clientX,
-        e.touches[0].clientY - e.touches[1].clientY
-      );
-      if (lastPinchDist > 0) zoomColoring(d / lastPinchDist);
-      lastPinchDist = d;
-      e.preventDefault();
+      var d = Math.hypot(e.touches[0].clientX-e.touches[1].clientX, e.touches[0].clientY-e.touches[1].clientY);
+      if (lastPinch > 0) zoomColoring(d / lastPinch);
+      lastPinch = d; e.preventDefault();
     }
   }, { passive: false });
 })();
