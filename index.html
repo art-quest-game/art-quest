@@ -144,8 +144,7 @@ canvas { display:block; image-rendering:pixelated; position:fixed; top:0; left:0
 #coloring-workspace { display:flex; gap:14px; align-items:flex-start; width:100%; justify-content:center; flex-wrap:wrap; }
 #coloring-canvas-wrapper { position:relative; width:560px; height:392px; max-width:100%; background:#f5f5f5; border-radius:12px; border:3px solid #ffd70060; overflow:hidden; flex-shrink:0; touch-action:none; }
 #coloring-zoom-container { position:absolute; top:0; left:0; width:100%; height:100%; transform-origin:top left; cursor:crosshair; }
-#coloring-draw-canvas { position:absolute; top:0; left:0; z-index:2; cursor:crosshair; }
-#coloring-outline-canvas-css { z-index:3; }
+#coloring-draw-canvas { position:absolute; top:0; left:0; width:100%; height:100%; z-index:3; cursor:crosshair; background:transparent; }
 
 #coloring-canvas-wrapper.mode-brush { cursor:crosshair; }
 #coloring-canvas-wrapper.mode-fill  { cursor:cell; }
@@ -811,8 +810,8 @@ async function openTeacherDashboard() {
     <div id="coloring-workspace">
       <div id="coloring-canvas-wrapper" class="mode-brush">
         <div id="coloring-zoom-inner" style="position:absolute;top:0;left:0;transform-origin:0 0;">
-          <canvas id="coloring-draw-canvas" width="560" height="392" style="position:absolute;top:0;left:0;z-index:2;cursor:crosshair;display:block;"></canvas>
-          <canvas id="coloring-outline-canvas" width="560" height="392" style="position:absolute;top:0;left:0;z-index:3;pointer-events:none;display:block;"></canvas>
+          <canvas id="coloring-draw-canvas" style="position:absolute;top:0;left:0;z-index:2;cursor:crosshair;display:block;"></canvas>
+          <canvas id="coloring-outline-canvas" style="position:absolute;top:0;left:0;z-index:3;pointer-events:none;display:block;"></canvas>
         </div>
       </div>
       <div id="coloring-palette-panel">
@@ -1993,19 +1992,19 @@ function openColoring() {
 }
 
 let coloringEventsInit = false;
+const COLORING_BASE = 'https://raw.githubusercontent.com/art-quest-game/art-quest/main/';
 
 function initColoringEvents() {
   if (coloringEventsInit) return;
-
   const colorCv   = document.getElementById('coloring-draw-canvas');
   const outlineCv = document.getElementById('coloring-outline-canvas');
   const zi        = document.getElementById('coloring-zoom-inner');
   const wrapper   = document.getElementById('coloring-canvas-wrapper');
   if (!colorCv || !outlineCv || !zi || !wrapper) return;
 
-  // wrapper 실제 픽셀 크기로 캔버스 해상도 설정
-  const W = Math.round(wrapper.getBoundingClientRect().width)  || 560;
-  const H = Math.round(wrapper.getBoundingClientRect().height) || 392;
+  const rect = wrapper.getBoundingClientRect();
+  const W = Math.round(rect.width)  || 560;
+  const H = Math.round(rect.height) || 392;
   colorCv.width   = W; colorCv.height   = H;
   outlineCv.width = W; outlineCv.height = H;
   zi.style.width  = W + 'px';
@@ -2014,7 +2013,6 @@ function initColoringEvents() {
   cCtx = colorCv.getContext('2d');
   cCtx.clearRect(0, 0, W, H);
 
-  // 밑그림 outline 캔버스에 그리기 (z-index:3 이므로 색칠 위에 항상 표시)
   const outCtx = outlineCv.getContext('2d');
   function drawOutline(filename) {
     const img = new Image();
@@ -2023,12 +2021,11 @@ function initColoringEvents() {
       outCtx.clearRect(0, 0, outlineCv.width, outlineCv.height);
       outCtx.drawImage(img, 0, 0, outlineCv.width, outlineCv.height);
     };
-    img.src = 'https://raw.githubusercontent.com/art-quest-game/art-quest/main/' + filename;
+    img.src = COLORING_BASE + filename;
   }
   drawOutline('starry-coloring.png');
   window._drawColoringOutline = drawOutline;
 
-  // 좌표: draw-canvas 실제 화면 위치 기준 (zoom-inner에 transform 적용해도 canvas 자체 rect는 변환됨)
   function getPos(e) {
     const r   = colorCv.getBoundingClientRect();
     const src = e.touches ? e.touches[0] : e;
@@ -2037,7 +2034,6 @@ function initColoringEvents() {
       y: (src.clientY - r.top)  * colorCv.height / r.height
     };
   }
-
   function doPaint(x, y) {
     cCtx.globalCompositeOperation = cEraser ? 'destination-out' : 'source-over';
     cCtx.fillStyle = cEraser ? 'rgba(0,0,0,1)' : selectedColor;
@@ -2046,52 +2042,37 @@ function initColoringEvents() {
     cCtx.fill();
     cCtx.globalCompositeOperation = 'source-over';
   }
-
   function paintLine(x1, y1, x2, y2) {
-    const steps = Math.ceil(Math.hypot(x2-x1, y2-y1));
-    for (let i = 0; i <= (steps||1); i++) {
-      doPaint(x1+(x2-x1)*i/steps, y1+(y2-y1)*i/steps);
-    }
+    const steps = Math.ceil(Math.hypot(x2-x1, y2-y1)) || 1;
+    for (let i = 0; i <= steps; i++) doPaint(x1+(x2-x1)*i/steps, y1+(y2-y1)*i/steps);
   }
 
   colorCv.addEventListener('mousedown', function(e) {
-    if (e.button !== 0) return;
-    e.preventDefault();
-    const p = getPos(e); cDrawing = true; cLastX = p.x; cLastY = p.y;
-    doPaint(p.x, p.y);
+    if (e.button !== 0) return; e.preventDefault();
+    const p = getPos(e); cDrawing = true; cLastX = p.x; cLastY = p.y; doPaint(p.x, p.y);
   });
   colorCv.addEventListener('mousemove', function(e) {
     if (!cDrawing) return; e.preventDefault();
-    const p = getPos(e);
-    paintLine(cLastX, cLastY, p.x, p.y);
-    cLastX = p.x; cLastY = p.y;
+    const p = getPos(e); paintLine(cLastX, cLastY, p.x, p.y); cLastX = p.x; cLastY = p.y;
     if (++cCheckTimer % 50 === 0) checkColoringCoverage();
   });
-  window.addEventListener('mouseup', function() {
-    if (!cDrawing) return; cDrawing = false; checkColoringCoverage();
-  });
+  window.addEventListener('mouseup', function() { if (!cDrawing) return; cDrawing = false; checkColoringCoverage(); });
   colorCv.addEventListener('touchstart', function(e) {
     if (e.touches.length !== 1) return; e.preventDefault();
-    const p = getPos(e); cDrawing = true; cLastX = p.x; cLastY = p.y;
-    doPaint(p.x, p.y);
+    const p = getPos(e); cDrawing = true; cLastX = p.x; cLastY = p.y; doPaint(p.x, p.y);
   }, { passive: false });
   colorCv.addEventListener('touchmove', function(e) {
     if (!cDrawing || e.touches.length !== 1) return; e.preventDefault();
-    const p = getPos(e);
-    paintLine(cLastX, cLastY, p.x, p.y);
-    cLastX = p.x; cLastY = p.y;
+    const p = getPos(e); paintLine(cLastX, cLastY, p.x, p.y); cLastX = p.x; cLastY = p.y;
   }, { passive: false });
-  window.addEventListener('touchend', function() {
-    if (!cDrawing) return; cDrawing = false; checkColoringCoverage();
-  });
+  window.addEventListener('touchend', function() { if (!cDrawing) return; cDrawing = false; checkColoringCoverage(); });
 
   coloringEventsInit = true;
 }
 
 
 function changeColoringImg(filename, btn) {
-  const BASE = 'https://raw.githubusercontent.com/art-quest-game/art-quest/main/';
-  if (window._drawColoringOutline) window._drawColoringOutline(BASE + filename);
+  if (window._drawColoringOutline) window._drawColoringOutline(filename);
   clearColoringCanvas();
   document.querySelectorAll('#coloring-select-row .c-tool-btn').forEach(b => b.classList.remove('active'));
   btn.classList.add('active');
@@ -2428,7 +2409,6 @@ function showTypingResult() {
 
 // ── 색칠 확대/축소 ──
 let cZoom=1, cPanX=0, cPanY=0, cPanning=false, cPanStartX=0, cPanStartY=0;
-
 function applyColoringZoom() {
   const zi = document.getElementById('coloring-zoom-inner');
   if (zi) zi.style.transform = `scale(${cZoom}) translate(${cPanX}px,${cPanY}px)`;
@@ -2437,43 +2417,23 @@ function applyColoringZoom() {
 }
 function zoomColoring(f) { cZoom=Math.min(3,Math.max(0.5,cZoom*f)); applyColoringZoom(); }
 function resetZoomColoring() { cZoom=1; cPanX=0; cPanY=0; applyColoringZoom(); }
-
 (function(){
   const wrapper = document.getElementById('coloring-canvas-wrapper');
   if (!wrapper) return;
-  let spaceDown = false;
+  let spaceDown=false;
   document.addEventListener('keydown', e => {
-    if (e.code==='Space' && document.getElementById('coloring-screen').classList.contains('active')) {
-      spaceDown=true; e.preventDefault(); wrapper.style.cursor='grab';
-    }
+    if (e.code==='Space' && document.getElementById('coloring-screen').classList.contains('active')) { spaceDown=true; e.preventDefault(); wrapper.style.cursor='grab'; }
   });
-  document.addEventListener('keyup', e => {
-    if (e.code==='Space') { spaceDown=false; cPanning=false; wrapper.style.cursor=''; }
-  });
-  wrapper.addEventListener('wheel', e => { e.preventDefault(); zoomColoring(e.deltaY<0?1.15:0.87); }, {passive:false});
+  document.addEventListener('keyup', e => { if(e.code==='Space'){spaceDown=false;cPanning=false;wrapper.style.cursor='';} });
+  wrapper.addEventListener('wheel', e => { e.preventDefault(); zoomColoring(e.deltaY<0?1.15:0.87); },{passive:false});
   wrapper.addEventListener('mousedown', e => {
-    if (e.button===1||spaceDown) {
-      e.preventDefault(); cPanning=true;
-      cPanStartX=e.clientX/cZoom-cPanX; cPanStartY=e.clientY/cZoom-cPanY;
-      wrapper.style.cursor='grabbing';
-    }
+    if (e.button===1||spaceDown) { e.preventDefault(); cPanning=true; cPanStartX=e.clientX/cZoom-cPanX; cPanStartY=e.clientY/cZoom-cPanY; wrapper.style.cursor='grabbing'; }
   });
-  window.addEventListener('mousemove', e => {
-    if (!cPanning) return;
-    cPanX=e.clientX/cZoom-cPanStartX; cPanY=e.clientY/cZoom-cPanStartY;
-    applyColoringZoom();
-  });
-  window.addEventListener('mouseup', () => { if(cPanning){cPanning=false; wrapper.style.cursor=spaceDown?'grab':'';} });
+  window.addEventListener('mousemove', e => { if(!cPanning)return; cPanX=e.clientX/cZoom-cPanStartX; cPanY=e.clientY/cZoom-cPanStartY; applyColoringZoom(); });
+  window.addEventListener('mouseup', ()=>{ if(cPanning){cPanning=false;wrapper.style.cursor=spaceDown?'grab':'';} });
   let lastPinch=0;
-  wrapper.addEventListener('touchstart', e => {
-    if(e.touches.length===2) lastPinch=Math.hypot(e.touches[0].clientX-e.touches[1].clientX,e.touches[0].clientY-e.touches[1].clientY);
-  },{passive:true});
-  wrapper.addEventListener('touchmove', e => {
-    if(e.touches.length===2){
-      const d=Math.hypot(e.touches[0].clientX-e.touches[1].clientX,e.touches[0].clientY-e.touches[1].clientY);
-      if(lastPinch>0) zoomColoring(d/lastPinch); lastPinch=d; e.preventDefault();
-    }
-  },{passive:false});
+  wrapper.addEventListener('touchstart',e=>{if(e.touches.length===2)lastPinch=Math.hypot(e.touches[0].clientX-e.touches[1].clientX,e.touches[0].clientY-e.touches[1].clientY);},{passive:true});
+  wrapper.addEventListener('touchmove',e=>{if(e.touches.length===2){const d=Math.hypot(e.touches[0].clientX-e.touches[1].clientX,e.touches[0].clientY-e.touches[1].clientY);if(lastPinch>0)zoomColoring(d/lastPinch);lastPinch=d;e.preventDefault();}},{passive:false});
 })();
 typingInput.addEventListener('compositionstart', () => { _composing = true; });
 typingInput.addEventListener('compositionend',   function() {
