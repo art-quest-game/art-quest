@@ -1281,6 +1281,10 @@ document.getElementById('popup-overlay').addEventListener('click', e => {
 
 // 전역 키보드 핸들러
 document.addEventListener('keydown', e => {
+  // 등급업 팝업 Enter/ESC → 최우선 처리
+  if (document.getElementById('rank-up-overlay').classList.contains('active')) {
+    if (e.key === 'Enter' || e.key === 'Escape') { e.preventDefault(); closeRankUp(); return; }
+  }
   // ESC → 열려있는 미니게임/팝업 닫기
   if (e.key === 'Escape') {
     if (document.getElementById('quest-complete-popup').style.display === 'flex') {
