@@ -144,8 +144,8 @@ canvas { display:block; image-rendering:pixelated; position:fixed; top:0; left:0
 #coloring-workspace { display:flex; gap:14px; align-items:flex-start; width:100%; justify-content:center; flex-wrap:wrap; }
 #coloring-canvas-wrapper { position:relative; width:560px; height:392px; max-width:100%; background:#f5f5f5; border-radius:12px; border:3px solid #ffd70060; overflow:hidden; flex-shrink:0; touch-action:none; }
 #coloring-zoom-container { position:absolute; top:0; left:0; width:100%; height:100%; transform-origin:top left; cursor:crosshair; }
-#coloring-draw-canvas { position:absolute; top:0; left:0; width:100%; height:100%; z-index:3; cursor:crosshair; }
-#coloring-overlay-img { position:absolute; top:0; left:0; width:100%; height:100%; z-index:2; pointer-events:none; user-select:none; }
+#coloring-draw-canvas { position:absolute; top:0; left:0; width:100%; height:100%; z-index:3; cursor:crosshair; background:transparent; }
+
 #coloring-canvas-wrapper.mode-brush { cursor:crosshair; }
 #coloring-canvas-wrapper.mode-fill  { cursor:cell; }
 #coloring-palette-panel { display:flex; flex-direction:column; align-items:center; gap:10px; }
@@ -335,6 +335,7 @@ auth.onAuthStateChanged(async (user) => {
     }
     window._currentUser = user;
     window._isTeacher = snap.exists && snap.data()?.role === 'teacher';
+    window._school = snap.exists ? (snap.data()?.school || '') : '';
     document.getElementById('login-overlay').style.display = 'none';
     document.getElementById('user-info-bar').style.display = 'flex';
     const nameLabel = snap.exists ? (snap.data().name || user.email) : user.email;
@@ -354,21 +355,22 @@ auth.onAuthStateChanged(async (user) => {
 });
 
 async function doLogin(isSignup) {
-  const rawId = document.getElementById('login-email').value.trim();
-  const pw    = document.getElementById('login-pw').value;
-  const name  = document.getElementById('login-name').value.trim();
-  const role  = document.getElementById('login-role').value;
-  const msg   = document.getElementById('login-msg');
+  const rawId  = document.getElementById('login-email').value.trim();
+  const pw     = document.getElementById('login-pw').value;
+  const name   = document.getElementById('login-name')?.value.trim() || '';
+  const school = document.getElementById('login-school')?.value.trim() || '';
+  const role   = document.getElementById('login-role')?.value || 'student';
+  const msg    = document.getElementById('login-msg');
   msg.textContent = '';
   if (!rawId || !pw) { msg.textContent = '아이디와 비밀번호를 입력하세요.'; return; }
-  // 아이디를 내부 이메일로 변환
   const email = rawId.includes('@') ? rawId : rawId + '@artquest.game';
   try {
     if (isSignup) {
       if (!name) { msg.textContent = '이름을 입력하세요.'; return; }
+      if (!school) { msg.textContent = '학교 이름을 입력하세요.'; return; }
       const cred = await auth.createUserWithEmailAndPassword(email, pw);
       await db.collection('users').doc(cred.user.uid).set({
-        email, userId: rawId, name, role, coins:0, totalCoins:0, artworks:0, equipped:[], owned:[], createdAt: new Date().toISOString()
+        email, userId: rawId, name, school, role, coins:0, totalCoins:0, artworks:0, equipped:[], owned:[], createdAt: new Date().toISOString()
       });
     } else {
       await auth.signInWithEmailAndPassword(email, pw);
@@ -500,6 +502,7 @@ window.doLogout = doLogout;
 
         <div id="signup-fields" style="display:none;">
           <input id="login-name" class="px-input" placeholder="▸ 이름">
+          <input id="login-school" class="px-input" placeholder="▸ 학교 이름 (예: 행복초등학교)">
           <select id="login-role" class="px-input px-select">
             <option value="student">▸ 학생</option>
             <option value="teacher">▸ 교사</option>
@@ -538,8 +541,73 @@ function switchTab(tab) {
   document.getElementById('tab-login').className  = 'px-tab ' + (isSignup ? 'px-tab-off' : 'px-tab-on');
   document.getElementById('tab-signup').className = 'px-tab ' + (isSignup ? 'px-tab-on'  : 'px-tab-off');
 }
-function openTeacherDashboard() {
-  alert('교사 대시보드 준비 중입니다.');
+async function openTeacherDashboard() {
+  if (!window._currentUser || !window._isTeacher) return;
+  const school = window._school || '';
+  if (!school) { alert('학교 정보가 없습니다. 다시 로그인해주세요.'); return; }
+
+  // 모달 생성
+  let modal = document.getElementById('teacher-modal');
+  if (!modal) {
+    modal = document.createElement('div');
+    modal.id = 'teacher-modal';
+    modal.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.85);z-index:9999;display:flex;justify-content:center;align-items:flex-start;overflow-y:auto;padding:20px;';
+    modal.innerHTML = `
+      <div style="background:linear-gradient(135deg,#2d1b69,#1a0a2e);border:3px solid #ffd700;border-radius:16px;width:min(700px,98vw);padding:28px 24px;position:relative;">
+        <h2 style="color:#ffd700;font-size:1.3rem;margin-bottom:4px;">📊 학생 현황</h2>
+        <div id="td-school-name" style="color:#a78bfa;font-size:.85rem;margin-bottom:16px;"></div>
+        <button onclick="document.getElementById('teacher-modal').remove()" style="position:absolute;top:16px;right:16px;background:#6b21a8;color:#fff;border:none;border-radius:8px;padding:6px 14px;cursor:pointer;font-size:.85rem;">✕ 닫기</button>
+        <div id="td-body" style="color:#e2c4ff;font-size:.88rem;">불러오는 중...</div>
+      </div>`;
+    document.body.appendChild(modal);
+  } else {
+    modal.style.display = 'flex';
+    document.getElementById('td-body').textContent = '불러오는 중...';
+  }
+  document.getElementById('td-school-name').textContent = '🏫 ' + school;
+
+  try {
+    const snap = await db.collection('users').where('school', '==', school).where('role', '==', 'student').get();
+    if (snap.empty) {
+      document.getElementById('td-body').innerHTML = '<p style="color:#a78bfa;">아직 등록된 학생이 없습니다.</p>';
+      return;
+    }
+    const ranks = ['견습생','화가지망생','화가','거장','마에스트로'];
+    const rankIcons = ['🌱','🎨','🖼️','⭐','🏆'];
+    function getRank(c) {
+      if(c>=500) return 4; if(c>=200) return 3; if(c>=80) return 2; if(c>=30) return 1; return 0;
+    }
+    const students = [];
+    snap.forEach(doc => students.push(doc.data()));
+    students.sort((a,b) => (b.totalCoins||0) - (a.totalCoins||0));
+    let rows = '';
+    let i = 1;
+    students.forEach(d => {
+      const r = getRank(d.totalCoins||0);
+      rows += `<tr style="border-bottom:1px solid #ffffff20;">
+        <td style="padding:8px 6px;color:#ffd700;font-weight:700;">${i++}</td>
+        <td style="padding:8px 6px;">${d.name||'-'}</td>
+        <td style="padding:8px 6px;">${rankIcons[r]} ${ranks[r]}</td>
+        <td style="padding:8px 6px;color:#ffd700;">🪙 ${d.coins||0}</td>
+        <td style="padding:8px 6px;color:#a78bfa;">누적 ${d.totalCoins||0}</td>
+        <td style="padding:8px 6px;">🖼️ ${d.artworks||0}</td>
+      </tr>`;
+    });
+    document.getElementById('td-body').innerHTML = `
+      <table style="width:100%;border-collapse:collapse;">
+        <thead><tr style="color:#ffd700;font-size:.8rem;border-bottom:2px solid #ffd70050;">
+          <th style="padding:6px;text-align:left;">#</th>
+          <th style="padding:6px;text-align:left;">이름</th>
+          <th style="padding:6px;text-align:left;">등급</th>
+          <th style="padding:6px;text-align:left;">코인</th>
+          <th style="padding:6px;text-align:left;">누적코인</th>
+          <th style="padding:6px;text-align:left;">감상</th>
+        </tr></thead>
+        <tbody>${rows}</tbody>
+      </table>`;
+  } catch(e) {
+    document.getElementById('td-body').textContent = '오류: ' + e.message;
+  }
 }
 </script>
 </head>
@@ -741,7 +809,7 @@ function openTeacherDashboard() {
     <div id="coloring-workspace">
       <div id="coloring-canvas-wrapper" class="mode-brush">
         <canvas id="coloring-draw-canvas" width="600" height="420"></canvas>
-        <img id="coloring-overlay-img" src="https://raw.githubusercontent.com/art-quest-game/art-quest/main/starry-coloring.png" alt="coloring outline" draggable="false">
+        <canvas id="coloring-outline-canvas" width="600" height="420" style="position:absolute;top:0;left:0;width:100%;height:100%;z-index:4;pointer-events:none;background:transparent;"></canvas>
       </div>
       <div id="coloring-palette-panel">
         <div id="coloring-cur-color" style="background:#1d4ed8"></div>
@@ -1256,6 +1324,8 @@ document.addEventListener('keydown', e => {
   }
   // 팝업 / 감상 완료 Enter
   if (e.key !== 'Enter') return;
+  if (document.getElementById('rank-up-overlay').classList.contains('active'))
+    { closeRankUp(); return; }
   if (document.getElementById('popup-overlay').classList.contains('active'))
     document.getElementById('popup-enter').click();
   else if (document.getElementById('art-detail-overlay').classList.contains('active'))
@@ -1908,63 +1978,120 @@ function openColoring() {
   cReward50 = false; cReward100 = false;
   cEraser = false; cZoom = 1;
   coloringEventsInit = false;
+  cCtx = null;
   buildPalette();
   updateColoringStatus(0);
-  initColoringEvents(); // 여기서 canvas clone + cCtx 설정
+  initColoringEvents();
 }
 
 let coloringEventsInit = false;
+
 function initColoringEvents() {
-  const canvas = document.getElementById('coloring-draw-canvas');
-  // 기존 이벤트 제거 후 재등록
-  const newCanvas = canvas.cloneNode(true);
-  canvas.parentNode.replaceChild(newCanvas, canvas);
-  cCtx = newCanvas.getContext('2d');
-  // 투명 초기화
-  cCtx.clearRect(0, 0, newCanvas.width, newCanvas.height);
+  if (coloringEventsInit) return;
+
+  const colorCv   = document.getElementById('coloring-draw-canvas');
+  const outlineCv = document.getElementById('coloring-outline-canvas');
+  if (!colorCv || !outlineCv) return;
+
+  cCtx = colorCv.getContext('2d');
+  cCtx.clearRect(0, 0, colorCv.width, colorCv.height);
+
+  const outlineCtx = outlineCv.getContext('2d');
+
+  // 밑그림 이미지를 outline 캔버스에 그리기
+  function drawOutline(src) {
+    const img = new Image();
+    img.crossOrigin = 'anonymous';
+    img.onload = function() {
+      outlineCtx.clearRect(0, 0, outlineCv.width, outlineCv.height);
+      outlineCtx.drawImage(img, 0, 0, outlineCv.width, outlineCv.height);
+    };
+    img.src = src;
+  }
+  const BASE = 'https://raw.githubusercontent.com/art-quest-game/art-quest/main/';
+  drawOutline(BASE + 'starry-coloring.png');
+  window._drawColoringOutline = drawOutline;
 
   function getPos(e) {
-    const r = newCanvas.getBoundingClientRect();
-    const scaleX = newCanvas.width  / r.width;
-    const scaleY = newCanvas.height / r.height;
+    const r = colorCv.getBoundingClientRect();
     const src = e.touches ? e.touches[0] : e;
     return {
-      x: Math.round((src.clientX - r.left) * scaleX),
-      y: Math.round((src.clientY - r.top)  * scaleY)
+      x: Math.round((src.clientX - r.left) * (colorCv.width  / r.width)),
+      y: Math.round((src.clientY - r.top)  * (colorCv.height / r.height))
     };
   }
-  function onDown(e) {
+  function doPaint(x, y) {
+    if (cEraser) {
+      cCtx.globalCompositeOperation = 'destination-out';
+      cCtx.fillStyle = 'rgba(0,0,0,1)';
+    } else {
+      cCtx.globalCompositeOperation = 'source-over';
+      cCtx.fillStyle = selectedColor;
+    }
+    cCtx.beginPath();
+    cCtx.arc(x, y, cBrushSize / 2, 0, Math.PI * 2);
+    cCtx.fill();
+    cCtx.globalCompositeOperation = 'source-over';
+  }
+
+  colorCv.addEventListener('mousedown', function(e) {
     e.preventDefault();
     const p = getPos(e);
     cDrawing = true; cLastX = p.x; cLastY = p.y;
-    cPaint(p.x, p.y);
-  }
-  function onMove(e) {
+    doPaint(p.x, p.y);
+  });
+  colorCv.addEventListener('mousemove', function(e) {
     if (!cDrawing) return;
     e.preventDefault();
     const p = getPos(e);
-    cPaintLine(cLastX, cLastY, p.x, p.y);
+    const steps = Math.max(Math.abs(p.x-cLastX), Math.abs(p.y-cLastY));
+    for (let i = 0; i <= steps; i++) {
+      doPaint(
+        Math.round(cLastX + (p.x-cLastX)*i/steps),
+        Math.round(cLastY + (p.y-cLastY)*i/steps)
+      );
+    }
     cLastX = p.x; cLastY = p.y;
     cCheckTimer++;
     if (cCheckTimer % 50 === 0) checkColoringCoverage();
-  }
-  function onUp() {
+  });
+  window.addEventListener('mouseup', function() {
     if (!cDrawing) return;
     cDrawing = false;
     checkColoringCoverage();
-  }
-  newCanvas.addEventListener('mousedown',  onDown);
-  newCanvas.addEventListener('mousemove',  onMove);
-  window.addEventListener('mouseup',       onUp);
-  newCanvas.addEventListener('touchstart', onDown, { passive: false });
-  newCanvas.addEventListener('touchmove',  onMove, { passive: false });
-  window.addEventListener('touchend',      onUp);
+  });
+  colorCv.addEventListener('touchstart', function(e) {
+    e.preventDefault();
+    const p = getPos(e);
+    cDrawing = true; cLastX = p.x; cLastY = p.y;
+    doPaint(p.x, p.y);
+  }, { passive: false });
+  colorCv.addEventListener('touchmove', function(e) {
+    if (!cDrawing) return;
+    e.preventDefault();
+    const p = getPos(e);
+    const steps = Math.max(Math.abs(p.x-cLastX), Math.abs(p.y-cLastY));
+    for (let i = 0; i <= steps; i++) {
+      doPaint(
+        Math.round(cLastX + (p.x-cLastX)*i/steps),
+        Math.round(cLastY + (p.y-cLastY)*i/steps)
+      );
+    }
+    cLastX = p.x; cLastY = p.y;
+  }, { passive: false });
+  window.addEventListener('touchend', function() {
+    if (!cDrawing) return;
+    cDrawing = false;
+    checkColoringCoverage();
+  });
+
   coloringEventsInit = true;
 }
 
+
 function changeColoringImg(filename, btn) {
   const BASE = 'https://raw.githubusercontent.com/art-quest-game/art-quest/main/';
-  document.getElementById('coloring-overlay-img').src = BASE + filename;
+  if (window._drawColoringOutline) window._drawColoringOutline(BASE + filename);
   clearColoringCanvas();
   document.querySelectorAll('#coloring-select-row .c-tool-btn').forEach(b => b.classList.remove('active'));
   btn.classList.add('active');
@@ -2008,21 +2135,24 @@ function toggleEraser() {
 }
 
 function clearColoringCanvas() {
-  if (!cCtx) return;
-  const cv = document.getElementById('coloring-draw-canvas');
-  if (cv) cCtx.clearRect(0, 0, cv.width, cv.height);
+  if (cCtx) {
+    const cv = document.getElementById('coloring-draw-canvas');
+    if (cv) cCtx.clearRect(0, 0, cv.width, cv.height);
+  }
   cReward50 = false; cReward100 = false;
   updateColoringStatus(0);
 }
 
 function saveColoringCanvas() {
-  const cv = document.getElementById('coloring-draw-canvas');
+  const colorCv   = document.getElementById('coloring-draw-canvas');
+  const outlineCv = document.getElementById('coloring-outline-canvas');
+  if (!colorCv) return;
   const tmp = document.createElement('canvas');
-  tmp.width = cv.width; tmp.height = cv.height;
+  tmp.width = colorCv.width; tmp.height = colorCv.height;
   const ctx = tmp.getContext('2d');
   ctx.fillStyle = '#ffffff'; ctx.fillRect(0, 0, tmp.width, tmp.height);
-  ctx.drawImage(cv, 0, 0);
-  try { ctx.drawImage(document.getElementById('coloring-overlay-img'), 0, 0, tmp.width, tmp.height); } catch(e){}
+  ctx.drawImage(colorCv, 0, 0);
+  if (outlineCv) ctx.drawImage(outlineCv, 0, 0);
   const a = document.createElement('a');
   a.download = 'my-artwork.png'; a.href = tmp.toDataURL('image/png'); a.click();
 }
@@ -2038,25 +2168,7 @@ function cGetPos(e) {
   };
 }
 
-function cPaint(x, y) {
-  if (!cCtx) return;
-  if (cEraser) {
-    cCtx.globalCompositeOperation = 'destination-out';
-    cCtx.fillStyle = 'rgba(0,0,0,1)';
-  } else {
-    cCtx.globalCompositeOperation = 'source-over';
-    cCtx.fillStyle = selectedColor;
-  }
-  cCtx.beginPath(); cCtx.arc(x, y, cBrushSize / 2, 0, Math.PI * 2); cCtx.fill();
-  cCtx.globalCompositeOperation = 'source-over';
-}
-
-function cPaintLine(x1, y1, x2, y2) {
-  const steps = Math.max(Math.abs(x2 - x1), Math.abs(y2 - y1));
-  for (let i = 0; i <= steps; i++) {
-    cPaint(Math.round(x1 + (x2 - x1) * i / steps), Math.round(y1 + (y2 - y1) * i / steps));
-  }
-}
+/* cPaint/cPaintLine replaced by doPaint inside initColoringEvents */
 
 function updateColoringStatus(p) {
   const el = document.getElementById('coloring-coin-status');
@@ -2069,6 +2181,7 @@ function updateColoringStatus(p) {
 function checkColoringCoverage() {
   if (!cCtx) return;
   const cv = document.getElementById('coloring-draw-canvas');
+  if (!cv) return;
   const data = cCtx.getImageData(0, 0, cv.width, cv.height).data;
   let colored = 0;
   for (let i = 3; i < data.length; i += 4) { if (data[i] > 10) colored++; }
