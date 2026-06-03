@@ -143,7 +143,9 @@ canvas { display:block; image-rendering:pixelated; position:fixed; top:0; left:0
 #coloring-coin-status { color:#a78bfa; font-size:.78rem; margin-left:auto; text-align:right; }
 #coloring-workspace { display:flex; gap:14px; align-items:flex-start; width:100%; justify-content:center; flex-wrap:wrap; }
 #coloring-canvas-wrapper { position:relative; width:560px; height:392px; max-width:100%; background:#f5f5f5; border-radius:12px; border:3px solid #ffd70060; overflow:hidden; flex-shrink:0; touch-action:none; }
-#coloring-zoom-container { position:absolute; top:0; left:0; width:100%; height:100%; transform-origin:0 0; overflow:visible; }
+#coloring-draw-canvas { position:absolute; top:0; left:0; z-index:3; cursor:crosshair; }
+#coloring-outline-canvas { position:absolute; top:0; left:0; z-index:4; pointer-events:none; }
+#coloring-zoom-container { position:absolute; top:0; left:0; width:100%; height:100%; transform-origin:top left; cursor:crosshair; }
 
 #coloring-canvas-wrapper.mode-brush { cursor:crosshair; }
 #coloring-canvas-wrapper.mode-fill  { cursor:cell; }
@@ -798,6 +800,7 @@ async function openTeacherDashboard() {
       <span id="coloring-zoom-label" style="color:#a78bfa;font-size:.78rem;">100%</span>
       <span id="coloring-coin-status" style="color:#a78bfa;font-size:.78rem;margin-left:auto;">🎨 0% 색칠됨</span>
     </div>
+    <div style="font-size:.72rem;color:#6b5a9a;margin:-4px 0 6px;width:100%;text-align:right;padding-right:4px;">🖱️ 스페이스+드래그: 이동 &nbsp;|&nbsp; 핀치: 줌</div>
     <div id="coloring-select-row" style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:8px;">
       <button class="c-tool-btn active" onclick="changeColoringImg('starry-coloring.png',this)">별이 빛나는 밤</button>
       <button class="c-tool-btn" onclick="changeColoringImg('monalisa-coloring.png',this)">모나리자</button>
@@ -807,10 +810,8 @@ async function openTeacherDashboard() {
     </div>
     <div id="coloring-workspace">
       <div id="coloring-canvas-wrapper" class="mode-brush">
-        <div id="coloring-zoom-container">
-          <canvas id="coloring-draw-canvas" width="600" height="420" style="position:absolute;top:0;left:0;width:100%;height:100%;z-index:3;cursor:crosshair;"></canvas>
-          <canvas id="coloring-outline-canvas" width="600" height="420" style="position:absolute;top:0;left:0;width:100%;height:100%;z-index:4;pointer-events:none;"></canvas>
-        </div>
+        <canvas id="coloring-draw-canvas" width="560" height="392"></canvas>
+        <canvas id="coloring-outline-canvas" width="560" height="392"></canvas>
       </div>
       <div id="coloring-palette-panel">
         <div id="coloring-cur-color" style="background:#1d4ed8"></div>
@@ -1984,11 +1985,9 @@ function openColoring() {
   cEraser = false; cZoom = 1;
   coloringEventsInit = false;
   cCtx = null;
-  cZoom = 1; cPanX = 0; cPanY = 0;
   buildPalette();
   updateColoringStatus(0);
-  // 브라우저 렌더링 후 캔버스 크기가 확정된 다음 초기화
-  requestAnimationFrame(() => requestAnimationFrame(() => initColoringEvents()));
+  initColoringEvents();
 }
 
 let coloringEventsInit = false;
@@ -1998,52 +1997,60 @@ function initColoringEvents() {
 
   const colorCv   = document.getElementById('coloring-draw-canvas');
   const outlineCv = document.getElementById('coloring-outline-canvas');
-  if (!colorCv || !outlineCv) return;
+  if (!colorCv || !outlineCv) { console.warn('캔버스 없음'); return; }
+
+  // 캔버스 크기를 wrapper에 맞춤
+  const wrapper = document.getElementById('coloring-canvas-wrapper');
+  const W = wrapper.clientWidth  || 560;
+  const H = wrapper.clientHeight || 392;
+  colorCv.width   = W; colorCv.height   = H;
+  outlineCv.width = W; outlineCv.height = H;
 
   cCtx = colorCv.getContext('2d');
-  cCtx.clearRect(0, 0, colorCv.width, colorCv.height);
 
-  const outlineCtx = outlineCv.getContext('2d');
-
-  // 밑그림 이미지를 outline 캔버스에 그리기
-  function drawOutline(src) {
+  // 밑그림 outline 캔버스에 그리기
+  const outCtx = outlineCv.getContext('2d');
+  function drawOutline(filename) {
     const img = new Image();
     img.crossOrigin = 'anonymous';
     img.onload = function() {
-      outlineCtx.clearRect(0, 0, outlineCv.width, outlineCv.height);
-      outlineCtx.drawImage(img, 0, 0, outlineCv.width, outlineCv.height);
+      outCtx.clearRect(0, 0, outlineCv.width, outlineCv.height);
+      outCtx.drawImage(img, 0, 0, outlineCv.width, outlineCv.height);
     };
-    img.src = src;
+    img.src = 'https://raw.githubusercontent.com/art-quest-game/art-quest/main/' + filename;
   }
-  const BASE = 'https://raw.githubusercontent.com/art-quest-game/art-quest/main/';
-  drawOutline(BASE + 'starry-coloring.png');
+  drawOutline('starry-coloring.png');
   window._drawColoringOutline = drawOutline;
 
+  // 좌표 계산 - colorCv의 실제 화면 크기 기준
   function getPos(e) {
-    const wrapper = document.getElementById('coloring-canvas-wrapper');
-    const r = wrapper.getBoundingClientRect();
+    const r   = colorCv.getBoundingClientRect();
     const src = e.touches ? e.touches[0] : e;
-    // wrapper 기준 좌표 → 캔버스 논리 좌표 (줌/팬 보정)
     return {
-      x: Math.round(((src.clientX - r.left) / cZoom - cPanX) * colorCv.width  / r.width),
-      y: Math.round(((src.clientY - r.top)  / cZoom - cPanY) * colorCv.height / r.height)
+      x: (src.clientX - r.left) * colorCv.width  / r.width,
+      y: (src.clientY - r.top)  * colorCv.height / r.height
     };
   }
+
   function doPaint(x, y) {
-    if (cEraser) {
-      cCtx.globalCompositeOperation = 'destination-out';
-      cCtx.fillStyle = 'rgba(0,0,0,1)';
-    } else {
-      cCtx.globalCompositeOperation = 'source-over';
-      cCtx.fillStyle = selectedColor;
-    }
+    cCtx.globalCompositeOperation = cEraser ? 'destination-out' : 'source-over';
+    cCtx.fillStyle = cEraser ? 'rgba(0,0,0,1)' : selectedColor;
     cCtx.beginPath();
     cCtx.arc(x, y, cBrushSize / 2, 0, Math.PI * 2);
     cCtx.fill();
     cCtx.globalCompositeOperation = 'source-over';
   }
 
+  function paintLine(x1, y1, x2, y2) {
+    const steps = Math.max(1, Math.ceil(Math.hypot(x2-x1, y2-y1)));
+    for (let i = 0; i <= steps; i++) {
+      doPaint(x1 + (x2-x1)*i/steps, y1 + (y2-y1)*i/steps);
+    }
+  }
+
+  // 마우스
   colorCv.addEventListener('mousedown', function(e) {
+    if (e.button !== 0) return;
     e.preventDefault();
     const p = getPos(e);
     cDrawing = true; cLastX = p.x; cLastY = p.y;
@@ -2053,45 +2060,33 @@ function initColoringEvents() {
     if (!cDrawing) return;
     e.preventDefault();
     const p = getPos(e);
-    const steps = Math.max(Math.abs(p.x-cLastX), Math.abs(p.y-cLastY));
-    for (let i = 0; i <= steps; i++) {
-      doPaint(
-        Math.round(cLastX + (p.x-cLastX)*i/steps),
-        Math.round(cLastY + (p.y-cLastY)*i/steps)
-      );
-    }
+    paintLine(cLastX, cLastY, p.x, p.y);
     cLastX = p.x; cLastY = p.y;
-    cCheckTimer++;
-    if (cCheckTimer % 50 === 0) checkColoringCoverage();
+    if (++cCheckTimer % 50 === 0) checkColoringCoverage();
   });
   window.addEventListener('mouseup', function() {
     if (!cDrawing) return;
-    cDrawing = false;
-    checkColoringCoverage();
+    cDrawing = false; checkColoringCoverage();
   });
+
+  // 터치
   colorCv.addEventListener('touchstart', function(e) {
+    if (e.touches.length !== 1) return;
     e.preventDefault();
     const p = getPos(e);
     cDrawing = true; cLastX = p.x; cLastY = p.y;
     doPaint(p.x, p.y);
   }, { passive: false });
   colorCv.addEventListener('touchmove', function(e) {
-    if (!cDrawing) return;
+    if (!cDrawing || e.touches.length !== 1) return;
     e.preventDefault();
     const p = getPos(e);
-    const steps = Math.max(Math.abs(p.x-cLastX), Math.abs(p.y-cLastY));
-    for (let i = 0; i <= steps; i++) {
-      doPaint(
-        Math.round(cLastX + (p.x-cLastX)*i/steps),
-        Math.round(cLastY + (p.y-cLastY)*i/steps)
-      );
-    }
+    paintLine(cLastX, cLastY, p.x, p.y);
     cLastX = p.x; cLastY = p.y;
   }, { passive: false });
   window.addEventListener('touchend', function() {
     if (!cDrawing) return;
-    cDrawing = false;
-    checkColoringCoverage();
+    cDrawing = false; checkColoringCoverage();
   });
 
   coloringEventsInit = true;
@@ -2436,88 +2431,29 @@ function showTypingResult() {
 }
 
 // ── 색칠 확대/축소 ──
-let cZoom = 1, cPanX = 0, cPanY = 0;
-function applyColoringZoom() {
-  const zc = document.getElementById('coloring-zoom-container');
-  if (!zc) return;
-  zc.style.transform = `scale(${cZoom}) translate(${cPanX}px,${cPanY}px)`;
-  const lbl = document.getElementById('coloring-zoom-label');
-  if (lbl) lbl.textContent = Math.round(cZoom * 100) + '%';
-}
-function zoomColoring(f) {
-  cZoom = Math.min(3, Math.max(0.5, cZoom * f));
-  applyColoringZoom();
-}
-function resetZoomColoring() {
-  cZoom = 1; cPanX = 0; cPanY = 0;
-  applyColoringZoom();
-}
+let cZoom = 1;
+function zoomColoring(f) { cZoom = Math.min(3, Math.max(0.5, cZoom*f)); const lbl=document.getElementById('coloring-zoom-label'); if(lbl) lbl.textContent=Math.round(cZoom*100)+'%'; }
+function resetZoomColoring() { cZoom=1; const lbl=document.getElementById('coloring-zoom-label'); if(lbl) lbl.textContent='100%'; }
+function applyColoringZoom() { /* zoom 컨테이너 제거됨 */ }
 
-// 마우스 휠 확대/축소 + 스페이스바 팬
+// 마우스 휠로도 확대/축소
 (function(){
   const wrapper = document.getElementById('coloring-canvas-wrapper');
   if (!wrapper) return;
-  let spaceDown = false;
-  let panStart = null;
-
-  // 휠 줌
   wrapper.addEventListener('wheel', e => {
     e.preventDefault();
     zoomColoring(e.deltaY < 0 ? 1.15 : 0.87);
   }, { passive: false });
-
-  // 스페이스바 감지
-  document.addEventListener('keydown', e => {
-    if (e.code === 'Space' && document.getElementById('coloring-screen').classList.contains('active')) {
-      spaceDown = true;
-      wrapper.style.cursor = 'grab';
-      e.preventDefault();
-    }
-  });
-  document.addEventListener('keyup', e => {
-    if (e.code === 'Space') {
-      spaceDown = false;
-      panStart = null;
-      wrapper.style.cursor = '';
-    }
-  });
-
-  // 마우스 중간버튼 or 스페이스+드래그로 팬
+  // 스페이스바+드래그로 팬
   wrapper.addEventListener('mousedown', e => {
-    if (e.button === 1 || spaceDown) {
-      e.preventDefault();
-      panStart = { x: e.clientX - cPanX * cZoom, y: e.clientY - cPanY * cZoom };
-      wrapper.style.cursor = 'grabbing';
-    }
+    if (e.button === 1 || e.spaceKey) { cPanning=true; cPanStartX=e.clientX-cPanX; cPanStartY=e.clientY-cPanY; }
   });
   window.addEventListener('mousemove', e => {
-    if (!panStart) return;
-    cPanX = (e.clientX - panStart.x) / cZoom;
-    cPanY = (e.clientY - panStart.y) / cZoom;
+    if (!cPanning) return;
+    cPanX=e.clientX-cPanStartX; cPanY=e.clientY-cPanStartY;
     applyColoringZoom();
   });
-  window.addEventListener('mouseup', e => {
-    if (panStart) {
-      panStart = null;
-      wrapper.style.cursor = spaceDown ? 'grab' : '';
-    }
-  });
-
-  // 터치 두 손가락 핀치 줌
-  let lastDist = 0;
-  wrapper.addEventListener('touchstart', e => {
-    if (e.touches.length === 2) {
-      lastDist = Math.hypot(e.touches[0].clientX - e.touches[1].clientX, e.touches[0].clientY - e.touches[1].clientY);
-    }
-  }, { passive: true });
-  wrapper.addEventListener('touchmove', e => {
-    if (e.touches.length === 2) {
-      const d = Math.hypot(e.touches[0].clientX - e.touches[1].clientX, e.touches[0].clientY - e.touches[1].clientY);
-      if (lastDist > 0) zoomColoring(d / lastDist);
-      lastDist = d;
-      e.preventDefault();
-    }
-  }, { passive: false });
+  window.addEventListener('mouseup', () => { cPanning=false; });
 })();
 typingInput.addEventListener('compositionstart', () => { _composing = true; });
 typingInput.addEventListener('compositionend',   function() {
