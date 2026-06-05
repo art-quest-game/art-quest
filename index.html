@@ -2119,7 +2119,9 @@ function loadOutline(filename) {
   img.crossOrigin = 'anonymous';
   img.onload = function() {
     cOutCtx.clearRect(0, 0, CW, CH);
+    cOutCtx.globalCompositeOperation = 'multiply';
     cOutCtx.drawImage(img, 0, 0, CW, CH);
+    cOutCtx.globalCompositeOperation = 'source-over';
   };
   img.onerror = function() {
     console.warn('윤곽선 로드 실패:', filename);
