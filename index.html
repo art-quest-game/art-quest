@@ -809,9 +809,8 @@ async function openTeacherDashboard() {
     </div>
     <div id="coloring-workspace">
       <div id="coloring-canvas-wrapper" class="mode-brush">
-        <div id="coloring-zoom-inner" style="position:absolute;top:0;left:0;transform-origin:0 0;">
-          <canvas id="coloring-draw-canvas" style="position:absolute;top:0;left:0;z-index:2;cursor:crosshair;display:block;"></canvas>
-          <canvas id="coloring-outline-canvas" style="position:absolute;top:0;left:0;z-index:3;pointer-events:none;display:block;"></canvas>
+        <div id="coloring-zoom-inner" style="position:absolute;top:0;left:0;transform-origin:0 0;background-size:100% 100%;background-repeat:no-repeat;">
+          <canvas id="coloring-draw-canvas" style="position:absolute;top:0;left:0;z-index:2;cursor:crosshair;display:block;background:transparent;"></canvas>
         </div>
       </div>
       <div id="coloring-palette-panel">
@@ -1996,34 +1995,23 @@ const COLORING_BASE = 'https://raw.githubusercontent.com/art-quest-game/art-ques
 
 function initColoringEvents() {
   if (coloringEventsInit) return;
-  const colorCv   = document.getElementById('coloring-draw-canvas');
-  const outlineCv = document.getElementById('coloring-outline-canvas');
-  const zi        = document.getElementById('coloring-zoom-inner');
-  const wrapper   = document.getElementById('coloring-canvas-wrapper');
-  if (!colorCv || !outlineCv || !zi || !wrapper) return;
+  const colorCv = document.getElementById('coloring-draw-canvas');
+  const zi      = document.getElementById('coloring-zoom-inner');
+  const wrapper = document.getElementById('coloring-canvas-wrapper');
+  if (!colorCv || !zi || !wrapper) return;
 
   const rect = wrapper.getBoundingClientRect();
   const W = Math.round(rect.width)  || 560;
   const H = Math.round(rect.height) || 392;
-  colorCv.width   = W; colorCv.height   = H;
-  outlineCv.width = W; outlineCv.height = H;
+  colorCv.width  = W; colorCv.height  = H;
   zi.style.width  = W + 'px';
   zi.style.height = H + 'px';
 
   cCtx = colorCv.getContext('2d');
   cCtx.clearRect(0, 0, W, H);
 
-  const outCtx = outlineCv.getContext('2d');
   function drawOutline(filename) {
-    const img = new Image();
-    img.crossOrigin = 'anonymous';
-    img.onload = function() {
-      outCtx.clearRect(0, 0, outlineCv.width, outlineCv.height);
-      outCtx.globalCompositeOperation = 'multiply';
-      outCtx.drawImage(img, 0, 0, outlineCv.width, outlineCv.height);
-      outCtx.globalCompositeOperation = 'source-over';
-    };
-    img.src = COLORING_BASE + filename;
+    zi.style.backgroundImage = 'url(' + COLORING_BASE + filename + ')';
   }
   drawOutline('starry-coloring.png');
   window._drawColoringOutline = drawOutline;
@@ -2127,17 +2115,29 @@ function clearColoringCanvas() {
 }
 
 function saveColoringCanvas() {
-  const colorCv   = document.getElementById('coloring-draw-canvas');
-  const outlineCv = document.getElementById('coloring-outline-canvas');
+  const colorCv = document.getElementById('coloring-draw-canvas');
+  const zi      = document.getElementById('coloring-zoom-inner');
   if (!colorCv) return;
   const tmp = document.createElement('canvas');
   tmp.width = colorCv.width; tmp.height = colorCv.height;
   const ctx = tmp.getContext('2d');
   ctx.fillStyle = '#ffffff'; ctx.fillRect(0, 0, tmp.width, tmp.height);
   ctx.drawImage(colorCv, 0, 0);
-  if (outlineCv) ctx.drawImage(outlineCv, 0, 0);
-  const a = document.createElement('a');
-  a.download = 'my-artwork.png'; a.href = tmp.toDataURL('image/png'); a.click();
+  const bgImg = zi ? zi.style.backgroundImage : '';
+  const match = bgImg.match(/url\(["']?([^"')]+)["']?\)/);
+  if (match) {
+    const img = new Image();
+    img.crossOrigin = 'anonymous';
+    img.onload = function() {
+      ctx.drawImage(img, 0, 0, tmp.width, tmp.height);
+      const a = document.createElement('a');
+      a.download = 'my-artwork.png'; a.href = tmp.toDataURL('image/png'); a.click();
+    };
+    img.src = match[1];
+  } else {
+    const a = document.createElement('a');
+    a.download = 'my-artwork.png'; a.href = tmp.toDataURL('image/png'); a.click();
+  }
 }
 
 function cGetPos(e) {
