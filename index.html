@@ -1983,32 +1983,34 @@ function openColoring() {
   disablePhaserInput();
   cReward50 = false; cReward100 = false;
   cEraser = false; cZoom = 1; cPanX = 0; cPanY = 0;
-  coloringEventsInit = false;
+  const _cv = document.getElementById('coloring-draw-canvas');
+  if (_cv) _cv._bound = false;
   cCtx = null;
   buildPalette();
   updateColoringStatus(0);
   requestAnimationFrame(function(){ requestAnimationFrame(function(){ initColoringEvents(); }); });
 }
 
-let coloringEventsInit = false;
 const COLORING_BASE = 'https://raw.githubusercontent.com/art-quest-game/art-quest/main/';
 
 function initColoringEvents() {
-  if (coloringEventsInit) return;
   const colorCv = document.getElementById('coloring-draw-canvas');
   const zi      = document.getElementById('coloring-zoom-inner');
   const wrapper = document.getElementById('coloring-canvas-wrapper');
   if (!colorCv || !zi || !wrapper) return;
+  if (colorCv._bound) return;
+  colorCv._bound = true;
 
-  const rect = wrapper.getBoundingClientRect();
-  const W = Math.round(rect.width)  || 560;
-  const H = Math.round(rect.height) || 392;
+  const W = 560, H = 392;
   colorCv.width  = W; colorCv.height  = H;
+  colorCv.style.width  = W + 'px';
+  colorCv.style.height = H + 'px';
   zi.style.width  = W + 'px';
   zi.style.height = H + 'px';
 
   cCtx = colorCv.getContext('2d');
-  cCtx.clearRect(0, 0, W, H);
+  cCtx.fillStyle = '#ffffff';
+  cCtx.fillRect(0, 0, W, H);
 
   function drawOutline(filename) {
     zi.style.backgroundImage = 'url(' + COLORING_BASE + filename + ')';
@@ -2056,8 +2058,6 @@ function initColoringEvents() {
     const p = getPos(e); paintLine(cLastX, cLastY, p.x, p.y); cLastX = p.x; cLastY = p.y;
   }, { passive: false });
   window.addEventListener('touchend', function() { if (!cDrawing) return; cDrawing = false; checkColoringCoverage(); });
-
-  coloringEventsInit = true;
 }
 
 
