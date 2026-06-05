@@ -1997,8 +1997,7 @@ function openColoring() {
   zi.appendChild(cv);
 
   const ctx = cv.getContext('2d');
-  ctx.fillStyle = '#ffffff';
-  ctx.fillRect(0, 0, 560, 392);
+  ctx.clearRect(0, 0, 560, 392);
   window._colorCtx = ctx;
 
   window._drawColoringOutline = function(filename) {
@@ -2097,7 +2096,7 @@ function toggleEraser() {
 function clearColoringCanvas() {
   const cv = document.getElementById('color-cv');
   const ctx = window._colorCtx;
-  if (cv && ctx) { ctx.fillStyle = '#ffffff'; ctx.fillRect(0, 0, cv.width, cv.height); }
+  if (cv && ctx) ctx.clearRect(0, 0, cv.width, cv.height);
   cReward50 = false; cReward100 = false;
   updateColoringStatus(0);
 }
