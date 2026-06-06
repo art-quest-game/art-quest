@@ -1987,7 +1987,7 @@ function openColoring() {
   cCtx = null;
   buildPalette();
   updateColoringStatus(0);
-  requestAnimationFrame(function(){ requestAnimationFrame(function(){ initColoringEvents(); }); });
+  initColoringEvents();
 }
 
 let coloringEventsInit = false;
