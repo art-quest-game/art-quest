@@ -2010,6 +2010,7 @@ function initColoringEvents() {
 
   cCtx = colorCv.getContext('2d');
   cCtx.clearRect(0, 0, W, H);
+  cCtx.fillStyle='#ffffff'; cCtx.fillRect(0,0,W,H);
 
   function getPos(e) {
     const r   = colorCv.getBoundingClientRect();
