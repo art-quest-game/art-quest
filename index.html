@@ -873,8 +873,8 @@ async function openTeacherDashboard() {
     <div id="quest-ox" style="display:none">
       <div id="quest-ox-question"></div>
       <div id="quest-ox-btns">
-        <button id="quest-ox-o" onclick="answerOX(true)">⭕ O</button>
-        <button id="quest-ox-x" onclick="answerOX(false)">❌ X</button>
+        <button id="quest-ox-o" onclick="answerOX(true)">⭕</button>
+        <button id="quest-ox-x" onclick="answerOX(false)">❌</button>
       </div>
       <div id="quest-ox-result" class="quest-ox-result"></div>
       <div id="quest-ox-progress"></div>
@@ -1860,7 +1860,7 @@ const QUEST_DATA = {
     {q:'달마도는 세밀하고 부드러운 필치로 그려졌다.',            a:false, explain:'김명국의 달마도는 거칠고 힘찬 속필로 그려진 것이 특징입니다.'},
   ]},
   'yuap': { type:'ox', instruction:'유압도에 대한 OX 퀴즈를 풀어보세요!', questions:[
-    {q:'유압도는 오리와 고양이를 함께 그린 그림이다.',           a:true,  explain:'유압도(遊鴨圖)는 오리와 고양이를 주제로 한 동물화입니다.'},
+    {q:'유압도는 오리와 고양이를 함께 그린 그림이다.',           a:false, explain:'유압도(遊鴨圖)는 오리를 주제로 한 동물화로, 고양이는 등장하지 않습니다.'},
     {q:'유압도의 작가 홍세섭은 조선 초기 화가이다.',             a:false, explain:'홍세섭은 조선 말기(19세기)의 화가입니다.'},
     {q:'유압도는 국립중앙박물관에 소장되어 있다.',               a:true,  explain:'유압도는 국립중앙박물관에 소장되어 있습니다.'},
   ]},
