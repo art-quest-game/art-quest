@@ -336,11 +336,14 @@ auth.onAuthStateChanged(async (user) => {
     window._currentUser = user;
     window._isTeacher = snap.exists && snap.data()?.role === 'teacher';
     window._school = snap.exists ? (snap.data()?.school || '') : '';
+    window._grade  = snap.exists ? (snap.data()?.grade  || '') : '';
+    window._class  = snap.exists ? (snap.data()?.class  || '') : '';
     document.getElementById('login-overlay').style.display = 'none';
     document.getElementById('user-info-bar').style.display = 'flex';
     const nameLabel = snap.exists ? (snap.data().name || user.email) : user.email;
     document.getElementById('user-email-label').textContent = nameLabel;
     if (window._isTeacher) document.getElementById('teacher-btn').style.display = 'inline-block';
+    if (!window._isTeacher && window._school && window._class) document.getElementById('class-rank-btn').style.display = 'inline-block';
     if (typeof enablePhaserInput === 'function') enablePhaserInput();
   } else {
     // 로그아웃 시 상태 초기화
@@ -360,6 +363,8 @@ async function doLogin(isSignup) {
   const name   = document.getElementById('login-name')?.value.trim() || '';
   const school = document.getElementById('login-school')?.value.trim() || '';
   const role   = document.getElementById('login-role')?.value || 'student';
+  const grade  = document.getElementById('login-grade')?.value || '';
+  const cls    = document.getElementById('login-class')?.value || '';
   const msg    = document.getElementById('login-msg');
   msg.textContent = '';
   if (!rawId || !pw) { msg.textContent = '아이디와 비밀번호를 입력하세요.'; return; }
@@ -368,9 +373,10 @@ async function doLogin(isSignup) {
     if (isSignup) {
       if (!name) { msg.textContent = '이름을 입력하세요.'; return; }
       if (!school) { msg.textContent = '학교 이름을 입력하세요.'; return; }
+      if (role === 'student' && (!grade || !cls)) { msg.textContent = '학년과 반을 선택해주세요.'; return; }
       const cred = await auth.createUserWithEmailAndPassword(email, pw);
       await db.collection('users').doc(cred.user.uid).set({
-        email, userId: rawId, name, school, role, coins:0, totalCoins:0, artworks:0, equipped:[], owned:[], createdAt: new Date().toISOString()
+        email, userId: rawId, name, school, role, grade, class: cls, coins:0, totalCoins:0, artworks:0, equipped:[], owned:[], createdAt: new Date().toISOString()
       });
     } else {
       await auth.signInWithEmailAndPassword(email, pw);
@@ -504,10 +510,31 @@ window.doLogout = doLogout;
           <input id="login-name" class="px-input" placeholder="▸ 이름">
           <input id="login-school" class="px-input" placeholder="▸ 학교 이름 (예: 행복초등학교)">
           <p style="color:#a78bfa;font-size:.75rem;margin:-6px 0 8px 4px;">⚠️ 학교 이름은 정확하게 입력해주세요. (예: 한국중학교)</p>
-          <select id="login-role" class="px-input px-select">
+          <select id="login-role" class="px-input px-select" onchange="toggleGradeClass()">
             <option value="student">▸ 학생</option>
             <option value="teacher">▸ 교사</option>
           </select>
+          <div id="grade-class-fields" style="display:flex;gap:8px;">
+            <select id="login-grade" class="px-input px-select" style="flex:1;">
+              <option value="">▸ 학년 선택</option>
+              <option value="1">1학년</option>
+              <option value="2">2학년</option>
+              <option value="3">3학년</option>
+            </select>
+            <select id="login-class" class="px-input px-select" style="flex:1;">
+              <option value="">▸ 반 선택</option>
+              <option value="1">1반</option>
+              <option value="2">2반</option>
+              <option value="3">3반</option>
+              <option value="4">4반</option>
+              <option value="5">5반</option>
+              <option value="6">6반</option>
+              <option value="7">7반</option>
+              <option value="8">8반</option>
+              <option value="9">9반</option>
+              <option value="10">10반</option>
+            </select>
+          </div>
         </div>
 
         <input id="login-email" type="text" class="px-input" placeholder="▸ 아이디 (영문/숫자)" onfocus="if(gameScene)gameScene.input.keyboard.enabled=false;">
@@ -531,6 +558,7 @@ window.doLogout = doLogout;
   <span id="user-email-label" style="color:#fff;font-size:.78rem;font-weight:700;max-width:150px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;"></span>
   <button onclick="doLogout()" style="padding:4px 10px;border-radius:12px;border:1px solid #5aad2a;background:#1a2a10;color:#a8e063;font-size:.75rem;cursor:pointer;font-weight:600;">로그아웃</button>
   <button id="teacher-btn" onclick="openTeacherDashboard()" style="display:none;padding:4px 10px;border-radius:12px;border:1px solid #a78bfa;background:#1a0a2e;color:#c084fc;font-size:.75rem;cursor:pointer;">📊 학생 현황</button>
+  <button id="class-rank-btn" onclick="openClassRanking()" style="display:none;padding:4px 10px;border-radius:12px;border:1px solid #38bdf8;background:#0a1a2e;color:#7dd3fc;font-size:.75rem;cursor:pointer;">🏆 우리 반 랭킹</button>
 </div>
 
 <script>
@@ -542,51 +570,111 @@ function switchTab(tab) {
   document.getElementById('tab-login').className  = 'px-tab ' + (isSignup ? 'px-tab-off' : 'px-tab-on');
   document.getElementById('tab-signup').className = 'px-tab ' + (isSignup ? 'px-tab-on'  : 'px-tab-off');
 }
+function toggleGradeClass() {
+  const role = document.getElementById('login-role')?.value;
+  document.getElementById('grade-class-fields').style.display = role === 'student' ? 'flex' : 'none';
+}
+async function openClassRanking() {
+  const school = window._school || '';
+  const cls    = window._class  || '';
+  const grade  = window._grade  || '';
+  if (!school || !cls) { alert('학교/반 정보가 없습니다.'); return; }
+  let modal = document.getElementById('class-rank-modal');
+  if (!modal) {
+    modal = document.createElement('div');
+    modal.id = 'class-rank-modal';
+    modal.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.85);z-index:9999;display:flex;justify-content:center;align-items:flex-start;overflow-y:auto;padding:20px;';
+    modal.innerHTML = `
+      <div style="background:linear-gradient(135deg,#0a1a2e,#0f2744);border:3px solid #38bdf8;border-radius:16px;width:min(600px,98vw);padding:28px 24px;position:relative;">
+        <h2 style="color:#38bdf8;font-size:1.3rem;margin-bottom:4px;">🏆 우리 반 랭킹</h2>
+        <div id="cr-label" style="color:#7dd3fc;font-size:.85rem;margin-bottom:16px;"></div>
+        <button onclick="document.getElementById('class-rank-modal').remove()" style="position:absolute;top:16px;right:16px;background:#0369a1;color:#fff;border:none;border-radius:8px;padding:6px 14px;cursor:pointer;font-size:.85rem;">✕ 닫기</button>
+        <div id="cr-body" style="color:#e0f2fe;font-size:.88rem;">불러오는 중...</div>
+      </div>`;
+    document.body.appendChild(modal);
+  } else {
+    modal.style.display = 'flex';
+    document.getElementById('cr-body').textContent = '불러오는 중...';
+  }
+  document.getElementById('cr-label').textContent = `🏫 ${school} ${grade ? grade+'학년 ' : ''}${cls}반`;
+  try {
+    let query = db.collection('users').where('school','==',school).where('class','==',cls).where('role','==','student');
+    if (grade) query = query.where('grade','==',grade);
+    const snap = await query.get();
+    if (snap.empty) { document.getElementById('cr-body').innerHTML = '<p style="color:#7dd3fc;">아직 반 친구가 없습니다.</p>'; return; }
+    const ranks = ['견습생','화가지망생','화가','거장','마에스트로'];
+    const rankIcons = ['🌱','🎨','🖼️','⭐','🏆'];
+    function getRank(c) { if(c>=500)return 4;if(c>=200)return 3;if(c>=80)return 2;if(c>=30)return 1;return 0; }
+    const students = [];
+    snap.forEach(doc => students.push(doc.data()));
+    students.sort((a,b) => (b.totalCoins||0)-(a.totalCoins||0));
+    let rows = '';
+    students.forEach((d,i) => {
+      const r = getRank(d.totalCoins||0);
+      const isMe = d.userId === (window._currentUser?.email?.replace('@artquest.game','') || '');
+      rows += `<tr style="border-bottom:1px solid #ffffff20;${isMe?'background:#1e3a5f;':''}">
+        <td style="padding:8px 6px;color:#ffd700;font-weight:700;">${i+1}</td>
+        <td style="padding:8px 6px;">${d.name||'-'}${isMe?' <span style="color:#38bdf8;font-size:.7rem;">(나)</span>':''}</td>
+        <td style="padding:8px 6px;">${rankIcons[r]} ${ranks[r]}</td>
+        <td style="padding:8px 6px;color:#ffd700;">🪙 ${d.coins||0}</td>
+        <td style="padding:8px 6px;color:#7dd3fc;">누적 ${d.totalCoins||0}</td>
+      </tr>`;
+    });
+    document.getElementById('cr-body').innerHTML = `
+      <table style="width:100%;border-collapse:collapse;">
+        <thead><tr style="color:#38bdf8;font-size:.8rem;border-bottom:2px solid #38bdf850;">
+          <th style="padding:6px;text-align:left;">#</th>
+          <th style="padding:6px;text-align:left;">이름</th>
+          <th style="padding:6px;text-align:left;">등급</th>
+          <th style="padding:6px;text-align:left;">코인</th>
+          <th style="padding:6px;text-align:left;">누적코인</th>
+        </tr></thead>
+        <tbody>${rows}</tbody>
+      </table>`;
+  } catch(e) {
+    document.getElementById('cr-body').textContent = '오류: ' + e.message;
+  }
+}
 async function openTeacherDashboard() {
   if (!window._currentUser || !window._isTeacher) return;
   const school = window._school || '';
   if (!school) { alert('학교 정보가 없습니다. 다시 로그인해주세요.'); return; }
 
-  // 모달 생성
   let modal = document.getElementById('teacher-modal');
   if (!modal) {
     modal = document.createElement('div');
     modal.id = 'teacher-modal';
     modal.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.85);z-index:9999;display:flex;justify-content:center;align-items:flex-start;overflow-y:auto;padding:20px;';
     modal.innerHTML = `
-      <div style="background:linear-gradient(135deg,#2d1b69,#1a0a2e);border:3px solid #ffd700;border-radius:16px;width:min(700px,98vw);padding:28px 24px;position:relative;">
+      <div style="background:linear-gradient(135deg,#2d1b69,#1a0a2e);border:3px solid #ffd700;border-radius:16px;width:min(760px,98vw);padding:28px 24px;position:relative;">
         <h2 style="color:#ffd700;font-size:1.3rem;margin-bottom:4px;">📊 학생 현황</h2>
-        <div id="td-school-name" style="color:#a78bfa;font-size:.85rem;margin-bottom:16px;"></div>
+        <div id="td-school-name" style="color:#a78bfa;font-size:.85rem;margin-bottom:12px;"></div>
         <button onclick="document.getElementById('teacher-modal').remove()" style="position:absolute;top:16px;right:16px;background:#6b21a8;color:#fff;border:none;border-radius:8px;padding:6px 14px;cursor:pointer;font-size:.85rem;">✕ 닫기</button>
+        <div id="td-grade-tabs" style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:12px;"></div>
+        <div id="td-class-tabs" style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:14px;"></div>
         <div id="td-body" style="color:#e2c4ff;font-size:.88rem;">불러오는 중...</div>
       </div>`;
     document.body.appendChild(modal);
   } else {
     modal.style.display = 'flex';
     document.getElementById('td-body').textContent = '불러오는 중...';
+    document.getElementById('td-grade-tabs').innerHTML = '';
+    document.getElementById('td-class-tabs').innerHTML = '';
   }
   document.getElementById('td-school-name').textContent = '🏫 ' + school;
 
-  try {
-    const snap = await db.collection('users').where('school', '==', school).where('role', '==', 'student').get();
-    if (snap.empty) {
-      document.getElementById('td-body').innerHTML = '<p style="color:#a78bfa;">아직 등록된 학생이 없습니다.</p>';
-      return;
-    }
-    const ranks = ['견습생','화가지망생','화가','거장','마에스트로'];
-    const rankIcons = ['🌱','🎨','🖼️','⭐','🏆'];
-    function getRank(c) {
-      if(c>=500) return 4; if(c>=200) return 3; if(c>=80) return 2; if(c>=30) return 1; return 0;
-    }
-    const students = [];
-    snap.forEach(doc => students.push(doc.data()));
-    students.sort((a,b) => (b.totalCoins||0) - (a.totalCoins||0));
+  const ranks = ['견습생','화가지망생','화가','거장','마에스트로'];
+  const rankIcons = ['🌱','🎨','🖼️','⭐','🏆'];
+  function getRank(c) { if(c>=500)return 4;if(c>=200)return 3;if(c>=80)return 2;if(c>=30)return 1;return 0; }
+
+  function renderStudentTable(students) {
+    if (!students.length) { document.getElementById('td-body').innerHTML = '<p style="color:#a78bfa;">해당 반에 학생이 없습니다.</p>'; return; }
+    students.sort((a,b) => (b.totalCoins||0)-(a.totalCoins||0));
     let rows = '';
-    let i = 1;
-    students.forEach(d => {
+    students.forEach((d,i) => {
       const r = getRank(d.totalCoins||0);
       rows += `<tr style="border-bottom:1px solid #ffffff20;">
-        <td style="padding:8px 6px;color:#ffd700;font-weight:700;">${i++}</td>
+        <td style="padding:8px 6px;color:#ffd700;font-weight:700;">${i+1}</td>
         <td style="padding:8px 6px;">${d.name||'-'}</td>
         <td style="padding:8px 6px;">${rankIcons[r]} ${ranks[r]}</td>
         <td style="padding:8px 6px;color:#ffd700;">🪙 ${d.coins||0}</td>
@@ -597,15 +685,64 @@ async function openTeacherDashboard() {
     document.getElementById('td-body').innerHTML = `
       <table style="width:100%;border-collapse:collapse;">
         <thead><tr style="color:#ffd700;font-size:.8rem;border-bottom:2px solid #ffd70050;">
-          <th style="padding:6px;text-align:left;">#</th>
-          <th style="padding:6px;text-align:left;">이름</th>
-          <th style="padding:6px;text-align:left;">등급</th>
-          <th style="padding:6px;text-align:left;">코인</th>
-          <th style="padding:6px;text-align:left;">누적코인</th>
-          <th style="padding:6px;text-align:left;">감상</th>
-        </tr></thead>
-        <tbody>${rows}</tbody>
+          <th style="padding:6px;text-align:left;">#</th><th style="padding:6px;text-align:left;">이름</th>
+          <th style="padding:6px;text-align:left;">등급</th><th style="padding:6px;text-align:left;">코인</th>
+          <th style="padding:6px;text-align:left;">누적코인</th><th style="padding:6px;text-align:left;">감상</th>
+        </tr></thead><tbody>${rows}</tbody>
       </table>`;
+  }
+
+  try {
+    const snap = await db.collection('users').where('school','==',school).where('role','==','student').get();
+    if (snap.empty) { document.getElementById('td-body').innerHTML = '<p style="color:#a78bfa;">아직 등록된 학생이 없습니다.</p>'; return; }
+
+    const allStudents = [];
+    snap.forEach(doc => allStudents.push(doc.data()));
+
+    const gradeSet = [...new Set(allStudents.map(d => d.grade||'').filter(Boolean))].sort();
+    const classSet = [...new Set(allStudents.map(d => d.class||'').filter(Boolean))].sort((a,b) => Number(a)-Number(b));
+
+    let selGrade = gradeSet[0] || '';
+    let selClass = '';
+
+    function renderClassTabs(grade) {
+      const classes = [...new Set(allStudents.filter(d => !grade || d.grade===grade).map(d => d.class||'').filter(Boolean))].sort((a,b)=>Number(a)-Number(b));
+      selClass = classes[0] || '';
+      const tabDiv = document.getElementById('td-class-tabs');
+      if (!classes.length) { tabDiv.innerHTML = ''; return; }
+      tabDiv.innerHTML = classes.map(c =>
+        `<button onclick="tdSelectClass('${c}')" id="td-cls-${c}" style="padding:4px 12px;border-radius:10px;border:1px solid #a78bfa;background:${c===selClass?'#6b21a8':'#1a0a2e'};color:#e2c4ff;cursor:pointer;font-size:.8rem;">${c}반</button>`
+      ).join('');
+    }
+
+    window.tdSelectGrade = function(g) {
+      selGrade = g;
+      document.querySelectorAll('[id^="td-gr-"]').forEach(b => {
+        b.style.background = b.id === 'td-gr-'+g ? '#854d0e' : '#1a0a2e';
+      });
+      renderClassTabs(g);
+      const filtered = allStudents.filter(d => (!selGrade||d.grade===selGrade) && (!selClass||d.class===selClass));
+      renderStudentTable(filtered);
+    };
+    window.tdSelectClass = function(c) {
+      selClass = c;
+      document.querySelectorAll('[id^="td-cls-"]').forEach(b => {
+        b.style.background = b.id === 'td-cls-'+c ? '#6b21a8' : '#1a0a2e';
+      });
+      const filtered = allStudents.filter(d => (!selGrade||d.grade===selGrade) && (!selClass||d.class===selClass));
+      renderStudentTable(filtered);
+    };
+
+    const gradeTabDiv = document.getElementById('td-grade-tabs');
+    if (gradeSet.length) {
+      gradeTabDiv.innerHTML = '<span style="color:#ffd700;font-size:.8rem;align-self:center;margin-right:4px;">학년:</span>' +
+        gradeSet.map(g =>
+          `<button onclick="tdSelectGrade('${g}')" id="td-gr-${g}" style="padding:4px 12px;border-radius:10px;border:1px solid #ffd700;background:${g===selGrade?'#854d0e':'#1a0a2e'};color:#fde68a;cursor:pointer;font-size:.8rem;">${g}학년</button>`
+        ).join('');
+    }
+    renderClassTabs(selGrade);
+    const filtered = allStudents.filter(d => (!selGrade||d.grade===selGrade) && (!selClass||d.class===selClass));
+    renderStudentTable(filtered);
   } catch(e) {
     document.getElementById('td-body').textContent = '오류: ' + e.message;
   }
