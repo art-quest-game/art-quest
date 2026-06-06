@@ -809,7 +809,7 @@ async function openTeacherDashboard() {
     </div>
     <div id="coloring-workspace">
       <div id="coloring-canvas-wrapper" class="mode-brush">
-        <div id="coloring-zoom-inner" style="position:absolute;top:0;left:0;transform-origin:0 0;">
+        <div id="coloring-zoom-inner" style="position:absolute;top:0;left:0;transform-origin:0 0;background-size:100% 100%;background-repeat:no-repeat;">
           <canvas id="coloring-draw-canvas" style="position:absolute;top:0;left:0;z-index:2;cursor:crosshair;display:block;"></canvas>
         </div>
       </div>
@@ -2006,6 +2006,7 @@ function initColoringEvents() {
   colorCv.width  = W; colorCv.height  = H;
   zi.style.width = W + 'px';
   zi.style.height = H + 'px';
+  zi.style.backgroundImage = 'url(' + COLORING_BASE + 'starry-coloring.png)';
 
   cCtx = colorCv.getContext('2d');
   cCtx.clearRect(0, 0, W, H);
@@ -2056,7 +2057,8 @@ function initColoringEvents() {
 
 
 function changeColoringImg(filename, btn) {
-  if (window._drawColoringOutline) window._drawColoringOutline(filename);
+  const zi = document.getElementById('coloring-zoom-inner');
+  if (zi) zi.style.backgroundImage = 'url(' + COLORING_BASE + filename + ')';
   clearColoringCanvas();
   document.querySelectorAll('#coloring-select-row .c-tool-btn').forEach(b => b.classList.remove('active'));
   btn.classList.add('active');
