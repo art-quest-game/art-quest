@@ -144,7 +144,7 @@ canvas { display:block; image-rendering:pixelated; position:fixed; top:0; left:0
 #coloring-workspace { display:flex; gap:14px; align-items:flex-start; width:100%; justify-content:center; flex-wrap:wrap; }
 #coloring-canvas-wrapper { position:relative; width:560px; height:392px; max-width:100%; background:#f5f5f5; border-radius:12px; border:3px solid #ffd70060; overflow:hidden; flex-shrink:0; touch-action:none; }
 #coloring-zoom-container { position:absolute; top:0; left:0; width:100%; height:100%; transform-origin:top left; cursor:crosshair; }
-#color-cv { position:absolute; top:0; left:0; z-index:2; cursor:crosshair; background:transparent; }
+#coloring-draw-canvas { position:absolute; top:0; left:0; width:100%; height:100%; z-index:3; cursor:crosshair; background:transparent; }
 
 #coloring-canvas-wrapper.mode-brush { cursor:crosshair; }
 #coloring-canvas-wrapper.mode-fill  { cursor:cell; }
@@ -809,7 +809,10 @@ async function openTeacherDashboard() {
     </div>
     <div id="coloring-workspace">
       <div id="coloring-canvas-wrapper" class="mode-brush">
-        <div id="coloring-zoom-inner" style="position:absolute;top:0;left:0;transform-origin:0 0;background-size:100% 100%;background-repeat:no-repeat;"></div>
+        <div id="coloring-zoom-inner" style="position:absolute;top:0;left:0;transform-origin:0 0;">
+          <canvas id="coloring-draw-canvas" style="position:absolute;top:0;left:0;z-index:2;cursor:crosshair;display:block;"></canvas>
+          <canvas id="coloring-outline-canvas" style="position:absolute;top:0;left:0;z-index:3;pointer-events:none;display:block;"></canvas>
+        </div>
       </div>
       <div id="coloring-palette-panel">
         <div id="coloring-cur-color" style="background:#1d4ed8"></div>
@@ -1969,83 +1972,104 @@ const PALETTE = ['#f5cba7','#e8a87c','#d4956a','#c47c4a','#a0522d','#1d4ed8','#6
 let selectedColor = '#1d4ed8';
 let cBrushSize    = 10;
 let cEraser       = false;
+let cDrawing      = false;
+let cLastX = 0, cLastY = 0;
 let cReward50  = false;
 let cReward100 = false;
-
-const COLORING_BASE = 'https://raw.githubusercontent.com/art-quest-game/art-quest/main/';
+let cCtx       = null;
+let cCheckTimer = 0;
 
 function openColoring() {
   document.getElementById('coloring-screen').classList.add('active');
   disablePhaserInput();
   cReward50 = false; cReward100 = false;
   cEraser = false; cZoom = 1; cPanX = 0; cPanY = 0;
+  coloringEventsInit = false;
+  cCtx = null;
   buildPalette();
   updateColoringStatus(0);
+  requestAnimationFrame(function(){ requestAnimationFrame(function(){ initColoringEvents(); }); });
+}
 
-  const zi = document.getElementById('coloring-zoom-inner');
-  zi.innerHTML = '';
-  zi.style.width  = '560px';
-  zi.style.height = '392px';
-  zi.style.backgroundImage = 'url(' + COLORING_BASE + 'starry-coloring.png)';
-  zi.style.backgroundSize = '100% 100%';
+let coloringEventsInit = false;
+const COLORING_BASE = 'https://raw.githubusercontent.com/art-quest-game/art-quest/main/';
 
-  const cv = document.createElement('canvas');
-  cv.id = 'color-cv';
-  cv.width  = 560;
-  cv.height = 392;
-  cv.style.cssText = 'position:absolute;top:0;left:0;width:560px;height:392px;z-index:2;cursor:crosshair;display:block;background:transparent;';
-  zi.appendChild(cv);
+function initColoringEvents() {
+  if (coloringEventsInit) return;
+  const colorCv   = document.getElementById('coloring-draw-canvas');
+  const outlineCv = document.getElementById('coloring-outline-canvas');
+  const zi        = document.getElementById('coloring-zoom-inner');
+  const wrapper   = document.getElementById('coloring-canvas-wrapper');
+  if (!colorCv || !outlineCv || !zi || !wrapper) return;
 
-  const ctx = cv.getContext('2d');
-  ctx.clearRect(0, 0, 560, 392);
-  window._colorCtx = ctx;
+  const rect = wrapper.getBoundingClientRect();
+  const W = Math.round(rect.width)  || 560;
+  const H = Math.round(rect.height) || 392;
+  colorCv.width   = W; colorCv.height   = H;
+  outlineCv.width = W; outlineCv.height = H;
+  zi.style.width  = W + 'px';
+  zi.style.height = H + 'px';
 
-  window._drawColoringOutline = function(filename) {
-    zi.style.backgroundImage = 'url(' + COLORING_BASE + filename + ')';
-  };
+  cCtx = colorCv.getContext('2d');
+  cCtx.clearRect(0, 0, W, H);
 
-  let drawing = false, lastX = 0, lastY = 0, checkTimer = 0;
+  const outCtx = outlineCv.getContext('2d');
+  function drawOutline(filename) {
+    const img = new Image();
+    img.crossOrigin = 'anonymous';
+    img.onload = function() {
+      outCtx.clearRect(0, 0, outlineCv.width, outlineCv.height);
+      outCtx.globalCompositeOperation = 'multiply';
+      outCtx.drawImage(img, 0, 0, outlineCv.width, outlineCv.height);
+      outCtx.globalCompositeOperation = 'source-over';
+    };
+    img.src = COLORING_BASE + filename;
+  }
+  drawOutline('starry-coloring.png');
+  window._drawColoringOutline = drawOutline;
 
   function getPos(e) {
-    const r = cv.getBoundingClientRect();
+    const r   = colorCv.getBoundingClientRect();
     const src = e.touches ? e.touches[0] : e;
     return {
-      x: (src.clientX - r.left) * cv.width  / r.width,
-      y: (src.clientY - r.top)  * cv.height / r.height
+      x: (src.clientX - r.left) * colorCv.width  / r.width,
+      y: (src.clientY - r.top)  * colorCv.height / r.height
     };
   }
-  function paint(x, y) {
-    ctx.globalCompositeOperation = cEraser ? 'destination-out' : 'source-over';
-    ctx.fillStyle = cEraser ? 'rgba(0,0,0,1)' : selectedColor;
-    ctx.beginPath();
-    ctx.arc(x, y, cBrushSize / 2, 0, Math.PI * 2);
-    ctx.fill();
-    ctx.globalCompositeOperation = 'source-over';
+  function doPaint(x, y) {
+    cCtx.globalCompositeOperation = cEraser ? 'destination-out' : 'source-over';
+    cCtx.fillStyle = cEraser ? 'rgba(0,0,0,1)' : selectedColor;
+    cCtx.beginPath();
+    cCtx.arc(x, y, cBrushSize / 2, 0, Math.PI * 2);
+    cCtx.fill();
+    cCtx.globalCompositeOperation = 'source-over';
   }
   function paintLine(x1, y1, x2, y2) {
     const steps = Math.ceil(Math.hypot(x2-x1, y2-y1)) || 1;
-    for (let i = 0; i <= steps; i++) paint(x1+(x2-x1)*i/steps, y1+(y2-y1)*i/steps);
+    for (let i = 0; i <= steps; i++) doPaint(x1+(x2-x1)*i/steps, y1+(y2-y1)*i/steps);
   }
 
-  cv.addEventListener('mousedown', function(e) {
+  colorCv.addEventListener('mousedown', function(e) {
     if (e.button !== 0) return; e.preventDefault();
-    const p = getPos(e); drawing = true; lastX = p.x; lastY = p.y; paint(p.x, p.y);
+    const p = getPos(e); cDrawing = true; cLastX = p.x; cLastY = p.y; doPaint(p.x, p.y);
   });
-  cv.addEventListener('mousemove', function(e) {
-    if (!drawing) return; e.preventDefault();
-    const p = getPos(e); paintLine(lastX, lastY, p.x, p.y); lastX = p.x; lastY = p.y;
-    if (++checkTimer % 50 === 0) checkColoringCoverage();
+  colorCv.addEventListener('mousemove', function(e) {
+    if (!cDrawing) return; e.preventDefault();
+    const p = getPos(e); paintLine(cLastX, cLastY, p.x, p.y); cLastX = p.x; cLastY = p.y;
+    if (++cCheckTimer % 50 === 0) checkColoringCoverage();
   });
-  window.addEventListener('mouseup', function() { if (!drawing) return; drawing = false; checkColoringCoverage(); });
-  cv.addEventListener('touchstart', function(e) {
+  window.addEventListener('mouseup', function() { if (!cDrawing) return; cDrawing = false; checkColoringCoverage(); });
+  colorCv.addEventListener('touchstart', function(e) {
     if (e.touches.length !== 1) return; e.preventDefault();
-    const p = getPos(e); drawing = true; lastX = p.x; lastY = p.y; paint(p.x, p.y);
+    const p = getPos(e); cDrawing = true; cLastX = p.x; cLastY = p.y; doPaint(p.x, p.y);
   }, { passive: false });
-  cv.addEventListener('touchmove', function(e) {
-    if (!drawing || e.touches.length !== 1) return; e.preventDefault();
-    const p = getPos(e); paintLine(lastX, lastY, p.x, p.y); lastX = p.x; lastY = p.y;
+  colorCv.addEventListener('touchmove', function(e) {
+    if (!cDrawing || e.touches.length !== 1) return; e.preventDefault();
+    const p = getPos(e); paintLine(cLastX, cLastY, p.x, p.y); cLastX = p.x; cLastY = p.y;
   }, { passive: false });
-  window.addEventListener('touchend', function() { if (!drawing) return; drawing = false; checkColoringCoverage(); });
+  window.addEventListener('touchend', function() { if (!cDrawing) return; cDrawing = false; checkColoringCoverage(); });
+
+  coloringEventsInit = true;
 }
 
 
@@ -2094,39 +2118,40 @@ function toggleEraser() {
 }
 
 function clearColoringCanvas() {
-  const cv = document.getElementById('color-cv');
-  const ctx = window._colorCtx;
-  if (cv && ctx) ctx.clearRect(0, 0, cv.width, cv.height);
+  if (cCtx) {
+    const cv = document.getElementById('coloring-draw-canvas');
+    if (cv) cCtx.clearRect(0, 0, cv.width, cv.height);
+  }
   cReward50 = false; cReward100 = false;
   updateColoringStatus(0);
 }
 
 function saveColoringCanvas() {
-  const colorCv = document.getElementById('color-cv');
-  const zi      = document.getElementById('coloring-zoom-inner');
+  const colorCv   = document.getElementById('coloring-draw-canvas');
+  const outlineCv = document.getElementById('coloring-outline-canvas');
   if (!colorCv) return;
   const tmp = document.createElement('canvas');
   tmp.width = colorCv.width; tmp.height = colorCv.height;
   const ctx = tmp.getContext('2d');
   ctx.fillStyle = '#ffffff'; ctx.fillRect(0, 0, tmp.width, tmp.height);
   ctx.drawImage(colorCv, 0, 0);
-  const bgImg = zi ? zi.style.backgroundImage : '';
-  const match = bgImg.match(/url\(["']?([^"')]+)["']?\)/);
-  if (match) {
-    const img = new Image();
-    img.crossOrigin = 'anonymous';
-    img.onload = function() {
-      ctx.drawImage(img, 0, 0, tmp.width, tmp.height);
-      const a = document.createElement('a');
-      a.download = 'my-artwork.png'; a.href = tmp.toDataURL('image/png'); a.click();
-    };
-    img.src = match[1];
-  } else {
-    const a = document.createElement('a');
-    a.download = 'my-artwork.png'; a.href = tmp.toDataURL('image/png'); a.click();
-  }
+  if (outlineCv) ctx.drawImage(outlineCv, 0, 0);
+  const a = document.createElement('a');
+  a.download = 'my-artwork.png'; a.href = tmp.toDataURL('image/png'); a.click();
 }
 
+function cGetPos(e) {
+  const cv = document.getElementById('coloring-draw-canvas');
+  const r  = cv.getBoundingClientRect();
+  const scaleX = cv.width  / r.width;
+  const scaleY = cv.height / r.height;
+  return {
+    x: Math.round((e.clientX - r.left) * scaleX),
+    y: Math.round((e.clientY - r.top)  * scaleY)
+  };
+}
+
+/* cPaint/cPaintLine replaced by doPaint inside initColoringEvents */
 
 function updateColoringStatus(p) {
   const el = document.getElementById('coloring-coin-status');
@@ -2137,10 +2162,10 @@ function updateColoringStatus(p) {
 }
 
 function checkColoringCoverage() {
-  const cv = document.getElementById('color-cv');
-  const ctx = window._colorCtx;
-  if (!cv || !ctx) return;
-  const data = ctx.getImageData(0, 0, cv.width, cv.height).data;
+  if (!cCtx) return;
+  const cv = document.getElementById('coloring-draw-canvas');
+  if (!cv) return;
+  const data = cCtx.getImageData(0, 0, cv.width, cv.height).data;
   let colored = 0;
   for (let i = 3; i < data.length; i += 4) { if (data[i] > 10) colored++; }
   const p = Math.round(colored / (cv.width * cv.height) * 100);
