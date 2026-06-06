@@ -365,6 +365,7 @@ async function doLogin(isSignup) {
   const role   = document.getElementById('login-role')?.value || 'student';
   const grade  = document.getElementById('login-grade')?.value || '';
   const cls    = document.getElementById('login-class')?.value || '';
+  const number = document.getElementById('login-number')?.value || '';
   const msg    = document.getElementById('login-msg');
   msg.textContent = '';
   if (!rawId || !pw) { msg.textContent = '아이디와 비밀번호를 입력하세요.'; return; }
@@ -374,9 +375,10 @@ async function doLogin(isSignup) {
       if (!name) { msg.textContent = '이름을 입력하세요.'; return; }
       if (!school) { msg.textContent = '학교 이름을 입력하세요.'; return; }
       if (role === 'student' && (!grade || !cls)) { msg.textContent = '학년과 반을 선택해주세요.'; return; }
+      if (role === 'student' && !number) { msg.textContent = '출석번호를 선택해주세요.'; return; }
       const cred = await auth.createUserWithEmailAndPassword(email, pw);
       await db.collection('users').doc(cred.user.uid).set({
-        email, userId: rawId, name, school, role, grade, class: cls, coins:0, totalCoins:0, artworks:0, equipped:[], owned:[], createdAt: new Date().toISOString()
+        email, userId: rawId, name, school, role, grade, class: cls, number, coins:0, totalCoins:0, artworks:0, equipped:[], owned:[], createdAt: new Date().toISOString()
       });
     } else {
       await auth.signInWithEmailAndPassword(email, pw);
@@ -533,8 +535,35 @@ window.doLogout = doLogout;
               <option value="8">8반</option>
               <option value="9">9반</option>
               <option value="10">10반</option>
+              <option value="11">11반</option>
+              <option value="12">12반</option>
+              <option value="13">13반</option>
+              <option value="14">14반</option>
+              <option value="15">15반</option>
+              <option value="16">16반</option>
+              <option value="17">17반</option>
+              <option value="18">18반</option>
+              <option value="19">19반</option>
+              <option value="20">20반</option>
             </select>
           </div>
+          <select id="login-number" class="px-input px-select">
+            <option value="">▸ 출석번호 선택</option>
+            <option value="1">1번</option><option value="2">2번</option><option value="3">3번</option>
+            <option value="4">4번</option><option value="5">5번</option><option value="6">6번</option>
+            <option value="7">7번</option><option value="8">8번</option><option value="9">9번</option>
+            <option value="10">10번</option><option value="11">11번</option><option value="12">12번</option>
+            <option value="13">13번</option><option value="14">14번</option><option value="15">15번</option>
+            <option value="16">16번</option><option value="17">17번</option><option value="18">18번</option>
+            <option value="19">19번</option><option value="20">20번</option><option value="21">21번</option>
+            <option value="22">22번</option><option value="23">23번</option><option value="24">24번</option>
+            <option value="25">25번</option><option value="26">26번</option><option value="27">27번</option>
+            <option value="28">28번</option><option value="29">29번</option><option value="30">30번</option>
+            <option value="31">31번</option><option value="32">32번</option><option value="33">33번</option>
+            <option value="34">34번</option><option value="35">35번</option><option value="36">36번</option>
+            <option value="37">37번</option><option value="38">38번</option><option value="39">39번</option>
+            <option value="40">40번</option>
+          </select>
         </div>
 
         <input id="login-email" type="text" class="px-input" placeholder="▸ 아이디 (영문/숫자)" onfocus="if(gameScene)gameScene.input.keyboard.enabled=false;">
@@ -669,12 +698,12 @@ async function openTeacherDashboard() {
 
   function renderStudentTable(students) {
     if (!students.length) { document.getElementById('td-body').innerHTML = '<p style="color:#a78bfa;">해당 반에 학생이 없습니다.</p>'; return; }
-    students.sort((a,b) => (b.totalCoins||0)-(a.totalCoins||0));
+    students.sort((a,b) => Number(a.number||99) - Number(b.number||99));
     let rows = '';
-    students.forEach((d,i) => {
+    students.forEach(d => {
       const r = getRank(d.totalCoins||0);
       rows += `<tr style="border-bottom:1px solid #ffffff20;">
-        <td style="padding:8px 6px;color:#ffd700;font-weight:700;">${i+1}</td>
+        <td style="padding:8px 6px;color:#ffd700;font-weight:700;text-align:center;">${d.number||'-'}</td>
         <td style="padding:8px 6px;">${d.name||'-'}</td>
         <td style="padding:8px 6px;">${rankIcons[r]} ${ranks[r]}</td>
         <td style="padding:8px 6px;color:#ffd700;">🪙 ${d.coins||0}</td>
@@ -685,7 +714,7 @@ async function openTeacherDashboard() {
     document.getElementById('td-body').innerHTML = `
       <table style="width:100%;border-collapse:collapse;">
         <thead><tr style="color:#ffd700;font-size:.8rem;border-bottom:2px solid #ffd70050;">
-          <th style="padding:6px;text-align:left;">#</th><th style="padding:6px;text-align:left;">이름</th>
+          <th style="padding:6px;text-align:center;">번호</th><th style="padding:6px;text-align:left;">이름</th>
           <th style="padding:6px;text-align:left;">등급</th><th style="padding:6px;text-align:left;">코인</th>
           <th style="padding:6px;text-align:left;">누적코인</th><th style="padding:6px;text-align:left;">감상</th>
         </tr></thead><tbody>${rows}</tbody>
