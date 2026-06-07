@@ -2039,12 +2039,6 @@ function buildQuizFromArtworks() {
       art.desc
     ));
     qs.push(makeQ(
-      `"${art.title}"이(가) 제작된 시기는 언제인가요?`,
-      art.year,
-      pick3(others.map(x => x.year), art.year),
-      art.desc
-    ));
-    qs.push(makeQ(
       `"${art.title}"이(가) 탄생한 나라는 어디인가요?`,
       art.country,
       pick3(others.map(x => x.country), art.country),
