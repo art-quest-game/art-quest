@@ -2800,7 +2800,7 @@ function showTypingResult() {
   document.getElementById('typing-game-area').style.display  = 'none';
   document.getElementById('typing-result-box').style.display = 'block';
   const acc   = ts.totalKeys > 0 ? Math.round(ts.correctKeys / ts.totalKeys * 100) : 100;
-  const wpm   = Math.round((ts.completedWords / 30) * 60);
+  const wpm   = Math.round((ts.completedWords / 60) * 60);
   const coins = Math.min(60, Math.round(acc / 100 * 60));
   document.getElementById('result-wpm').textContent      = wpm;
   document.getElementById('result-accuracy').textContent = acc + '%';
