@@ -1012,7 +1012,7 @@ async function openTeacherDashboard() {
   <div id="typing-inner">
     <div id="typing-start-overlay">
       <h3>🖼️ 명화 타자 연습</h3>
-      <p>명화에 관한 문장을 빠르고 정확하게 타이핑하세요!<br>60초 동안 최대한 많은 문장을 완성해 코인을 획득하세요.<br>최대 <strong style="color:#ffd700">30 코인</strong></p>
+      <p>명화에 관한 문장을 빠르고 정확하게 타이핑하세요!<br>60초 동안 최대한 많은 문장을 완성해 코인을 획득하세요.<br>최대 <strong style="color:#ffd700">60 코인</strong></p>
       <button id="typing-start-btn" onclick="startTyping()">시작하기!</button>
     </div>
     <div id="typing-game-area" style="display:none">
@@ -1078,7 +1078,7 @@ const BUILDINGS = [
   { id:'gallery', name:'명화 갤러리', icon:'🏛️', desc:'세계 각국의 명화를 감상하세요!\n유럽·한국·일본·중남미 작품을 만날 수 있어요.', color:0xffd700, tx:22, ty:6,  width:6, height:5 },
   { id:'quiz',    name:'퀴즈 타워',   icon:'🎯', desc:'명화 4지선다 퀴즈를 풀고 코인을 획득하세요!\n10문제, 정답당 +10 코인.',                    color:0xff6b35, tx:35, ty:5,  width:6, height:5 },
   { id:'shop',    name:'캐릭터 상점', icon:'🛍️', desc:'코인으로 캐릭터를 꾸며보세요!\n모자·의상·액세서리를 구매하고 장착하세요.',                    color:0xf59e0b, tx:10, ty:5,  width:6, height:5 },
-  { id:'typing',  name:'타자 연습장', icon:'⌨️', desc:'명화 관련 문장을 타이핑하세요!\n60초, 정확도에 따라 최대 +30 코인.',                      color:0x38bdf8, tx:35, ty:17, width:6, height:5 },
+  { id:'typing',  name:'타자 연습장', icon:'⌨️', desc:'명화 관련 문장을 타이핑하세요!\n60초, 정확도에 따라 최대 +60 코인.',                      color:0x38bdf8, tx:35, ty:17, width:6, height:5 },
   { id:'memory',  name:'메모리 카드', icon:'🃏', desc:'명화 카드 16장의 짝을 맞추세요!\n짝 맞출 때마다 +5코인, 전체 완성 +20 보너스!',           color:0xa855f7, tx:10, ty:17, width:6, height:5 },
   { id:'coloring',name:'색칠 스튜디오',icon:'🎨',desc:'명화 윤곽선을 직접 색칠하세요!\n5가지 명화, 16색 팔레트, 완성시 +20 코인.',              color:0x22c55e, tx:22, ty:18, width:6, height:5 }
 ];
@@ -2801,7 +2801,7 @@ function showTypingResult() {
   document.getElementById('typing-result-box').style.display = 'block';
   const acc   = ts.totalKeys > 0 ? Math.round(ts.correctKeys / ts.totalKeys * 100) : 100;
   const wpm   = Math.round((ts.completedWords / 30) * 60);
-  const coins = Math.min(30, Math.round(acc / 100 * 30));
+  const coins = Math.min(60, Math.round(acc / 100 * 60));
   document.getElementById('result-wpm').textContent      = wpm;
   document.getElementById('result-accuracy').textContent = acc + '%';
   document.getElementById('result-coins').textContent    = coins + ' 🪙';
