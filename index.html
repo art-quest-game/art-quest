@@ -2185,7 +2185,7 @@ function flipCard(i) {
 // ─────────────────────────────────────────────
 let puzzleState = { pieces:[], selected:null, moves:0, imgUrl:'', title:'', solved:false };
 
-const BASE = 'https://raw.githubusercontent.com/art-quest-game/art-quest/main/';
+const BASE = 'https://raw.githubusercontent.com/art-quest-game/art-quest/main/images/';
 const PUZZLE_ARTWORKS = [
   { title:'별이 빛나는 밤', url:BASE+'starry-night.jpg' },
   { title:'모나리자', url:BASE+'mona-lisa.jpg' },
@@ -2201,7 +2201,7 @@ const PUZZLE_ARTWORKS = [
 //  색칠 스튜디오
 // ─────────────────────────────────────────────
 const PALETTE = ['#f5cba7','#e8a87c','#d4956a','#c47c4a','#a0522d','#1d4ed8','#60a5fa','#06b6d4','#22c55e','#15803d','#fbbf24','#f97316','#ef4444','#ec4899','#a855f7','#8b5cf6','#78350f','#d1d5db','#6b7280','#111827'];
-const COLORING_BASE = 'https://raw.githubusercontent.com/art-quest-game/art-quest/main/';
+const COLORING_BASE = 'https://raw.githubusercontent.com/art-quest-game/art-quest/main/images/';
 const CW = 560, CH = 392;
 
 let selectedColor = '#1d4ed8';
@@ -2850,7 +2850,7 @@ const W = COLS * TILE, H = ROWS * TILE;
 class GameScene extends Phaser.Scene {
   constructor() { super('GameScene'); }
   preload() {
-    const BASE = 'https://raw.githubusercontent.com/art-quest-game/art-quest/main/';
+    const BASE = 'https://raw.githubusercontent.com/art-quest-game/art-quest/main/images/';
     ALL_ITEMS.filter(i => i.img).forEach(item => {
       this.load.image(item.id + '_ov', item.img);
     });
