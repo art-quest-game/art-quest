@@ -574,8 +574,8 @@ window.doLogout = doLogout;
           </select>
         </div>
 
-        <input id="login-email" type="text" class="px-input" placeholder="▸ 아이디 (영문/숫자)" onfocus="if(gameScene)gameScene.input.keyboard.enabled=false;">
-        <input id="login-pw" type="password" class="px-input" placeholder="▸ 비밀번호 (6자 이상)" onfocus="if(gameScene)gameScene.input.keyboard.enabled=false;">
+        <input id="login-email" type="text" class="px-input" placeholder="▸ 아이디 (영문/숫자)">
+        <input id="login-pw" type="password" class="px-input" placeholder="▸ 비밀번호 (6자 이상)">
 
         <div id="login-msg" style="color:#ff6b6b;font-size:.8rem;min-height:18px;margin-bottom:8px;"></div>
 
@@ -3157,18 +3157,11 @@ class GameScene extends Phaser.Scene {
       if (miniGameActive || pointer.button !== 0) return;
       if (this.nearBuilding && !this._dragging) showPopup(this.nearBuilding);
     });
-    // HTML 입력창 포커스 시 Phaser 키보드 완전 차단
-    document.addEventListener('focusin', e => {
-      if (['INPUT','TEXTAREA','SELECT'].includes(e.target.tagName))
-        this.input.keyboard.enabled = false;
-    });
-    document.addEventListener('focusout', e => {
-      if (['INPUT','TEXTAREA','SELECT'].includes(e.target.tagName)) {
-        const ov = document.getElementById('login-overlay');
-        if (!ov || ov.style.display === 'none')
-          if (!miniGameActive) this.input.keyboard.enabled = true;
-      }
-    });
+    // 씬 초기화 시점에 로그인 오버레이가 이미 열려있거나 miniGameActive 상태이면 즉시 비활성화
+    // (Firebase auth가 gameScene 생성 전에 disablePhaserInput을 호출해도 이 시점에 바로잡음)
+    if (miniGameActive || document.getElementById('login-overlay')?.style.display !== 'none') {
+      this.input.keyboard.enabled = false;
+    }
     this._setupTouchInput();
   }
   _setupTouchInput() {
