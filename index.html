@@ -767,18 +767,6 @@ async function openTeacherDashboard() {
     } catch(e) { alert('소감문 불러오기 오류: ' + e.message); }
   };
 
-  window.tdDeleteStudent = async function(uid, name, number) {
-    if (!uid) { alert('학생 정보를 찾을 수 없습니다.'); return; }
-    if (!confirm(`정말로 ${name}(${number}번) 학생의 계정을 삭제하시겠습니까?\n이 작업은 되돌릴 수 없습니다.`)) return;
-    try {
-      await db.collection('users').doc(uid).delete();
-      const idx = allStudents.findIndex(s => s._uid === uid);
-      if (idx !== -1) allStudents.splice(idx, 1);
-      const filtered = allStudents.filter(d => (!selGrade||d.grade===selGrade) && (!selClass||d.class===selClass));
-      renderStudentTable(filtered);
-    } catch(e) { alert('삭제 오류: ' + e.message); }
-  };
-
   try {
     const snap = await db.collection('users').where('school','==',school).where('role','==','student').get();
     if (snap.empty) { document.getElementById('td-body').innerHTML = '<p style="color:#a78bfa;">아직 등록된 학생이 없습니다.</p>'; return; }
@@ -818,6 +806,18 @@ async function openTeacherDashboard() {
       });
       const filtered = allStudents.filter(d => (!selGrade||d.grade===selGrade) && (!selClass||d.class===selClass));
       renderStudentTable(filtered);
+    };
+
+    window.tdDeleteStudent = async function(uid, name, number) {
+      if (!uid) { alert('학생 정보를 찾을 수 없습니다.'); return; }
+      if (!confirm(`정말로 ${name}(${number}번) 학생의 계정을 삭제하시겠습니까?\n이 작업은 되돌릴 수 없습니다.`)) return;
+      try {
+        await db.collection('users').doc(uid).delete();
+        const idx = allStudents.findIndex(s => s._uid === uid);
+        if (idx !== -1) allStudents.splice(idx, 1);
+        const filtered = allStudents.filter(d => (!selGrade||d.grade===selGrade) && (!selClass||d.class===selClass));
+        renderStudentTable(filtered);
+      } catch(err) { alert('삭제 오류: ' + err.message); }
     };
 
     const gradeTabDiv = document.getElementById('td-grade-tabs');
