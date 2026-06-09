@@ -771,40 +771,39 @@ async function openTeacherDashboard() {
     const snap = await db.collection('users').where('school','==',school).where('role','==','student').get();
     if (snap.empty) { document.getElementById('td-body').innerHTML = '<p style="color:#a78bfa;">아직 등록된 학생이 없습니다.</p>'; return; }
 
-    const allStudents = [];
-    snap.forEach(doc => allStudents.push({ ...doc.data(), _uid: doc.id }));
+    window._tdStudents = [];
+    snap.forEach(doc => window._tdStudents.push({ ...doc.data(), _uid: doc.id }));
 
-    const gradeSet = [...new Set(allStudents.map(d => d.grade||'').filter(Boolean))].sort();
-    const classSet = [...new Set(allStudents.map(d => d.class||'').filter(Boolean))].sort((a,b) => Number(a)-Number(b));
+    const gradeSet = [...new Set(window._tdStudents.map(d => d.grade||'').filter(Boolean))].sort();
 
-    let selGrade = gradeSet[0] || '';
-    let selClass = '';
+    window._tdSelGrade = gradeSet[0] || '';
+    window._tdSelClass = '';
 
     function renderClassTabs(grade) {
-      const classes = [...new Set(allStudents.filter(d => !grade || d.grade===grade).map(d => d.class||'').filter(Boolean))].sort((a,b)=>Number(a)-Number(b));
-      selClass = classes[0] || '';
+      const classes = [...new Set(window._tdStudents.filter(d => !grade || d.grade===grade).map(d => d.class||'').filter(Boolean))].sort((a,b)=>Number(a)-Number(b));
+      window._tdSelClass = classes[0] || '';
       const tabDiv = document.getElementById('td-class-tabs');
       if (!classes.length) { tabDiv.innerHTML = ''; return; }
       tabDiv.innerHTML = classes.map(c =>
-        `<button onclick="tdSelectClass('${c}')" id="td-cls-${c}" style="padding:4px 12px;border-radius:10px;border:1px solid #a78bfa;background:${c===selClass?'#6b21a8':'#1a0a2e'};color:#e2c4ff;cursor:pointer;font-size:.8rem;">${c}반</button>`
+        `<button onclick="tdSelectClass('${c}')" id="td-cls-${c}" style="padding:4px 12px;border-radius:10px;border:1px solid #a78bfa;background:${c===window._tdSelClass?'#6b21a8':'#1a0a2e'};color:#e2c4ff;cursor:pointer;font-size:.8rem;">${c}반</button>`
       ).join('');
     }
 
     window.tdSelectGrade = function(g) {
-      selGrade = g;
+      window._tdSelGrade = g;
       document.querySelectorAll('[id^="td-gr-"]').forEach(b => {
         b.style.background = b.id === 'td-gr-'+g ? '#854d0e' : '#1a0a2e';
       });
       renderClassTabs(g);
-      const filtered = allStudents.filter(d => (!selGrade||d.grade===selGrade) && (!selClass||d.class===selClass));
+      const filtered = window._tdStudents.filter(d => (!window._tdSelGrade||d.grade===window._tdSelGrade) && (!window._tdSelClass||d.class===window._tdSelClass));
       renderStudentTable(filtered);
     };
     window.tdSelectClass = function(c) {
-      selClass = c;
+      window._tdSelClass = c;
       document.querySelectorAll('[id^="td-cls-"]').forEach(b => {
         b.style.background = b.id === 'td-cls-'+c ? '#6b21a8' : '#1a0a2e';
       });
-      const filtered = allStudents.filter(d => (!selGrade||d.grade===selGrade) && (!selClass||d.class===selClass));
+      const filtered = window._tdStudents.filter(d => (!window._tdSelGrade||d.grade===window._tdSelGrade) && (!window._tdSelClass||d.class===window._tdSelClass));
       renderStudentTable(filtered);
     };
 
@@ -813,9 +812,9 @@ async function openTeacherDashboard() {
       if (!confirm(`정말로 ${name}(${number}번) 학생의 계정을 삭제하시겠습니까?\n이 작업은 되돌릴 수 없습니다.`)) return;
       try {
         await db.collection('users').doc(uid).delete();
-        const idx = allStudents.findIndex(s => s._uid === uid);
-        if (idx !== -1) allStudents.splice(idx, 1);
-        const filtered = allStudents.filter(d => (!selGrade||d.grade===selGrade) && (!selClass||d.class===selClass));
+        const idx = window._tdStudents.findIndex(s => s._uid === uid);
+        if (idx !== -1) window._tdStudents.splice(idx, 1);
+        const filtered = window._tdStudents.filter(d => (!window._tdSelGrade||d.grade===window._tdSelGrade) && (!window._tdSelClass||d.class===window._tdSelClass));
         renderStudentTable(filtered);
       } catch(err) { alert('삭제 오류: ' + err.message); }
     };
@@ -824,11 +823,11 @@ async function openTeacherDashboard() {
     if (gradeSet.length) {
       gradeTabDiv.innerHTML = '<span style="color:#ffd700;font-size:.8rem;align-self:center;margin-right:4px;">학년:</span>' +
         gradeSet.map(g =>
-          `<button onclick="tdSelectGrade('${g}')" id="td-gr-${g}" style="padding:4px 12px;border-radius:10px;border:1px solid #ffd700;background:${g===selGrade?'#854d0e':'#1a0a2e'};color:#fde68a;cursor:pointer;font-size:.8rem;">${g}학년</button>`
+          `<button onclick="tdSelectGrade('${g}')" id="td-gr-${g}" style="padding:4px 12px;border-radius:10px;border:1px solid #ffd700;background:${g===window._tdSelGrade?'#854d0e':'#1a0a2e'};color:#fde68a;cursor:pointer;font-size:.8rem;">${g}학년</button>`
         ).join('');
     }
-    renderClassTabs(selGrade);
-    const filtered = allStudents.filter(d => (!selGrade||d.grade===selGrade) && (!selClass||d.class===selClass));
+    renderClassTabs(window._tdSelGrade);
+    const filtered = window._tdStudents.filter(d => (!window._tdSelGrade||d.grade===window._tdSelGrade) && (!window._tdSelClass||d.class===window._tdSelClass));
     renderStudentTable(filtered);
   } catch(e) {
     document.getElementById('td-body').textContent = '오류: ' + e.message;
