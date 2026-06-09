@@ -710,6 +710,9 @@ async function openTeacherDashboard() {
     let rows = '';
     students.forEach(d => {
       const r = getRank(d.totalCoins||0);
+      const uid = d._uid || '';
+      const safeName = (d.name||'-').replace(/'/g,"\\'");
+      const reviewCount = d.reviews ? Object.keys(d.reviews).length : 0;
       rows += `<tr style="border-bottom:1px solid #ffffff20;">
         <td style="padding:8px 6px;color:#ffd700;font-weight:700;text-align:center;">${d.number||'-'}</td>
         <td style="padding:8px 6px;">${d.name||'-'}</td>
@@ -717,6 +720,12 @@ async function openTeacherDashboard() {
         <td style="padding:8px 6px;color:#ffd700;">🪙 ${d.coins||0}</td>
         <td style="padding:8px 6px;color:#a78bfa;">누적 ${d.totalCoins||0}</td>
         <td style="padding:8px 6px;">🖼️ ${d.artworks||0}</td>
+        <td style="padding:8px 6px;">
+          <button onclick="tdViewReviews('${uid}','${safeName}')" style="padding:3px 8px;border-radius:6px;border:1px solid #a78bfa;background:#1a0a2e;color:#c084fc;cursor:pointer;font-size:.75rem;">✍️ 소감문${reviewCount>0?' ('+reviewCount+')':''}</button>
+        </td>
+        <td style="padding:8px 6px;">
+          <button onclick="tdDeleteStudent('${uid}','${safeName}',${d.number||0})" style="padding:3px 8px;border-radius:6px;border:1px solid #ef4444;background:#1a0a2e;color:#f87171;cursor:pointer;font-size:.75rem;">🗑️ 삭제</button>
+        </td>
       </tr>`;
     });
     document.getElementById('td-body').innerHTML = `
@@ -725,16 +734,58 @@ async function openTeacherDashboard() {
           <th style="padding:6px;text-align:center;">번호</th><th style="padding:6px;text-align:left;">이름</th>
           <th style="padding:6px;text-align:left;">등급</th><th style="padding:6px;text-align:left;">코인</th>
           <th style="padding:6px;text-align:left;">누적코인</th><th style="padding:6px;text-align:left;">감상</th>
+          <th style="padding:6px;text-align:left;">소감문</th><th style="padding:6px;text-align:left;">관리</th>
         </tr></thead><tbody>${rows}</tbody>
       </table>`;
   }
+
+  window.tdViewReviews = async function(uid, name) {
+    try {
+      const snap = await db.collection('users').doc(uid).get();
+      const reviews = snap.exists ? (snap.data().reviews || {}) : {};
+      const entries = Object.entries(reviews);
+      let content = '';
+      if (!entries.length) {
+        content = '<p style="color:#a78bfa;">아직 작성된 소감문이 없습니다.</p>';
+      } else {
+        content = entries.map(([artId, text]) =>
+          `<div style="margin-bottom:14px;background:#0f0720;border-radius:8px;padding:12px 14px;">
+            <div style="color:#ffd700;font-size:.8rem;margin-bottom:6px;">🖼️ ${artId}</div>
+            <div style="color:#e2c4ff;font-size:.88rem;line-height:1.6;white-space:pre-wrap;">${text.replace(/</g,'&lt;')}</div>
+          </div>`
+        ).join('');
+      }
+      const modal = document.createElement('div');
+      modal.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.88);z-index:10000;display:flex;justify-content:center;align-items:flex-start;overflow-y:auto;padding:20px;';
+      modal.innerHTML = `
+        <div style="background:linear-gradient(135deg,#2d1b69,#1a0a2e);border:2px solid #a78bfa;border-radius:14px;width:min(560px,98vw);padding:24px 20px;position:relative;">
+          <h3 style="color:#ffd700;margin-bottom:4px;font-size:1.1rem;">✍️ ${name} 학생 소감문</h3>
+          <p style="color:#a78bfa;font-size:.8rem;margin-bottom:14px;">총 ${entries.length}편</p>
+          <button onclick="this.closest('[style*=fixed]').remove()" style="position:absolute;top:14px;right:14px;background:#6b21a8;color:#fff;border:none;border-radius:8px;padding:5px 12px;cursor:pointer;font-size:.82rem;">✕ 닫기</button>
+          ${content}
+        </div>`;
+      document.body.appendChild(modal);
+    } catch(e) { alert('소감문 불러오기 오류: ' + e.message); }
+  };
+
+  window.tdDeleteStudent = async function(uid, name, number) {
+    if (!uid) { alert('학생 정보를 찾을 수 없습니다.'); return; }
+    if (!confirm(`정말로 ${name}(${number}번) 학생의 계정을 삭제하시겠습니까?\n이 작업은 되돌릴 수 없습니다.`)) return;
+    try {
+      await db.collection('users').doc(uid).delete();
+      const idx = allStudents.findIndex(s => s._uid === uid);
+      if (idx !== -1) allStudents.splice(idx, 1);
+      const filtered = allStudents.filter(d => (!selGrade||d.grade===selGrade) && (!selClass||d.class===selClass));
+      renderStudentTable(filtered);
+    } catch(e) { alert('삭제 오류: ' + e.message); }
+  };
 
   try {
     const snap = await db.collection('users').where('school','==',school).where('role','==','student').get();
     if (snap.empty) { document.getElementById('td-body').innerHTML = '<p style="color:#a78bfa;">아직 등록된 학생이 없습니다.</p>'; return; }
 
     const allStudents = [];
-    snap.forEach(doc => allStudents.push(doc.data()));
+    snap.forEach(doc => allStudents.push({ ...doc.data(), _uid: doc.id }));
 
     const gradeSet = [...new Set(allStudents.map(d => d.grade||'').filter(Boolean))].sort();
     const classSet = [...new Set(allStudents.map(d => d.class||'').filter(Boolean))].sort((a,b) => Number(a)-Number(b));
@@ -1460,6 +1511,9 @@ document.getElementById('popup-overlay').addEventListener('click', e => {
 
 // 전역 키보드 핸들러
 document.addEventListener('keydown', e => {
+  // 입력창에 포커스가 있으면 게임 키 처리 스킵
+  const _focused = document.activeElement;
+  if (_focused && (_focused.tagName === 'INPUT' || _focused.tagName === 'TEXTAREA' || _focused.tagName === 'SELECT')) return;
   // 등급업 팝업 Enter/ESC → 최우선 처리
   if (document.getElementById('rank-up-overlay').classList.contains('active')) {
     if (e.key === 'Enter' || e.key === 'Escape') { e.preventDefault(); closeRankUp(); return; }
@@ -3197,6 +3251,9 @@ class GameScene extends Phaser.Scene {
     if (this.sparkleEmitter) this.sparkleEmitter.setPosition(this.player.x, this.player.y);
     // 미니게임/팝업 열려 있으면 이동·입장 처리 스킵
     if (miniGameActive) return;
+    // 입력창에 포커스가 있으면 이동 처리 스킵
+    const _ae = document.activeElement;
+    if (_ae && (_ae.tagName === 'INPUT' || _ae.tagName === 'TEXTAREA' || _ae.tagName === 'SELECT')) return;
     const c=this.cursors, w=this.wasd; let dx=0,dy=0;
     if(c.left.isDown||w.left.isDown)  dx-=3;
     if(c.right.isDown||w.right.isDown) dx+=3;
@@ -3288,6 +3345,14 @@ function openQuestScreen(artId) {
 function closeQuest() { document.getElementById('quest-overlay').classList.remove('active'); }
 
 function finishQuest() {
+  if (qState.def?.type === 'review' && window._currentUser) {
+    const reviewText = document.getElementById('quest-review-text').value.trim();
+    if (reviewText.length >= 30) {
+      db.collection('users').doc(window._currentUser.uid).update({
+        [`reviews.${qState.artId}`]: reviewText
+      }).catch(() => {});
+    }
+  }
   markQuestDone(qState.artId);
   state.coins += 20; state.totalCoins += 20; updateHUD(); showCoinToast(20);
   closeQuest();
