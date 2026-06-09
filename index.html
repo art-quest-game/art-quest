@@ -720,7 +720,7 @@ async function openTeacherDashboard() {
         <td style="padding:8px 6px;color:#a78bfa;">누적 ${d.totalCoins||0}</td>
         <td style="padding:8px 6px;">🖼️ ${d.artworks||0}</td>
         <td style="padding:8px 6px;">
-          <button onclick="tdViewReviews('${uid}','${safeName}')" style="padding:3px 8px;border-radius:6px;border:1px solid #a78bfa;background:#1a0a2e;color:#c084fc;cursor:pointer;font-size:.75rem;">✍️ 소감문${reviewCount>0?' ('+reviewCount+')':''}</button>
+          <button onclick="tdViewReviews('${uid}','${safeName}')" style="padding:3px 8px;border-radius:6px;border:1px solid #a78bfa;background:#1a0a2e;color:${reviewCount>0?'#e879f9':'#c084fc'};cursor:pointer;font-size:.75rem;">✍️ 소감문 (${reviewCount})</button>
         </td>
         <td style="padding:8px 6px;">
           <button onclick="tdDeleteStudent('${uid}','${safeName}',${d.number||0})" style="padding:3px 8px;border-radius:6px;border:1px solid #ef4444;background:#1a0a2e;color:#f87171;cursor:pointer;font-size:.75rem;">🗑️ 삭제</button>
