@@ -346,7 +346,7 @@ auth.onAuthStateChanged(async (user) => {
     window._school = snap.exists ? (snap.data()?.school || '') : '';
     window._grade  = snap.exists ? (snap.data()?.grade  || '') : '';
     window._class  = snap.exists ? (snap.data()?.class  || '') : '';
-    document.getElementById('login-overlay').style.display = 'none';
+    hideLoginOverlay();
     document.getElementById('user-info-bar').style.display = 'flex';
     const nameLabel = snap.exists ? (snap.data().name || user.email) : user.email;
     document.getElementById('user-email-label').textContent = nameLabel;
@@ -359,9 +359,8 @@ auth.onAuthStateChanged(async (user) => {
     shopOwned.clear(); shopEquipped.clear();
     if (typeof updateHUD === 'function') updateHUD();
     window._currentUser = null;
-    document.getElementById('login-overlay').style.display = 'flex';
+    if (typeof showLoginOverlay === 'function') showLoginOverlay();
     document.getElementById('user-info-bar').style.display = 'none';
-    if (typeof disablePhaserInput === 'function') disablePhaserInput();
   }
 });
 
@@ -580,7 +579,7 @@ window.doLogout = doLogout;
         <div id="login-msg" style="color:#ff6b6b;font-size:.8rem;min-height:18px;margin-bottom:8px;"></div>
 
         <button id="login-btn" class="px-btn-main" onclick="doLogin(false)">▶ 게임 시작!</button>
-        <button onclick="document.getElementById('login-overlay').style.display='none'; if(typeof enablePhaserInput==='function') enablePhaserInput();" class="px-btn-ghost">◦ 비회원으로 둘러보기</button>
+        <button onclick="hideLoginOverlay(); if(typeof enablePhaserInput==='function') enablePhaserInput();" class="px-btn-ghost">◦ 비회원으로 둘러보기</button>
       </div>
     </div>
 
@@ -1480,6 +1479,17 @@ function enablePhaserInput() {
   resetKey(gameScene.enterKey);
 }
 
+// ── 로그인/회원가입 팝업 열기·닫기 ──────────────
+function showLoginOverlay() {
+  document.getElementById('login-overlay').style.display = 'flex';
+  window._loginOverlayOpen = true;
+  if (gameScene) gameScene.input.keyboard.enabled = false;
+}
+function hideLoginOverlay() {
+  document.getElementById('login-overlay').style.display = 'none';
+  window._loginOverlayOpen = false;
+}
+
 function showPopup(b) {
   activeBuilding = b;
   document.getElementById('popup-icon').textContent  = b.icon;
@@ -1511,6 +1521,11 @@ document.getElementById('popup-overlay').addEventListener('click', e => {
 
 // 전역 키보드 핸들러
 document.addEventListener('keydown', e => {
+  // 로그인/회원가입 팝업이 열려있으면 모든 키 이벤트 차단
+  if (window._loginOverlayOpen || document.getElementById('login-overlay')?.style.display !== 'none') {
+    e.stopPropagation();
+    return;
+  }
   // 입력창에 포커스가 있으면 게임 키 처리 스킵
   const _focused = document.activeElement;
   if (_focused && (_focused.tagName === 'INPUT' || _focused.tagName === 'TEXTAREA' || _focused.tagName === 'SELECT')) return;
@@ -3158,8 +3173,7 @@ class GameScene extends Phaser.Scene {
       if (this.nearBuilding && !this._dragging) showPopup(this.nearBuilding);
     });
     // 씬 초기화 시점에 로그인 오버레이가 이미 열려있거나 miniGameActive 상태이면 즉시 비활성화
-    // (Firebase auth가 gameScene 생성 전에 disablePhaserInput을 호출해도 이 시점에 바로잡음)
-    if (miniGameActive || document.getElementById('login-overlay')?.style.display !== 'none') {
+    if (miniGameActive || window._loginOverlayOpen || document.getElementById('login-overlay')?.style.display !== 'none') {
       this.input.keyboard.enabled = false;
     }
     this._setupTouchInput();
