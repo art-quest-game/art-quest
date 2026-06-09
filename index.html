@@ -2205,7 +2205,7 @@ function startMemory() {
   grid.innerHTML = pairs.map((art, i) => `
     <div class="mem-card" id="mc-${i}" onclick="flipCard(${i})">
       <div class="mem-card-inner">
-        <div class="mem-face"><img src="card-back.jpg" alt="card back" onerror="this.style.display='none'"></div>
+        <div class="mem-face"><img src="images/card-back.jpg" alt="card back" onerror="this.style.display='none'"></div>
         <div class="mem-back">
           <img src="${art.url}" alt="${art.title}" crossorigin="anonymous" referrerpolicy="no-referrer" onerror="this.style.display='none'">
           <div class="mem-back-title">${art.title}</div>
