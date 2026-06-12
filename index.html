@@ -1745,6 +1745,7 @@ function mobileEnter() {
 // ── Phaser 입력 완전 비활성화 ──────────────────
 function disablePhaserInput() {
   miniGameActive = true;
+  _keysDown.clear(); // 미니게임 진입 시 눌린 키 상태 즉시 초기화 → stuck 방지
   if (!gameScene) return;
   gameScene.input.keyboard.enabled = false;
   gameScene._dragging = false;
@@ -3270,6 +3271,10 @@ typingInput.addEventListener('keydown', function(e) {
 const TILE = 32, COLS = 52, ROWS = 28;
 const W = COLS * TILE, H = ROWS * TILE;
 
+// 이동 키 상태 — document keydown/keyup으로 직접 관리 (Phaser isDown 미사용)
+const _keysDown = new Set();
+let   _movKeyBound = false; // 리스너 중복 등록 방지 플래그
+
 class GameScene extends Phaser.Scene {
   constructor() { super('GameScene'); }
   preload() {
@@ -3468,7 +3473,19 @@ class GameScene extends Phaser.Scene {
     this.cameras.main.setBackgroundColor('#5aaa28');
   }
   _setupInput() {
-    // 방향키 + WASD 이동
+    // 방향키 + WASD: document 레벨에서 keydown/keyup 직접 추적
+    // _movKeyBound 플래그로 리스너 중복 등록을 방지
+    if (!_movKeyBound) {
+      _movKeyBound = true;
+      const MOV = new Set(['ArrowLeft','ArrowRight','ArrowUp','ArrowDown','KeyA','KeyD','KeyW','KeyS']);
+      document.addEventListener('keydown', e => {
+        if (!MOV.has(e.code)) return;
+        e.preventDefault(); // 페이지 스크롤 방지
+        if (!miniGameActive && !window._loginOverlayOpen) _keysDown.add(e.code);
+      });
+      document.addEventListener('keyup', e => { _keysDown.delete(e.code); });
+    }
+    // Phaser 커서키는 enablePhaserInput() reset 호환용으로만 유지
     this.cursors = this.input.keyboard.createCursorKeys();
     this.wasd    = this.input.keyboard.addKeys({
       up:   Phaser.Input.Keyboard.KeyCodes.W,
@@ -3575,11 +3592,11 @@ class GameScene extends Phaser.Scene {
     // 입력창에 포커스가 있으면 이동 처리 스킵
     const _ae = document.activeElement;
     if (_ae && (_ae.tagName === 'INPUT' || _ae.tagName === 'TEXTAREA' || _ae.tagName === 'SELECT')) return;
-    const c=this.cursors, w=this.wasd; let dx=0,dy=0;
-    if(c.left.isDown||w.left.isDown)  dx-=3;
-    if(c.right.isDown||w.right.isDown) dx+=3;
-    if(c.up.isDown||w.up.isDown)      dy-=3;
-    if(c.down.isDown||w.down.isDown)  dy+=3;
+    let dx=0,dy=0;
+    if(_keysDown.has('ArrowLeft') ||_keysDown.has('KeyA')) dx-=3;
+    if(_keysDown.has('ArrowRight')||_keysDown.has('KeyD')) dx+=3;
+    if(_keysDown.has('ArrowUp')   ||_keysDown.has('KeyW')) dy-=3;
+    if(_keysDown.has('ArrowDown') ||_keysDown.has('KeyS')) dy+=3;
     // 조이스틱 입력
     if(window._joystickVec && !this._dragging) {
       const jx = window._joystickVec.x, jy = window._joystickVec.y;
