@@ -414,6 +414,11 @@ auth.onAuthStateChanged(async (user) => {
     // 로그아웃 시 상태 초기화
     state.coins = 0; state.totalCoins = 0; state.artworks = 0;
     shopOwned.clear(); shopEquipped.clear();
+    window._gender = 'boy';
+    window._currentCostume = 'c_basic';
+    purchasedCostumes = new Set();
+    costumePreviewId = 'c_basic';
+    window._selectedSignupGender = '';
     if (typeof updateHUD === 'function') updateHUD();
     window._currentUser = null;
     if (typeof showLoginOverlay === 'function') showLoginOverlay();
