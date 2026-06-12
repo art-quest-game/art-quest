@@ -242,15 +242,23 @@ canvas { display:block; image-rendering:pixelated; position:fixed; top:0; left:0
 /* ─── 신규 코스튬 상점 ─── */
 #shop-inner { max-width:960px !important; }
 #costume-shop-layout { display:flex; gap:0; width:100%; min-height:460px; margin-top:10px; }
-#costume-list-panel { width:38%; overflow-y:auto; padding-right:10px; border-right:2px solid #2d1b69; flex-shrink:0; max-height:65vh; }
+#costume-list-panel { width:48%; overflow-y:auto; padding-right:10px; border-right:2px solid #2d1b69; flex-shrink:0; max-height:65vh; }
 #costume-preview-panel { flex:1; display:flex; flex-direction:column; align-items:center; padding:16px 20px 20px; gap:10px; }
 .costume-section-header { color:#ffd700; font-size:.76rem; font-weight:700; letter-spacing:1px; padding:10px 6px 5px; border-bottom:1px solid #ffd70030; margin-top:4px; }
+/* 그리드 컨테이너 */
+.costume-grid { display:grid; grid-template-columns:1fr 1fr; gap:7px; padding:4px 2px 8px; }
+/* 그리드 카드 타일 */
+.costume-tile { position:relative; border-radius:10px; border:2px solid #2d1b69; cursor:pointer; background:#1a0a2e; text-align:center; transition:all .15s; padding:8px 6px 7px; display:flex; flex-direction:column; align-items:center; }
+.costume-tile:hover { border-color:#a855f7; background:#2d1b69; }
+.costume-tile.ct-selected { border-color:#ffd700; background:rgba(45,27,105,.6); box-shadow:0 0 10px #ffd70030; }
+.costume-tile.ct-equipped { border-color:#22c55e; background:rgba(5,46,22,.5); }
+.costume-tile.ct-locked { opacity:.45; cursor:default; }
+.costume-tile .ct-img { width:60px; height:76px; object-fit:contain; display:block; }
+.costume-tile .ct-name { font-size:.7rem; color:#e2c4ff; margin-top:5px; font-weight:700; line-height:1.3; word-break:keep-all; }
+.costume-tile .ct-badge { position:absolute; top:3px; left:4px; font-size:.7rem; line-height:1; }
+.costume-tile .ct-lock { position:absolute; inset:0; display:flex; align-items:center; justify-content:center; font-size:1.5rem; background:rgba(0,0,0,.38); border-radius:8px; pointer-events:none; }
+/* 구 카드 스타일(하위호환 유지) */
 .costume-card { display:flex; align-items:center; gap:9px; padding:8px 9px; border-radius:10px; border:2px solid transparent; cursor:pointer; transition:all .15s; margin-bottom:3px; background:#1a0a2e; }
-.costume-card:hover { border-color:#a855f7; background:#2d1b69; }
-.costume-card.c-selected { border-color:#ffd700; background:rgba(45,27,105,.5); }
-.costume-card.c-equipped { border-color:#22c55e; background:rgba(5,46,22,.5); }
-.costume-card.c-locked { opacity:.4; cursor:default; }
-.costume-card img { width:42px; height:54px; object-fit:contain; flex-shrink:0; }
 .costume-card-name { color:#e2c4ff; font-size:.83rem; font-weight:700; }
 .costume-card-sub { font-size:.72rem; margin-top:2px; color:#6b7280; }
 .costume-card-sub.csub-red { color:#ef4444; }
@@ -400,6 +408,7 @@ auth.onAuthStateChanged(async (user) => {
       if (!data.gender) {
         document.getElementById('gender-setup-popup').style.display = 'flex';
       }
+      if (typeof window.updatePlayerSprite === 'function') window.updatePlayerSprite();
     }
     window._currentUser = user;
     window._isTeacher = snap.exists && snap.data()?.role === 'teacher';
@@ -1440,44 +1449,47 @@ function getCurrentRankIdx() { return RANKS.indexOf(getCurrentRank()); }
 
 function renderCostumeShop() {
   const rankIdx = getCurrentRankIdx();
+
+  // 성별에 맞는 이미지 경로 반환
+  function costumeImg(c) {
+    const gender = window._gender || 'boy';
+    return c.img.replace('char_boy_', `char_${gender}_`);
+  }
+
+  function makeTile(c, locked, onclick) {
+    const isEq  = window._currentCostume === c.id;
+    const isSel = costumePreviewId === c.id;
+    const cls   = ['costume-tile',
+      isEq  ? 'ct-equipped' : '',
+      isSel && !isEq ? 'ct-selected' : '',
+      locked ? 'ct-locked'   : ''
+    ].filter(Boolean).join(' ');
+    const badge = isEq ? '<span class="ct-badge">✅</span>' : '';
+    const lock  = locked ? '<div class="ct-lock">🔒</div>' : '';
+    return `<div class="${cls}" onclick="${onclick}">
+      ${badge}
+      <img class="ct-img" src="${costumeImg(c)}" alt="${c.name}" onerror="this.src='${c.img}'">
+      <div class="ct-name">${c.name}</div>
+      ${lock}
+    </div>`;
+  }
+
   let html = '';
 
   // [등급 보상]
-  html += '<div class="costume-section-header">🏆 등급 보상</div>';
+  html += '<div class="costume-section-header">🏆 등급 보상</div><div class="costume-grid">';
   COSTUME_DATA.filter(c => c.section === 'grade').forEach(c => {
-    const unlocked  = rankIdx >= c.rankReq;
-    const isEq      = window._currentCostume === c.id;
-    const isSel     = costumePreviewId === c.id;
-    let subTxt = '', subCls = '';
-    if (isEq)         { subTxt = '✅ 착용 중';                               subCls = 'csub-green'; }
-    else if (unlocked){ subTxt = '해금됨';                                    subCls = ''; }
-    else              { subTxt = `🔒 ${RANKS[c.rankReq].name} 달성 시 해금`; subCls = ''; }
-    const cls = [isEq?'c-equipped':'', isSel&&!isEq?'c-selected':'', !unlocked?'c-locked':''].filter(Boolean).join(' ');
-    html += `<div class="costume-card ${cls}" onclick="${unlocked?`selectCostume('${c.id}')`:``}">
-      <img src="${c.img}" alt="${c.name}">
-      <div><div class="costume-card-name">${c.name}</div><div class="costume-card-sub ${subCls}">${subTxt}</div></div>
-    </div>`;
+    const unlocked = rankIdx >= c.rankReq;
+    html += makeTile(c, !unlocked, unlocked ? `selectCostume('${c.id}')` : '');
   });
+  html += '</div>';
 
   // [세계 전통의상]
-  html += '<div class="costume-section-header">🌏 세계 전통의상</div>';
+  html += '<div class="costume-section-header">🌏 세계 전통의상</div><div class="costume-grid">';
   COSTUME_DATA.filter(c => c.section === 'world').forEach(c => {
-    const owned  = purchasedCostumes.has(c.id);
-    const isEq   = window._currentCostume === c.id;
-    const isSel  = costumePreviewId === c.id;
-    const afford = state.coins >= c.price;
-    let subTxt = '', subCls = '';
-    if (isEq)         { subTxt = '✅ 착용 중';                 subCls = 'csub-green'; }
-    else if (owned)   { subTxt = '보유 중';                   subCls = 'csub-green'; }
-    else if (!afford) { subTxt = `${c.price-state.coins}코인 부족`; subCls = 'csub-red'; }
-    else              { subTxt = `🪙 ${c.price}코인`;          subCls = 'csub-yellow'; }
-    const cls = [isEq?'c-equipped':'', isSel&&!isEq?'c-selected':''].filter(Boolean).join(' ');
-    html += `<div class="costume-card ${cls}" onclick="selectCostume('${c.id}')">
-      <img src="${c.img}" alt="${c.name}">
-      <div><div class="costume-card-name">${c.name} <span style="color:#6b7280;font-size:.7rem;">(${c.country})</span></div>
-      <div class="costume-card-sub ${subCls}">${subTxt}</div></div>
-    </div>`;
+    html += makeTile(c, false, `selectCostume('${c.id}')`);
   });
+  html += '</div>';
 
   // [성별 변경]
   const gLabel = window._gender === 'girl' ? '👧 여자' : '👦 남자';
@@ -1540,6 +1552,7 @@ async function equipCostume(id) {
   if (window._currentUser) {
     db.collection('users').doc(window._currentUser.uid).update({ currentCostume: id }).catch(() => {});
   }
+  if (typeof window.updatePlayerSprite === 'function') window.updatePlayerSprite();
   renderCostumeShop();
 }
 
@@ -1566,7 +1579,8 @@ async function confirmGenderSetup(gender) {
   if (window._currentUser) {
     await db.collection('users').doc(window._currentUser.uid).update({ gender }).catch(() => {});
   }
-  renderCostumeShop && renderCostumeShop();
+  if (typeof window.updatePlayerSprite === 'function') window.updatePlayerSprite();
+  if (typeof renderCostumeShop === 'function') renderCostumeShop();
 }
 
 function changeGender() {
@@ -1586,6 +1600,7 @@ async function confirmChangeGender() {
       gender: window._gender
     }).catch(() => {});
   }
+  if (typeof window.updatePlayerSprite === 'function') window.updatePlayerSprite();
   renderCostumeShop();
 }
 
@@ -1768,6 +1783,21 @@ function mobileEnter() {
 }
 
 // ── Phaser 입력 완전 비활성화 ──────────────────
+// 현재 gender + currentCostume 기반으로 맵 캐릭터 스프라이트 업데이트
+window.updatePlayerSprite = function() {
+  if (!gameScene || !gameScene.player) return;
+  const gender  = window._gender || '';
+  const costume = window._currentCostume || 'c_basic';
+  if (!gender) return; // gender 없으면 기존 char1 유지
+  const suffix  = costume.replace('c_', '');
+  const gKey    = 'char_' + gender + '_' + suffix;
+  const boyKey  = 'char_boy_' + suffix;
+  let texKey    = 'char1';
+  if (gameScene.textures.exists(gKey)) texKey = gKey;
+  else if (gameScene.textures.exists(boyKey)) texKey = boyKey;
+  gameScene.player.setTexture(texKey);
+};
+
 function disablePhaserInput() {
   miniGameActive = true;
   _keysDown.clear(); // 미니게임 진입 시 눌린 키 상태 즉시 초기화 → stuck 방지
@@ -3298,7 +3328,13 @@ const W = COLS * TILE, H = ROWS * TILE;
 
 // 이동 키 상태 — document keydown/keyup으로 직접 관리 (Phaser isDown 미사용)
 const _keysDown = new Set();
-let   _movKeyBound = false; // 리스너 중복 등록 방지 플래그
+const _MOV_KEYS = new Set(['ArrowLeft','ArrowRight','ArrowUp','ArrowDown','KeyA','KeyD','KeyW','KeyS']);
+function _onMovKeyDown(e) {
+  if (!_MOV_KEYS.has(e.code)) return;
+  e.preventDefault();
+  if (!miniGameActive && !window._loginOverlayOpen) _keysDown.add(e.code);
+}
+function _onMovKeyUp(e) { _keysDown.delete(e.code); }
 
 class GameScene extends Phaser.Scene {
   constructor() { super('GameScene'); }
@@ -3312,6 +3348,14 @@ class GameScene extends Phaser.Scene {
     this.load.image('char3', BASE+'char3.png');
     this.load.image('char4', BASE+'char4.png');
     this.load.image('char5', BASE+'char5.png');
+    // 코스튬 이미지 사전 로드 (boy/girl 모두)
+    COSTUME_DATA.forEach(c => {
+      const suffix = c.id.replace('c_', '');
+      const boyKey = 'char_boy_' + suffix;
+      if (!this.textures.exists(boyKey)) this.load.image(boyKey, BASE + 'char_boy_' + suffix + '.png');
+      const girlKey = 'char_girl_' + suffix;
+      if (!this.textures.exists(girlKey)) this.load.image(girlKey, BASE + 'char_girl_' + suffix + '.png');
+    });
     // 맵 이미지
     this.load.image('tile_grass',        BASE+'tile_grass.png');
     this.load.image('tile_path',         BASE+'tile_path.png');
@@ -3460,7 +3504,12 @@ class GameScene extends Phaser.Scene {
         .setDisplaySize(TILE*1.1,TILE*1.1).setBlendMode(Phaser.BlendModes.MULTIPLY));
   }
   _createPlayer() {
-    this.player = this.add.image(25*TILE+TILE/2, 13*TILE+TILE/2,'char1').setDisplaySize(192,224).setDepth(1100);
+    const _initTex = window._gender ? (() => {
+      const s = (window._currentCostume||'c_basic').replace('c_','');
+      const k = 'char_' + window._gender + '_' + s;
+      return (this.textures.exists(k)) ? k : 'char1';
+    })() : 'char1';
+    this.player = this.add.image(25*TILE+TILE/2, 13*TILE+TILE/2, _initTex).setDisplaySize(192,224).setDepth(1100);
     this.playerLabel = this.add.text(0,0,'견습생',{fontSize:'12px',color:'#ffd700',stroke:'#000',strokeThickness:3}).setOrigin(.5,1).setDepth(11);
     // 아이템 오버레이: 작은 뱃지(16~20px)로 캐릭터 주변 배치
     this.itemOverlays = {};
@@ -3498,18 +3547,11 @@ class GameScene extends Phaser.Scene {
     this.cameras.main.setBackgroundColor('#5aaa28');
   }
   _setupInput() {
-    // 방향키 + WASD: document 레벨에서 keydown/keyup 직접 추적
-    // _movKeyBound 플래그로 리스너 중복 등록을 방지
-    if (!_movKeyBound) {
-      _movKeyBound = true;
-      const MOV = new Set(['ArrowLeft','ArrowRight','ArrowUp','ArrowDown','KeyA','KeyD','KeyW','KeyS']);
-      document.addEventListener('keydown', e => {
-        if (!MOV.has(e.code)) return;
-        e.preventDefault(); // 페이지 스크롤 방지
-        if (!miniGameActive && !window._loginOverlayOpen) _keysDown.add(e.code);
-      });
-      document.addEventListener('keyup', e => { _keysDown.delete(e.code); });
-    }
+    // 방향키 + WASD: 기존 리스너 완전 제거 후 재등록 (중복 방지)
+    document.removeEventListener('keydown', _onMovKeyDown);
+    document.removeEventListener('keyup',   _onMovKeyUp);
+    document.addEventListener('keydown', _onMovKeyDown);
+    document.addEventListener('keyup',   _onMovKeyUp);
     // Phaser 커서키는 enablePhaserInput() reset 호환용으로만 유지
     this.cursors = this.input.keyboard.createCursorKeys();
     this.wasd    = this.input.keyboard.addKeys({
