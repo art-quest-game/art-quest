@@ -1523,11 +1523,11 @@ async function openTeacherDashboard() {
 // ─────────────────────────────────────────────
 const BUILDINGS = [
   { id:'gallery', name:'명화 갤러리',   icon:'🏛️', desc:'세계 각국의 명화를 감상하세요!\n유럽·한국·일본·중남미 작품을 만날 수 있어요.', color:0xffd700, tx:23, ty:4,  width:6, height:5 },
-  { id:'shop',    name:'캐릭터 상점',   icon:'🛍️', desc:'코인으로 캐릭터를 꾸며보세요!\n모자·의상·액세서리를 구매하고 장착하세요.',          color:0xf59e0b, tx:7,  ty:7,  width:6, height:5 },
-  { id:'quiz',    name:'퀴즈 타워',     icon:'🎯', desc:'명화 4지선다 퀴즈를 풀고 코인을 획득하세요!\n10문제, 정답당 +10 코인.',              color:0xff6b35, tx:38, ty:7,  width:6, height:5 },
-  { id:'memory',  name:'메모리 카드',   icon:'🃏', desc:'명화 카드 16장의 짝을 맞추세요!\n짝 맞출 때마다 +5코인, 전체 완성 +20 보너스!',     color:0xa855f7, tx:7,  ty:18, width:6, height:5 },
-  { id:'typing',  name:'타자 연습장',   icon:'⌨️', desc:'명화 관련 문장을 타이핑하세요!\n60초, 정확도에 따라 최대 +60 코인.',                color:0x38bdf8, tx:38, ty:18, width:6, height:5 },
-  { id:'coloring',name:'색칠 스튜디오', icon:'🎨', desc:'명화 윤곽선을 직접 색칠하세요!\n5가지 명화, 16색 팔레트, 완성시 +20 코인.',          color:0x22c55e, tx:23, ty:20, width:6, height:5 }
+  { id:'shop',    name:'캐릭터 상점',   icon:'🛍️', desc:'코인으로 캐릭터를 꾸며보세요!\n모자·의상·액세서리를 구매하고 장착하세요.',          color:0xf59e0b, tx:7,  ty:6,  width:6, height:5 },
+  { id:'quiz',    name:'퀴즈 타워',     icon:'🎯', desc:'명화 4지선다 퀴즈를 풀고 코인을 획득하세요!\n10문제, 정답당 +10 코인.',              color:0xff6b35, tx:38, ty:6,  width:6, height:5 },
+  { id:'memory',  name:'메모리 카드',   icon:'🃏', desc:'명화 카드 16장의 짝을 맞추세요!\n짝 맞출 때마다 +5코인, 전체 완성 +20 보너스!',     color:0xa855f7, tx:7,  ty:15, width:6, height:5 },
+  { id:'typing',  name:'타자 연습장',   icon:'⌨️', desc:'명화 관련 문장을 타이핑하세요!\n60초, 정확도에 따라 최대 +60 코인.',                color:0x38bdf8, tx:38, ty:15, width:6, height:5 },
+  { id:'coloring',name:'색칠 스튜디오', icon:'🎨', desc:'명화 윤곽선을 직접 색칠하세요!\n5가지 명화, 16색 팔레트, 완성시 +20 코인.',          color:0x22c55e, tx:23, ty:17, width:6, height:5 }
 ];
 
 // ─────────────────────────────────────────────
@@ -3844,7 +3844,7 @@ class GameScene extends Phaser.Scene {
       // if(b.id==='gallery') spr.setBlendMode(Phaser.BlendModes.MULTIPLY);
       this.buildingSprites[b.id]=spr;
       this.add.text(b.tx*TILE+b.width*TILE/2,(b.ty+b.height)*TILE+8,b.icon+' '+b.name,
-        {fontSize:'14px',color:'#ffd700',stroke:'#000000',strokeThickness:4,fontStyle:'bold'}).setOrigin(.5,0).setDepth((b.ty+b.height)*10+1);
+        {fontSize:'20px',color:'#ffffff',stroke:'#000000',strokeThickness:5,fontStyle:'bold'}).setOrigin(.5,0).setDepth((b.ty+b.height)*10+1);
     });
     this._plantTrees();
     this._addPixelDetails();
@@ -4060,7 +4060,7 @@ class GameScene extends Phaser.Scene {
   }
   _createCurator() {
     const cx = 31*TILE + TILE/2;
-    const cy = 8*TILE + TILE/2;
+    const cy = 7*TILE + TILE/2;
     const cDepth = 1050;
     this.curator = this.add.image(cx, cy, 'curator')
       .setDisplaySize(200, 250).setOrigin(0.5, 0.5).setDepth(cDepth).setFlipX(true);
