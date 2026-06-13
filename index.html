@@ -18,7 +18,7 @@ canvas { display:block; image-rendering:pixelated; position:fixed; top:0; left:0
 #hint { position:fixed; bottom:22px; left:50%; transform:translateX(-50%); background:rgba(45,27,105,.88); border:2px solid #a855f7; border-radius:24px; padding:8px 22px; color:#e2c4ff; font-size:.88rem; z-index:50; opacity:0; transition:opacity .3s; pointer-events:none; }
 #hint.visible { opacity:1; }
 /* 큐레이터 말풍선 */
-#curator-bubble { position:fixed; z-index:150; display:none; background:#1a0a2e; border:3px solid #ffd700; border-radius:6px; padding:10px 14px; color:#e2c4ff; font-size:.8rem; max-width:190px; text-align:center; line-height:1.6; cursor:pointer; box-shadow:4px 4px 0 #000,-1px -1px 0 #000,0 0 14px #ffd70055; transform:translateX(-50%); pointer-events:auto; }
+#curator-bubble { position:fixed; z-index:150; display:none; background:#1a0a2e; border:3px solid #ffd700; border-radius:6px; padding:12px 18px; color:#e2c4ff; font-size:.82rem; max-width:290px; text-align:center; line-height:1.7; cursor:pointer; box-shadow:4px 4px 0 #000,-1px -1px 0 #000,0 0 14px #ffd70055; transform:translateX(-50%); pointer-events:auto; }
 #curator-bubble::after { content:''; position:absolute; bottom:-10px; left:50%; transform:translateX(-50%); border:5px solid transparent; border-top-color:#ffd700; }
 #curator-bubble-name { color:#ffd700; font-size:.72rem; font-weight:700; margin-bottom:5px; }
 
@@ -3731,23 +3731,23 @@ const W = COLS * TILE, H = ROWS * TILE;
 // ─────────────────────────────────────────────
 function getCuratorDialogue() {
   if (!window._currentUser) {
-    return '🎨 명화의 숲에 오신 걸 환영해요!\n회원가입하면 퀘스트와 코인을\n모두 이용할 수 있어요!';
+    return '명화의 숲에 오신 걸 환영해요!\n회원가입하면 퀘스트와 코인을\n모두 이용할 수 있어요!';
   }
   const fKey = _aqPrefix() + 'curator_first';
   if (!localStorage.getItem(fKey)) {
     localStorage.setItem(fKey, '1');
-    return '🎨 명화의 숲에 오신 걸 환영해요!\n저는 큐레이터 반고흐예요.\n저 앞 명화 갤러리에서\n명화를 감상해보세요!';
+    return '명화의 숲에 오신 걸 환영해요!\n저는 큐레이터 반고흐예요.\n앞에 있는 명화 갤러리에서\n명화를 감상해보세요!';
   }
-  if (state.artworks >= 56) return '🌟 56개 명화를 모두 감상했어요!\n진정한 명화의 숲 마스터예요!';
-  if (getCurrentRank().name === '마에스트로') return '👑 마에스트로 달성을 축하해요!\n당신은 이제 진정한 예술가예요!';
+  if (state.artworks >= 56) return '56개 명화를 모두 감상했어요!\n진정한 명화의 숲 마스터예요!';
+  if (getCurrentRank().name === '마에스트로') return '마에스트로 달성을 축하해요!\n진정한 예술가예요!';
   if (window._curatorRankUp) {
     const rn = window._curatorRankUp; window._curatorRankUp = null;
-    return `🎉 축하해요! ${rn} 등급이 됐군요!\n캐릭터 상점에서 새 의상을\n확인해보세요!`;
+    return `축하해요! 새 등급이 됐군요!\n캐릭터 상점에서 새 의상을\n확인해보세요!`;
   }
-  if (state.artworks >= 20) return `대단해요! 벌써 ${state.artworks}개의 명화를\n감상했군요! 진짜 화가가 될 것 같아요 🎨`;
-  if (state.artworks === 0) return '🖼 아직 갤러리를 안 가봤군요!\n갤러리 퀘스트를 완료하면\n코인을 가장 많이 얻을 수 있어요!';
-  if (state.coins < 50) return '💰 코인이 부족한가요?\n갤러리 퀘스트를 완료하면\n코인을 많이 얻을 수 있어요!';
-  return '오늘도 명화를 감상하러 왔군요!\n새로운 명화가 기다리고 있어요 🖼';
+  if (state.artworks >= 20) return `대단해요! 벌써 ${state.artworks}개의 명화를\n감상했군요!`;
+  if (state.artworks === 0) return '아직 갤러리를 안 가봤군요!\n갤러리 퀘스트를 완료하면\n코인을 가장 많이 얻을 수 있어요!';
+  if (state.coins < 50) return '코인이 부족한가요?\n갤러리 퀘스트를 완료하면\n코인을 많이 얻을 수 있어요!';
+  return '오늘도 명화를 감상하러 왔군요!\n새로운 명화가 기다리고 있어요!';
 }
 
 // 이동 키 상태 — document keydown / window capture keyup으로 관리
@@ -4059,13 +4059,12 @@ class GameScene extends Phaser.Scene {
     this.zones=BUILDINGS.map(b=>({ building:b, x1:b.tx*TILE-TILE*1.5, y1:b.ty*TILE-TILE*1.5, x2:(b.tx+b.width)*TILE+TILE*1.5, y2:(b.ty+b.height)*TILE+TILE*1.5 }));
   }
   _createCurator() {
-    const cx = 23*TILE + TILE/2;
-    const cy = 11*TILE + TILE/2;
-    const cDepth = 11*10 + 5;
+    const cx = 27*TILE + TILE/2;
+    const cy = 6*TILE + TILE/2;
+    const cDepth = 6*10 + 5;
     this.curator = this.add.image(cx, cy, 'curator')
       .setDisplaySize(200, 250).setOrigin(0.5, 0.5).setDepth(cDepth);
-    // 좌우 흔들리는 애니메이션
-    this.tweens.add({ targets:this.curator, angle:{from:-5,to:5}, duration:1400, yoyo:true, repeat:-1, ease:'Sine.easeInOut' });
+    this.tweens.add({ targets:this.curator, y:cy-4, duration:2000, yoyo:true, repeat:-1, ease:'Sine.easeInOut' });
     // 💬 아이콘 (머리 위에서 위아래 bounce)
     this.curatorIcon = this.add.text(cx, cy - 140, '💬', {fontSize:'22px'})
       .setOrigin(0.5, 1).setDepth(cDepth + 1);
