@@ -430,6 +430,18 @@ canvas { display:block; image-rendering:pixelated; position:fixed; top:0; left:0
 body.is-mobile #joystick-zone { display:block; }
 #touch-drag-ring { position:fixed; pointer-events:none; z-index:55; display:none; width:52px; height:52px; border-radius:50%; border:3px solid #a855f7; box-shadow:0 0 12px #a855f7aa; transform:translate(-50%,-50%); transition:opacity .2s; opacity:0; }
 #touch-drag-ring.active { display:block; opacity:1; }
+@media (max-width:767px) {
+  body { background:#1a0a2e; }
+  #game-container { top:34px; background:#1a0a2e; }
+  #hud { top:0; left:0; right:0; transform:none; width:100%; height:34px; justify-content:center; align-items:center; gap:5px; padding:0 8px; background:rgba(10,5,25,.95); border-bottom:1px solid #ffd70028; }
+  .hud-chip { font-size:.66rem; padding:2px 9px; border-width:1px; border-radius:12px; }
+  #coin-toast { top:40px; }
+  #user-info-bar { top:0 !important; right:0 !important; height:34px !important; padding:0 7px !important; border-radius:0 !important; border-top:none !important; border-right:none !important; border-bottom:none !important; border-left:1px solid #5aad2a50 !important; background:rgba(10,5,25,.95) !important; gap:3px !important; }
+  #user-email-label { display:none !important; }
+  #user-info-bar button { font-size:.62rem !important; padding:2px 5px !important; border-radius:8px !important; }
+  .settings-btn { font-size:.62rem !important; padding:2px 5px !important; }
+  #hint { bottom:155px; font-size:.78rem; padding:5px 14px; }
+}
 @media (max-width:480px) {
   #quest-box { padding:16px 14px; border-radius:14px; }
   #quest-header { flex-direction:column; gap:6px; }
@@ -4090,6 +4102,10 @@ const game = new Phaser.Game({
 });
 // canvas가 포커스를 받을 수 있어야 closeMiniGame에서 canvas.focus()가 동작함
 setTimeout(() => { if (game.canvas) game.canvas.setAttribute('tabindex', '0'); }, 500);
+// 모바일에서 HUD 높이(34px)만큼 game-container가 내려가므로 scale 재계산
+if (window.innerWidth <= 767) {
+  setTimeout(() => { if (game.scale) game.scale.refresh(); }, 200);
+}
 
 // ─────────────────────────────────────────────
 //  퀘스트 시스템
