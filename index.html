@@ -240,55 +240,64 @@ canvas { display:block; image-rendering:pixelated; position:fixed; top:0; left:0
 .shop-equip-btn.on { background:linear-gradient(90deg,#22c55e,#16a34a); }
 
 /* ─── 캐릭터 상점 반응형 ─── */
-#shop-inner { max-width:1200px !important; width:100%; }
+#shop-inner { max-width:1260px !important; width:100%; }
 /* 성별 탭 (기본 숨김 → 좁은 화면에서만 표시) */
 .shop-gender-tabs { display:none; gap:8px; margin-bottom:8px; }
 .shop-gender-tab { flex:1; padding:10px; background:#1a0a2e; border:2px solid #4b1d7e; border-radius:10px; color:#a78bfa; font-size:.88rem; font-weight:700; cursor:pointer; transition:all .15s; }
 .shop-gender-tab.active { background:linear-gradient(90deg,#7c3aed,#a855f7); border-color:#a855f7; color:#fff; }
-/* 3열 레이아웃 (PC) */
-#costume-shop-layout { display:flex; gap:10px; width:100%; margin-top:8px; align-items:flex-start; }
-.shop-gender-panel { flex:1; overflow-y:auto; max-height:62vh; padding:0 2px; }
+/* 3열 레이아웃 (PC) — 좌:25% 중:40% 우:25% 여백:10% */
+#costume-shop-layout { display:flex; gap:14px; width:100%; margin-top:8px; align-items:flex-start; }
+.shop-gender-panel { flex:5; min-width:0; overflow-y:auto; max-height:64vh; padding:0 2px; }
 .shop-gender-panel-header { color:#ffd700; font-size:.85rem; font-weight:700; text-align:center; padding:6px 0 5px; border-bottom:2px solid #ffd70030; margin-bottom:6px; }
 /* 여자 잠금 오버레이 */
-.girl-lock-overlay { display:flex; flex-direction:column; align-items:center; justify-content:center; min-height:260px; text-align:center; gap:12px; padding:16px; }
+.girl-lock-overlay { display:flex; flex-direction:column; align-items:center; justify-content:center; min-height:300px; text-align:center; gap:12px; padding:16px; }
 .girl-unlock-btn { background:linear-gradient(90deg,#ffd700,#ff9900); color:#1a0a2e; border:none; border-radius:10px; padding:11px 18px; font-size:.88rem; font-weight:700; cursor:pointer; transition:all .15s; }
 .girl-unlock-btn:disabled { background:#2d2d2d; color:#666; cursor:default; }
-/* 가운데 미리보기 */
-#costume-preview-panel { width:210px; flex-shrink:0; display:flex; flex-direction:column; align-items:center; padding:12px 12px 16px; gap:8px; background:#08031a; border-radius:14px; border:2px solid #2d1b69; }
-#costume-preview-img-wrap { width:155px; height:200px; display:flex; align-items:center; justify-content:center; background:#060312; border:2px solid #ffd70030; border-radius:12px; overflow:hidden; }
+/* 가운데 미리보기 — flex:8 (전체의 ~44%) */
+#costume-preview-panel { flex:8; min-width:0; flex-shrink:0; display:flex; flex-direction:column; align-items:center; padding:16px 16px 20px; gap:10px; background:#08031a; border-radius:16px; border:2px solid #2d1b69; position:sticky; top:0; }
+#costume-preview-img-wrap { width:min(220px,85%); aspect-ratio:3/4; display:flex; align-items:center; justify-content:center; background:#060312; border:2px solid #ffd70030; border-radius:14px; overflow:hidden; }
 #costume-preview-img { width:100%; height:100%; object-fit:contain; }
-#costume-preview-name { color:#ffd700; font-size:.88rem; font-weight:700; text-align:center; }
-#costume-preview-desc { color:#a78bfa; font-size:.72rem; text-align:center; line-height:1.5; }
-#costume-action-btn { padding:8px 16px; border:none; border-radius:9px; font-weight:700; font-size:.84rem; cursor:pointer; transition:all .15s; width:100%; }
+#costume-preview-name { color:#ffd700; font-size:1rem; font-weight:700; text-align:center; }
+#costume-preview-desc { color:#a78bfa; font-size:.78rem; text-align:center; line-height:1.55; }
+#costume-action-btn { padding:11px 20px; border:none; border-radius:10px; font-weight:700; font-size:.9rem; cursor:pointer; transition:all .15s; width:100%; }
 #costume-action-btn.ca-equip   { background:linear-gradient(90deg,#3b82f6,#2563eb); color:#fff; }
 #costume-action-btn.ca-buy     { background:linear-gradient(90deg,#ffd700,#ff9900); color:#1a0a2e; }
 #costume-action-btn.ca-locked  { background:#2d2d2d; color:#666; cursor:default; }
 #costume-action-btn.ca-equipped{ background:linear-gradient(90deg,#22c55e,#16a34a); color:#fff; cursor:default; }
 /* 섹션 헤더 */
 .costume-section-header { color:#ffd700; font-size:.68rem; font-weight:700; letter-spacing:.5px; padding:7px 4px 3px; border-bottom:1px solid #ffd70020; margin-top:6px; margin-bottom:4px; }
-/* 바둑판 그리드 */
-.costume-grid { display:grid; grid-template-columns:1fr 1fr; gap:5px; }
-.costume-tile { position:relative; border-radius:9px; border:2px solid #2d1b69; cursor:pointer; background:#1a0a2e; text-align:center; transition:all .15s; padding:6px 4px 5px; display:flex; flex-direction:column; align-items:center; }
+/* 바둑판 그리드 — 카드 작게 */
+.costume-grid { display:grid; grid-template-columns:1fr 1fr; gap:4px; }
+.costume-tile { position:relative; border-radius:8px; border:2px solid #2d1b69; cursor:pointer; background:#1a0a2e; text-align:center; transition:all .15s; padding:5px 3px 4px; display:flex; flex-direction:column; align-items:center; }
 .costume-tile:hover { border-color:#a855f7; background:#2d1b69; }
 .costume-tile.ct-selected { border-color:#ffd700; background:rgba(45,27,105,.6); box-shadow:0 0 8px #ffd70030; }
 .costume-tile.ct-equipped { border-color:#22c55e; background:rgba(5,46,22,.5); }
 .costume-tile.ct-locked { opacity:.42; cursor:default; filter:grayscale(.6); }
 .costume-tile.ct-nocoin { opacity:.75; }
-.costume-tile .ct-img { width:50px; height:64px; object-fit:contain; display:block; }
-.costume-tile .ct-name { font-size:.62rem; color:#e2c4ff; margin-top:3px; font-weight:700; line-height:1.2; word-break:keep-all; }
-.costume-tile .ct-sub { font-size:.56rem; margin-top:1px; color:#6b7280; line-height:1.2; }
+.costume-tile .ct-img { width:38px; height:48px; object-fit:contain; display:block; }
+.costume-tile .ct-name { font-size:.58rem; color:#e2c4ff; margin-top:3px; font-weight:700; line-height:1.2; word-break:keep-all; }
+.costume-tile .ct-sub { font-size:.52rem; margin-top:1px; color:#6b7280; line-height:1.2; }
 .costume-tile .ct-sub.csub-red { color:#ef4444; }
 .costume-tile .ct-sub.csub-yellow { color:#fbbf24; }
 .costume-tile .ct-sub.csub-green { color:#22c55e; }
-.costume-tile .ct-badge { position:absolute; top:2px; left:3px; font-size:.62rem; line-height:1; }
-.costume-tile .ct-lock { position:absolute; inset:0; display:flex; align-items:center; justify-content:center; font-size:1.3rem; background:rgba(0,0,0,.42); border-radius:7px; pointer-events:none; }
+.costume-tile .ct-badge { position:absolute; top:2px; left:3px; font-size:.58rem; line-height:1; }
+.costume-tile .ct-lock { position:absolute; inset:0; display:flex; align-items:center; justify-content:center; font-size:1.2rem; background:rgba(0,0,0,.42); border-radius:6px; pointer-events:none; }
+/* 비회원 성별 팝업 */
+#guest-gender-popup { display:none; position:fixed; inset:0; background:rgba(0,0,0,.88); z-index:800; justify-content:center; align-items:center; }
+#guest-gender-popup .ggp-box { background:linear-gradient(135deg,#2d1b69,#1a0a2e 60%,#3d1060); border:3px solid #a855f7; border-radius:18px; padding:36px 32px; text-align:center; max-width:340px; width:90%; box-shadow:0 0 40px #a855f740; }
+#guest-gender-popup .ggp-emoji { font-size:2.4rem; margin-bottom:10px; }
+#guest-gender-popup .ggp-title { color:#ffd700; font-size:1.1rem; font-weight:700; margin-bottom:6px; }
+#guest-gender-popup .ggp-sub { color:#a78bfa; font-size:.82rem; margin-bottom:22px; line-height:1.5; }
+#guest-gender-popup .ggp-btns { display:flex; gap:12px; justify-content:center; }
+#guest-gender-popup .ggp-btn { flex:1; padding:14px 0; background:#1a0a2e; border:2px solid #6b21a8; border-radius:10px; color:#a78bfa; font-size:1rem; cursor:pointer; transition:all .15s; font-weight:700; }
+#guest-gender-popup .ggp-btn:hover { border-color:#a855f7; color:#e2c4ff; background:#2d1b69; }
 /* 태블릿/모바일 ≤1023px */
 @media (max-width:1023px) {
   .shop-gender-tabs { display:flex; }
-  #costume-shop-layout { flex-direction:column; }
-  .shop-gender-panel { max-height:44vh; }
-  #costume-preview-panel { width:100%; border:none; background:transparent; padding:6px 0; flex-direction:row; flex-wrap:wrap; justify-content:center; gap:8px; order:-1; }
-  #costume-preview-img-wrap { width:110px; height:144px; }
+  #costume-shop-layout { flex-direction:column; gap:10px; }
+  .shop-gender-panel { flex:none; width:100%; max-height:44vh; }
+  #costume-preview-panel { flex:none; width:100%; border:none; background:transparent; padding:6px 0; flex-direction:row; flex-wrap:wrap; justify-content:center; gap:8px; order:-1; position:static; }
+  #costume-preview-img-wrap { width:110px; aspect-ratio:3/4; height:auto; }
 }
 @media (max-width:767px) {
   #costume-preview-panel { flex-direction:column; align-items:center; }
@@ -694,7 +703,7 @@ window.doLogout = doLogout;
         <div id="login-msg" style="color:#ff6b6b;font-size:.8rem;min-height:18px;margin-bottom:8px;"></div>
 
         <button id="login-btn" class="px-btn-main" onclick="doLogin(false)">▶ 게임 시작!</button>
-        <button onclick="hideLoginOverlay(); if(typeof enablePhaserInput==='function') enablePhaserInput();" class="px-btn-ghost">◦ 비회원으로 둘러보기</button>
+        <button onclick="startGuestMode()" class="px-btn-ghost">◦ 비회원으로 둘러보기</button>
       </div>
     </div>
 
@@ -1220,6 +1229,19 @@ async function openTeacherDashboard() {
 </div>
 
 <!-- Gender setup popup (existing users without gender field) -->
+<!-- 비회원 성별 선택 팝업 -->
+<div id="guest-gender-popup">
+  <div class="ggp-box">
+    <div class="ggp-emoji">🎨</div>
+    <div class="ggp-title">캐릭터를 선택하세요!</div>
+    <div class="ggp-sub">어떤 캐릭터로 게임을 시작할까요?<br>언제든지 상점에서 바꿀 수 있어요.</div>
+    <div class="ggp-btns">
+      <button class="ggp-btn" onclick="selectGuestGender('boy')">👦 남자</button>
+      <button class="ggp-btn" onclick="selectGuestGender('girl')">👧 여자</button>
+    </div>
+  </div>
+</div>
+
 <div id="gender-setup-popup" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.85);z-index:700;justify-content:center;align-items:center;">
   <div style="background:linear-gradient(135deg,#2d1b69,#1a0a2e 60%,#3d1060);border:3px solid #a855f7;border-radius:16px;padding:32px 36px;text-align:center;max-width:340px;width:90%;">
     <div style="font-size:2rem;margin-bottom:10px;">👤</div>
@@ -1920,6 +1942,26 @@ function showLoginOverlay() {
 function hideLoginOverlay() {
   document.getElementById('login-overlay').style.display = 'none';
   window._loginOverlayOpen = false;
+}
+
+function startGuestMode() {
+  hideLoginOverlay();
+  const saved = localStorage.getItem('guestGender');
+  if (saved === 'boy' || saved === 'girl') {
+    window._gender = saved;
+    if (typeof enablePhaserInput === 'function') enablePhaserInput();
+    if (typeof window.updatePlayerSprite === 'function') window.updatePlayerSprite();
+  } else {
+    document.getElementById('guest-gender-popup').style.display = 'flex';
+  }
+}
+
+function selectGuestGender(gender) {
+  localStorage.setItem('guestGender', gender);
+  window._gender = gender;
+  document.getElementById('guest-gender-popup').style.display = 'none';
+  if (typeof enablePhaserInput === 'function') enablePhaserInput();
+  if (typeof window.updatePlayerSprite === 'function') window.updatePlayerSprite();
 }
 
 function showPopup(b) {
