@@ -4059,7 +4059,7 @@ class GameScene extends Phaser.Scene {
     this.zones=BUILDINGS.map(b=>({ building:b, x1:b.tx*TILE-TILE*1.5, y1:b.ty*TILE-TILE*1.5, x2:(b.tx+b.width)*TILE+TILE*1.5, y2:(b.ty+b.height)*TILE+TILE*1.5 }));
   }
   _createCurator() {
-    const cx = 31*TILE + TILE/2;
+    const cx = 29*TILE + TILE/2;
     const cy = 8*TILE + TILE/2;
     const cDepth = 1050;
     this.curator = this.add.image(cx, cy, 'curator')
