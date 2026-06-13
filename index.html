@@ -496,6 +496,8 @@ auth.onAuthStateChanged(async (user) => {
     document.getElementById('guest-exit-btn').style.display = 'none';
     document.getElementById('settings-menu').style.display = '';
     if (typeof enablePhaserInput === 'function') enablePhaserInput();
+    // 선생님이 비밀번호 초기화 요청한 경우 강제 변경 팝업
+    if (data.passwordReset) setTimeout(() => openPwChange(true), 600);
   } else {
     // 로그아웃 시 상태 초기화
     state.coins = 0; state.totalCoins = 0; state.artworks = 0;
@@ -579,20 +581,23 @@ function closeSettings() {
 document.addEventListener('click', () => closeSettings());
 
 // ── 비밀번호 변경 ──────────────────────────────
-function openPwChange() {
+function openPwChange(forced) {
+  window._forcePwChange = !!forced;
   closeSettings();
   ['pw-current','pw-new','pw-confirm'].forEach(id => document.getElementById(id).value = '');
   const msg = document.getElementById('pw-change-msg');
   msg.textContent = ''; msg.className = '';
   document.getElementById('pw-submit-btn').disabled = true;
+  document.getElementById('pw-forced-notice').style.display = forced ? 'block' : 'none';
+  document.getElementById('pw-cancel-btn').style.display   = forced ? 'none'  : '';
   document.getElementById('pw-change-popup').classList.add('active');
   disablePhaserInput();
-  // 입력값 변경 시 버튼 활성화 체크
   ['pw-current','pw-new','pw-confirm'].forEach(id => {
     document.getElementById(id).oninput = _pwValidate;
   });
 }
 function closePwChange() {
+  if (window._forcePwChange) return; // 강제 모드에서는 닫기 불가
   document.getElementById('pw-change-popup').classList.remove('active');
   enablePhaserInput();
 }
@@ -627,6 +632,12 @@ async function doChangePassword() {
     await user.updatePassword(nw);
     msg.textContent = '✅ 비밀번호가 변경되었습니다!'; msg.className = 'pw-change-msg-ok';
     btn.textContent = '변경하기';
+    if (window._forcePwChange) {
+      window._forcePwChange = false;
+      db.collection('users').doc(user.uid).update({ passwordReset: false }).catch(() => {});
+      document.getElementById('pw-forced-notice').style.display = 'none';
+      document.getElementById('pw-cancel-btn').style.display = '';
+    }
     setTimeout(() => closePwChange(), 1500);
   } catch(e) {
     const errs = {
@@ -868,6 +879,7 @@ window.doLogout = doLogout;
 <!-- 비밀번호 변경 팝업 -->
 <div id="pw-change-popup">
   <div id="pw-change-box">
+    <div id="pw-forced-notice" style="display:none;background:#450a0a;border:1px solid #ef4444;border-radius:8px;padding:9px 12px;color:#fca5a5;font-size:.78rem;line-height:1.5;">⚠️ 선생님이 비밀번호 변경을 요청했습니다.<br>새 비밀번호를 설정해야 게임을 이용할 수 있습니다.</div>
     <h3>🔑 비밀번호 변경</h3>
     <input class="pw-input" id="pw-current" type="password" placeholder="현재 비밀번호">
     <input class="pw-input" id="pw-new" type="password" placeholder="새 비밀번호 (4자 이상)">
@@ -1003,8 +1015,9 @@ async function openTeacherDashboard() {
         <td style="padding:8px 6px;">
           <button onclick="tdViewReviews('${uid}','${safeName}')" style="padding:3px 8px;border-radius:6px;border:1px solid #a78bfa;background:#1a0a2e;color:${reviewCount>0?'#e879f9':'#c084fc'};cursor:pointer;font-size:.75rem;">✍️ 소감문 (${reviewCount})</button>
         </td>
-        <td style="padding:8px 6px;">
-          <button onclick="tdDeleteStudent('${uid}','${safeName}',${d.number||0})" style="padding:3px 8px;border-radius:6px;border:1px solid #ef4444;background:#1a0a2e;color:#f87171;cursor:pointer;font-size:.75rem;">🗑️ 삭제</button>
+        <td style="padding:8px 6px;white-space:nowrap;">
+          <button onclick="tdResetPassword('${uid}','${safeName}')" style="padding:3px 8px;border-radius:6px;border:1px solid #fbbf24;background:#1a0a2e;color:#fbbf24;cursor:pointer;font-size:.75rem;margin-bottom:3px;display:block;">🔑 비번초기화</button>
+          <button onclick="tdDeleteStudent('${uid}','${safeName}',${d.number||0})" style="padding:3px 8px;border-radius:6px;border:1px solid #ef4444;background:#1a0a2e;color:#f87171;cursor:pointer;font-size:.75rem;display:block;">🗑️ 삭제</button>
         </td>
       </tr>`;
     });
@@ -1086,6 +1099,15 @@ async function openTeacherDashboard() {
       });
       const filtered = window._tdStudents.filter(d => (!window._tdSelGrade||d.grade===window._tdSelGrade) && (!window._tdSelClass||d.class===window._tdSelClass));
       renderStudentTable(filtered);
+    };
+
+    window.tdResetPassword = async function(uid, name) {
+      if (!uid) { alert('학생 정보를 찾을 수 없습니다.'); return; }
+      if (!confirm(`${name} 학생의 비밀번호 초기화를 요청하시겠습니까?\n\n학생이 다음 로그인 시 비밀번호 변경 팝업이 자동으로 표시됩니다.\n학생에게 현재 비밀번호를 직접 알려주세요.`)) return;
+      try {
+        await db.collection('users').doc(uid).update({ passwordReset: true });
+        showToast(`✅ ${name} 학생 초기화 요청 완료`, 'linear-gradient(90deg,#7c3aed,#a855f7)', '#fff');
+      } catch(err) { alert('오류: ' + err.message); }
     };
 
     window.tdDeleteStudent = async function(uid, name, number) {
