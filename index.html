@@ -4059,9 +4059,9 @@ class GameScene extends Phaser.Scene {
     this.zones=BUILDINGS.map(b=>({ building:b, x1:b.tx*TILE-TILE*1.5, y1:b.ty*TILE-TILE*1.5, x2:(b.tx+b.width)*TILE+TILE*1.5, y2:(b.ty+b.height)*TILE+TILE*1.5 }));
   }
   _createCurator() {
-    const cx = 27*TILE + TILE/2;
-    const cy = 6*TILE + TILE/2;
-    const cDepth = 6*10 + 5;
+    const cx = 31*TILE + TILE/2;
+    const cy = 8*TILE + TILE/2;
+    const cDepth = 1050;
     this.curator = this.add.image(cx, cy, 'curator')
       .setDisplaySize(200, 250).setOrigin(0.5, 0.5).setDepth(cDepth).setFlipX(true);
     this.tweens.add({ targets:this.curator, y:cy-4, duration:2000, yoyo:true, repeat:-1, ease:'Sine.easeInOut' });
