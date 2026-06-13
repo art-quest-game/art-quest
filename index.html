@@ -1167,7 +1167,7 @@ async function openTeacherDashboard() {
   <div class="hud-chip">🖼️ <span id="hud-artworks">0</span>/56</div>
 </div>
 <div id="hint" onclick="if(gameScene&&gameScene.nearBuilding&&!miniGameActive)showPopup(gameScene.nearBuilding)" style="cursor:pointer;">Space / Enter 키로 입장</div>
-<div id="curator-bubble" onclick="this.style.display='none';if(gameScene)gameScene._curatorDismissed=true;">
+<div id="curator-bubble" onclick="this.style.display='none';if(gameScene){gameScene._curatorDismissed=true;gameScene._curatorAutoVisible=false;if(gameScene._curatorAutoTimer){clearTimeout(gameScene._curatorAutoTimer);gameScene._curatorAutoTimer=null;}}">
   <div id="curator-bubble-name">💬 큐레이터 반고흐</div>
   <div id="curator-bubble-text"></div>
 </div>
@@ -4059,7 +4059,7 @@ class GameScene extends Phaser.Scene {
     this.zones=BUILDINGS.map(b=>({ building:b, x1:b.tx*TILE-TILE*1.5, y1:b.ty*TILE-TILE*1.5, x2:(b.tx+b.width)*TILE+TILE*1.5, y2:(b.ty+b.height)*TILE+TILE*1.5 }));
   }
   _createCurator() {
-    const cx = 29*TILE + TILE/2;
+    const cx = 31*TILE + TILE/2;
     const cy = 8*TILE + TILE/2;
     const cDepth = 1050;
     this.curator = this.add.image(cx, cy, 'curator')
@@ -4071,6 +4071,20 @@ class GameScene extends Phaser.Scene {
     this.tweens.add({ targets:this.curatorIcon, y:cy-152, duration:700, yoyo:true, repeat:-1, ease:'Sine.easeInOut' });
     this._curatorNear = false;
     this._curatorDismissed = false;
+    this._curatorAutoVisible = false;
+    this._curatorAutoTimer = null;
+    // 맵 로딩 후 2초 뒤 자동 말풍선
+    setTimeout(() => {
+      if (this._curatorNear) return;
+      this._curatorAutoVisible = true;
+      document.getElementById('curator-bubble-text').innerHTML = getCuratorDialogue().replace(/\n/g,'<br>');
+      this._curatorAutoTimer = setTimeout(() => {
+        this._curatorAutoVisible = false;
+        this._curatorAutoTimer = null;
+        const cb = document.getElementById('curator-bubble');
+        if (cb && !this._curatorNear) cb.style.display = 'none';
+      }, 5000);
+    }, 2000);
   }
   update(time, delta) {
     const hh=this.player.displayHeight/2;
@@ -4103,25 +4117,31 @@ class GameScene extends Phaser.Scene {
       const cdy = this.player.y - this.curator.y;
       const cdist = Math.sqrt(cdx*cdx + cdy*cdy);
       const cb = document.getElementById('curator-bubble');
-      if (cdist < 120 && !miniGameActive) {
+      const nearCurator = cdist < 120 && !miniGameActive;
+      if (nearCurator) {
         if (!this._curatorNear) {
           this._curatorNear = true;
           this._curatorDismissed = false;
+          if (this._curatorAutoTimer) { clearTimeout(this._curatorAutoTimer); this._curatorAutoTimer = null; }
+          this._curatorAutoVisible = false;
           document.getElementById('curator-bubble-text').innerHTML = getCuratorDialogue().replace(/\n/g,'<br>');
-        }
-        if (!this._curatorDismissed && cb) {
-          const rect = game.canvas.getBoundingClientRect();
-          const cam  = this.cameras.main;
-          const sx = rect.left + (this.curator.x - cam.scrollX) * (rect.width  / _gameW);
-          const sy = rect.top  + (this.curator.y - this.curator.displayHeight * 0.5 - 8 - cam.scrollY) * (rect.height / _gameH);
-          cb.style.display = 'block';
-          cb.style.left = sx + 'px';
-          cb.style.top  = (sy - (cb.offsetHeight || 80)) + 'px';
         }
       } else if (this._curatorNear) {
         this._curatorNear = false;
         this._curatorDismissed = false;
-        if (cb) cb.style.display = 'none';
+        if (!this._curatorAutoVisible && cb) cb.style.display = 'none';
+      }
+      const shouldShow = (nearCurator || this._curatorAutoVisible) && !this._curatorDismissed;
+      if (shouldShow && cb) {
+        const rect = game.canvas.getBoundingClientRect();
+        const cam  = this.cameras.main;
+        const sx = rect.left + (this.curator.x - cam.scrollX) * (rect.width  / _gameW);
+        const sy = rect.top  + (this.curator.y - this.curator.displayHeight * 0.5 - 8 - cam.scrollY) * (rect.height / _gameH);
+        cb.style.display = 'block';
+        cb.style.left = sx + 'px';
+        cb.style.top  = (sy - (cb.offsetHeight || 80)) + 'px';
+      } else if (!shouldShow && cb) {
+        cb.style.display = 'none';
       }
     }
     // 미니게임/팝업 열려 있으면 이동·입장 처리 스킵
