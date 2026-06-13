@@ -493,6 +493,8 @@ auth.onAuthStateChanged(async (user) => {
     if (window._isTeacher) document.getElementById('teacher-btn').style.display = 'inline-block';
     if (!window._isTeacher && window._school && window._class) document.getElementById('class-rank-btn').style.display = 'inline-block';
     document.getElementById('pw-change-menu-btn').style.display = 'block'; // 로그인 유저만 표시
+    document.getElementById('guest-exit-btn').style.display = 'none';
+    document.getElementById('settings-menu').style.display = '';
     if (typeof enablePhaserInput === 'function') enablePhaserInput();
   } else {
     // 로그아웃 시 상태 초기화
@@ -852,6 +854,7 @@ window.doLogout = doLogout;
   <span id="user-email-label" style="color:#fff;font-size:.78rem;font-weight:700;max-width:150px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;"></span>
   <button id="teacher-btn" onclick="openTeacherDashboard()" style="display:none;padding:4px 10px;border-radius:12px;border:1px solid #a78bfa;background:#1a0a2e;color:#c084fc;font-size:.75rem;cursor:pointer;">📊 학생 현황</button>
   <button id="class-rank-btn" onclick="openClassRanking()" style="display:none;padding:4px 10px;border-radius:12px;border:1px solid #38bdf8;background:#0a1a2e;color:#7dd3fc;font-size:.75rem;cursor:pointer;">🏆 우리 반 랭킹</button>
+  <button id="guest-exit-btn" onclick="doGuestExit()" style="display:none;padding:4px 10px;border-radius:12px;border:1px solid #ef4444;background:#2a0a0a;color:#f87171;font-size:.75rem;cursor:pointer;font-weight:600;">🚪 나가기</button>
   <div class="settings-menu" id="settings-menu">
     <button class="settings-btn" onclick="toggleSettings(event)">⚙️ 설정</button>
     <div class="settings-dropdown" id="settings-dropdown">
@@ -2139,11 +2142,19 @@ function hideLoginOverlay() {
   window._loginOverlayOpen = false;
 }
 
+function _showGuestBar() {
+  document.getElementById('user-info-bar').style.display = 'flex';
+  document.getElementById('user-email-label').textContent = '비회원';
+  document.getElementById('guest-exit-btn').style.display = 'inline-block';
+  document.getElementById('settings-menu').style.display = 'none';
+}
+
 function startGuestMode() {
   hideLoginOverlay();
   const saved = localStorage.getItem('guestGender');
   if (saved === 'boy' || saved === 'girl') {
     window._gender = saved;
+    _showGuestBar();
     if (typeof enablePhaserInput === 'function') enablePhaserInput();
     if (typeof window.updatePlayerSprite === 'function') window.updatePlayerSprite();
   } else {
@@ -2155,8 +2166,18 @@ function selectGuestGender(gender) {
   localStorage.setItem('guestGender', gender);
   window._gender = gender;
   document.getElementById('guest-gender-popup').style.display = 'none';
+  _showGuestBar();
   if (typeof enablePhaserInput === 'function') enablePhaserInput();
   if (typeof window.updatePlayerSprite === 'function') window.updatePlayerSprite();
+}
+
+function doGuestExit() {
+  localStorage.removeItem('guestGender');
+  document.getElementById('user-info-bar').style.display = 'none';
+  document.getElementById('guest-exit-btn').style.display = 'none';
+  document.getElementById('settings-menu').style.display = '';
+  disablePhaserInput();
+  if (typeof showLoginOverlay === 'function') showLoginOverlay();
 }
 
 function showPopup(b) {
