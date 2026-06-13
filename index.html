@@ -4063,7 +4063,7 @@ class GameScene extends Phaser.Scene {
     const cy = 6*TILE + TILE/2;
     const cDepth = 6*10 + 5;
     this.curator = this.add.image(cx, cy, 'curator')
-      .setDisplaySize(200, 250).setOrigin(0.5, 0.5).setDepth(cDepth);
+      .setDisplaySize(200, 250).setOrigin(0.5, 0.5).setDepth(cDepth).setFlipX(true);
     this.tweens.add({ targets:this.curator, y:cy-4, duration:2000, yoyo:true, repeat:-1, ease:'Sine.easeInOut' });
     // 💬 아이콘 (머리 위에서 위아래 bounce)
     this.curatorIcon = this.add.text(cx, cy - 140, '💬', {fontSize:'22px'})
