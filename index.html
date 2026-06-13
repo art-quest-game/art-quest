@@ -318,6 +318,30 @@ canvas { display:block; image-rendering:pixelated; position:fixed; top:0; left:0
   #costume-preview-panel { flex-direction:column; align-items:center; }
   .shop-gender-panel { max-height:36vh; }
 }
+/* ─── 설정 드롭다운 ─── */
+.settings-menu { position:relative; }
+.settings-btn { padding:4px 9px; border-radius:12px; border:1px solid #6b7280; background:#1a1a2e; color:#d1d5db; font-size:.78rem; cursor:pointer; font-weight:600; transition:all .15s; }
+.settings-btn:hover { border-color:#a78bfa; color:#e2c4ff; background:#2d1b69; }
+.settings-dropdown { display:none; position:absolute; top:calc(100% + 6px); right:0; background:#1a0a2e; border:2px solid #4b1d7e; border-radius:10px; min-width:140px; z-index:9100; box-shadow:0 8px 24px rgba(0,0,0,.7); overflow:hidden; }
+.settings-dropdown.open { display:block; }
+.settings-dropdown button { display:block; width:100%; padding:9px 14px; background:none; border:none; color:#e2c4ff; font-size:.8rem; text-align:left; cursor:pointer; transition:background .1s; white-space:nowrap; }
+.settings-dropdown button:hover { background:#2d1b69; color:#ffd700; }
+.settings-dropdown hr { border:none; border-top:1px solid #2d1b69; margin:2px 0; }
+/* ─── 비밀번호 변경 팝업 ─── */
+#pw-change-popup { display:none; position:fixed; inset:0; background:rgba(0,0,0,.88); z-index:9200; justify-content:center; align-items:center; }
+#pw-change-popup.active { display:flex; }
+#pw-change-box { background:linear-gradient(135deg,#1a0a2e,#0d0520); border:2px solid #6b21a8; border-radius:16px; padding:28px 28px 24px; width:90%; max-width:340px; display:flex; flex-direction:column; gap:10px; }
+#pw-change-box h3 { color:#ffd700; font-size:1rem; margin:0 0 4px; text-align:center; }
+.pw-input { background:#0d0520; border:2px solid #2d1b69; border-radius:8px; color:#e2c4ff; padding:9px 12px; font-size:.88rem; width:100%; outline:none; transition:border-color .15s; }
+.pw-input:focus { border-color:#a855f7; }
+#pw-change-msg { font-size:.78rem; min-height:18px; text-align:center; }
+.pw-change-msg-ok  { color:#22c55e; }
+.pw-change-msg-err { color:#ef4444; }
+#pw-submit-btn { background:linear-gradient(90deg,#7c3aed,#a855f7); color:#fff; border:none; border-radius:9px; padding:10px; font-size:.88rem; font-weight:700; cursor:pointer; transition:all .15s; }
+#pw-submit-btn:hover:not(:disabled) { filter:brightness(1.1); }
+#pw-submit-btn:disabled { background:#2d2d2d; color:#666; cursor:default; }
+#pw-cancel-btn { background:none; border:1px solid #4b1d7e; border-radius:9px; padding:8px; color:#a78bfa; font-size:.82rem; cursor:pointer; }
+#pw-cancel-btn:hover { border-color:#a855f7; color:#e2c4ff; }
 .gender-section-inner { padding:6px 4px 10px; }
 .gender-change-btn { width:100%; padding:9px; background:#2d1b69; border:2px solid #a855f7; border-radius:8px; color:#e2c4ff; font-size:.84rem; cursor:pointer; transition:all .15s; }
 .gender-change-btn:hover:not(:disabled) { background:#3d1b80; border-color:#ffd700; color:#ffd700; }
@@ -468,6 +492,7 @@ auth.onAuthStateChanged(async (user) => {
     document.getElementById('user-email-label').textContent = nameLabel;
     if (window._isTeacher) document.getElementById('teacher-btn').style.display = 'inline-block';
     if (!window._isTeacher && window._school && window._class) document.getElementById('class-rank-btn').style.display = 'inline-block';
+    document.getElementById('pw-change-menu-btn').style.display = 'block'; // 로그인 유저만 표시
     if (typeof enablePhaserInput === 'function') enablePhaserInput();
   } else {
     // 로그아웃 시 상태 초기화
@@ -483,6 +508,9 @@ auth.onAuthStateChanged(async (user) => {
     window._selectedSignupGender = '';
     if (typeof updateHUD === 'function') updateHUD();
     window._currentUser = null;
+    // 버튼 상태 초기화
+    ['teacher-btn','class-rank-btn'].forEach(id => { const el = document.getElementById(id); if(el) el.style.display='none'; });
+    const pwBtn = document.getElementById('pw-change-menu-btn'); if(pwBtn) pwBtn.style.display='none';
     if (typeof showLoginOverlay === 'function') showLoginOverlay();
     document.getElementById('user-info-bar').style.display = 'none';
   }
@@ -533,7 +561,98 @@ async function doLogin(isSignup) {
 }
 
 async function doLogout() {
+  closeSettings();
+  showToast('로그아웃 되었습니다', 'linear-gradient(90deg,#4b5563,#6b7280)', '#fff');
   await auth.signOut();
+}
+
+// ── 설정 드롭다운 ──────────────────────────────
+function toggleSettings(e) {
+  e.stopPropagation();
+  document.getElementById('settings-dropdown').classList.toggle('open');
+}
+function closeSettings() {
+  document.getElementById('settings-dropdown')?.classList.remove('open');
+}
+document.addEventListener('click', () => closeSettings());
+
+// ── 비밀번호 변경 ──────────────────────────────
+function openPwChange() {
+  closeSettings();
+  ['pw-current','pw-new','pw-confirm'].forEach(id => document.getElementById(id).value = '');
+  const msg = document.getElementById('pw-change-msg');
+  msg.textContent = ''; msg.className = '';
+  document.getElementById('pw-submit-btn').disabled = true;
+  document.getElementById('pw-change-popup').classList.add('active');
+  disablePhaserInput();
+  // 입력값 변경 시 버튼 활성화 체크
+  ['pw-current','pw-new','pw-confirm'].forEach(id => {
+    document.getElementById(id).oninput = _pwValidate;
+  });
+}
+function closePwChange() {
+  document.getElementById('pw-change-popup').classList.remove('active');
+  enablePhaserInput();
+}
+function _pwValidate() {
+  const cur = document.getElementById('pw-current').value;
+  const nw  = document.getElementById('pw-new').value;
+  const cf  = document.getElementById('pw-confirm').value;
+  const msg = document.getElementById('pw-change-msg');
+  const btn = document.getElementById('pw-submit-btn');
+  if (nw.length > 0 && nw.length < 4) {
+    msg.textContent = '새 비밀번호는 4자 이상이어야 합니다.'; msg.className = 'pw-change-msg-err';
+    btn.disabled = true; return;
+  }
+  if (cf.length > 0 && nw !== cf) {
+    msg.textContent = '새 비밀번호가 일치하지 않습니다.'; msg.className = 'pw-change-msg-err';
+    btn.disabled = true; return;
+  }
+  msg.textContent = ''; msg.className = '';
+  btn.disabled = !(cur && nw.length >= 4 && nw === cf);
+}
+async function doChangePassword() {
+  const user = window._currentUser;
+  if (!user) return;
+  const cur = document.getElementById('pw-current').value;
+  const nw  = document.getElementById('pw-new').value;
+  const msg = document.getElementById('pw-change-msg');
+  const btn = document.getElementById('pw-submit-btn');
+  btn.disabled = true; btn.textContent = '변경 중...';
+  try {
+    const cred = firebase.auth.EmailAuthProvider.credential(user.email, cur);
+    await user.reauthenticateWithCredential(cred);
+    await user.updatePassword(nw);
+    msg.textContent = '✅ 비밀번호가 변경되었습니다!'; msg.className = 'pw-change-msg-ok';
+    btn.textContent = '변경하기';
+    setTimeout(() => closePwChange(), 1500);
+  } catch(e) {
+    const errs = {
+      'auth/wrong-password':       '현재 비밀번호가 틀렸습니다.',
+      'auth/invalid-credential':   '현재 비밀번호가 틀렸습니다.',
+      'auth/too-many-requests':    '시도 횟수 초과. 잠시 후 다시 시도해주세요.',
+      'auth/weak-password':        '비밀번호가 너무 약합니다.',
+      'auth/requires-recent-login':'보안을 위해 다시 로그인 후 시도해주세요.',
+    };
+    msg.textContent = errs[e.code] || '오류가 발생했습니다: ' + e.message;
+    msg.className = 'pw-change-msg-err';
+    btn.disabled = false; btn.textContent = '변경하기';
+  }
+}
+
+// ── 일반 토스트 ──────────────────────────────
+let _toastTmr2 = null;
+function showToast(msg, bg, color) {
+  const el = document.getElementById('coin-toast');
+  el.textContent = msg;
+  el.style.background = bg  || 'linear-gradient(90deg,#22c55e,#16a34a)';
+  el.style.color      = color || '#fff';
+  el.classList.add('show');
+  clearTimeout(_toastTmr2);
+  _toastTmr2 = setTimeout(() => {
+    el.classList.remove('show');
+    setTimeout(() => { el.style.background = ''; el.style.color = ''; }, 350);
+  }, 2500);
 }
 
 async function saveUserData() {
@@ -731,9 +850,29 @@ window.doLogout = doLogout;
 <div id="user-info-bar" style="display:none;position:fixed;top:8px;right:12px;z-index:8000;align-items:center;gap:6px;background:rgba(0,0,0,.75);border:2px solid #5aad2a;border-radius:20px;padding:4px 10px;">
   <span style="font-size:.75rem;">🌿</span>
   <span id="user-email-label" style="color:#fff;font-size:.78rem;font-weight:700;max-width:150px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;"></span>
-  <button onclick="doLogout()" style="padding:4px 10px;border-radius:12px;border:1px solid #5aad2a;background:#1a2a10;color:#a8e063;font-size:.75rem;cursor:pointer;font-weight:600;">로그아웃</button>
   <button id="teacher-btn" onclick="openTeacherDashboard()" style="display:none;padding:4px 10px;border-radius:12px;border:1px solid #a78bfa;background:#1a0a2e;color:#c084fc;font-size:.75rem;cursor:pointer;">📊 학생 현황</button>
   <button id="class-rank-btn" onclick="openClassRanking()" style="display:none;padding:4px 10px;border-radius:12px;border:1px solid #38bdf8;background:#0a1a2e;color:#7dd3fc;font-size:.75rem;cursor:pointer;">🏆 우리 반 랭킹</button>
+  <div class="settings-menu" id="settings-menu">
+    <button class="settings-btn" onclick="toggleSettings(event)">⚙️ 설정</button>
+    <div class="settings-dropdown" id="settings-dropdown">
+      <button id="pw-change-menu-btn" onclick="openPwChange()" style="display:none;">🔑 비밀번호 변경</button>
+      <hr>
+      <button onclick="doLogout()" style="color:#f87171;">🚪 로그아웃</button>
+    </div>
+  </div>
+</div>
+
+<!-- 비밀번호 변경 팝업 -->
+<div id="pw-change-popup">
+  <div id="pw-change-box">
+    <h3>🔑 비밀번호 변경</h3>
+    <input class="pw-input" id="pw-current" type="password" placeholder="현재 비밀번호">
+    <input class="pw-input" id="pw-new" type="password" placeholder="새 비밀번호 (4자 이상)">
+    <input class="pw-input" id="pw-confirm" type="password" placeholder="새 비밀번호 확인">
+    <div id="pw-change-msg"></div>
+    <button id="pw-submit-btn" onclick="doChangePassword()" disabled>변경하기</button>
+    <button id="pw-cancel-btn" onclick="closePwChange()">취소</button>
+  </div>
 </div>
 
 <script>
