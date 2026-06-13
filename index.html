@@ -249,10 +249,25 @@ canvas { display:block; image-rendering:pixelated; position:fixed; top:0; left:0
 #costume-shop-layout { display:flex; gap:14px; width:100%; margin-top:8px; align-items:flex-start; }
 .shop-gender-panel { flex:5; min-width:0; overflow-y:auto; max-height:64vh; padding:0 2px; }
 .shop-gender-panel-header { color:#ffd700; font-size:.85rem; font-weight:700; text-align:center; padding:6px 0 5px; border-bottom:2px solid #ffd70030; margin-bottom:6px; }
-/* 여자 잠금 오버레이 */
-.girl-lock-overlay { display:flex; flex-direction:column; align-items:center; justify-content:center; min-height:300px; text-align:center; gap:12px; padding:16px; }
-.girl-unlock-btn { background:linear-gradient(90deg,#ffd700,#ff9900); color:#1a0a2e; border:none; border-radius:10px; padding:11px 18px; font-size:.88rem; font-weight:700; cursor:pointer; transition:all .15s; }
-.girl-unlock-btn:disabled { background:#2d2d2d; color:#666; cursor:default; }
+/* 여자 패널 해금 버튼 바 */
+.girl-unlock-bar { display:flex; flex-direction:column; align-items:center; gap:5px; padding:8px 4px 10px; margin-bottom:4px; border-bottom:1px solid #ffd70020; }
+.girl-unlock-btn { background:linear-gradient(90deg,#ffd700,#ff9900); color:#1a0a2e; border:none; border-radius:10px; padding:9px 14px; font-size:.82rem; font-weight:700; cursor:pointer; transition:all .15s; width:100%; }
+.girl-unlock-btn:hover:not(:disabled) { filter:brightness(1.1); transform:scale(1.02); }
+.girl-unlock-btn:disabled { background:#2d2d2d; color:#555; cursor:default; }
+.girl-unlock-coin-msg { color:#ef4444; font-size:.7rem; }
+/* 여자 캐릭터 잠금 타일 실루엣 효과 */
+@keyframes girlUnlockReveal { from { filter:grayscale(100%) brightness(25%); } to { filter:none; } }
+.ct-girl-locked .ct-img { filter:grayscale(100%) brightness(25%); transition:filter .6s ease; }
+.ct-girl-locked .ct-girl-lock { position:absolute; inset:0; display:flex; align-items:center; justify-content:center; font-size:1.6rem; background:rgba(0,0,0,.3); border-radius:6px; pointer-events:none; }
+.ct-just-unlocked .ct-img { animation:girlUnlockReveal .8s ease forwards; }
+/* 해금 완료 팝업 */
+#girl-unlock-popup { display:none; position:fixed; inset:0; background:rgba(0,0,0,.88); z-index:900; justify-content:center; align-items:center; }
+#girl-unlock-popup.active { display:flex; }
+#girl-unlock-box { background:linear-gradient(135deg,#2d1b69,#1a0a2e 55%,#3d1060); border:3px solid #a855f7; border-radius:20px; padding:36px 32px; text-align:center; max-width:340px; width:90%; box-shadow:0 0 50px #a855f740; }
+#girl-unlock-box .gu-icon { font-size:3rem; margin-bottom:10px; animation:none; }
+#girl-unlock-box .gu-title { color:#ffd700; font-size:1.2rem; font-weight:700; margin-bottom:6px; }
+#girl-unlock-box .gu-desc { color:#a78bfa; font-size:.82rem; line-height:1.6; margin-bottom:22px; }
+#girl-unlock-box .gu-btn { background:linear-gradient(90deg,#a855f7,#7c3aed); color:#fff; border:none; border-radius:10px; padding:12px 28px; font-size:.95rem; font-weight:700; cursor:pointer; }
 /* 가운데 미리보기 — flex:8 (전체의 ~44%) */
 #costume-preview-panel { flex:8; min-width:0; flex-shrink:0; display:flex; flex-direction:column; align-items:center; padding:16px 16px 20px; gap:10px; background:#08031a; border-radius:16px; border:2px solid #2d1b69; position:sticky; top:0; }
 #costume-preview-img-wrap { width:min(220px,85%); aspect-ratio:3/4; display:flex; align-items:center; justify-content:center; background:#060312; border:2px solid #ffd70030; border-radius:14px; overflow:hidden; }
@@ -1265,6 +1280,16 @@ async function openTeacherDashboard() {
   </div>
 </div>
 
+<!-- 여자 캐릭터 해금 완료 팝업 -->
+<div id="girl-unlock-popup">
+  <div id="girl-unlock-box">
+    <div class="gu-icon">👧✨</div>
+    <div class="gu-title">여자 캐릭터 해금 완료!</div>
+    <div class="gu-desc">이제 여자 캐릭터의 의상을<br>모두 착용할 수 있어요! 🎉<br><span style="color:#ffd700;font-size:.78rem;">현재 등급까지 의상이 자동 해금됩니다.</span></div>
+    <button class="gu-btn" onclick="closeGirlUnlockPopup()">🎊 확인!</button>
+  </div>
+</div>
+
 <!-- Rank-up popup -->
 <div id="rank-up-overlay">
   <div id="rank-up-box">
@@ -1506,13 +1531,22 @@ function getCurrentRankIdx() { return RANKS.indexOf(getCurrentRank()); }
 function renderCostumeShop() {
   const rankIdx = getCurrentRankIdx();
 
-  function makeTile(c, gender, locked, canBuy, isPurchased) {
+  const girlLocked = !window._hasGirlCharacter;
+
+  // girlJustUnlocked 플래그로 해금 애니메이션 한 번만 재생
+  const justUnlocked = window._girlJustUnlocked;
+  if (justUnlocked) window._girlJustUnlocked = false;
+
+  function makeTile(c, gender, rankLocked, canBuy, isPurchased) {
+    const isGirlLocked = gender === 'girl' && girlLocked && !rankLocked;
     const img   = gender === 'girl' ? (c.girlImg || c.boyImg) : c.boyImg;
     const isEq  = window._currentCostume === c.id && window._gender === gender;
     const isSel = costumePreviewId === c.id && shopPreviewGender === gender;
     let subText = '', subClass = '';
-    if (c.section === 'world') {
-      if (isPurchased)  { subText = '보유';        subClass = 'csub-green'; }
+    if (isGirlLocked) {
+      subText = '🔒 잠금'; subClass = '';
+    } else if (c.section === 'world') {
+      if (isPurchased)  { subText = '보유';         subClass = 'csub-green'; }
       else if (canBuy)  { subText = `🪙${c.price}`; subClass = 'csub-yellow'; }
       else              { subText = `🪙${c.price}`; subClass = 'csub-red'; }
     } else {
@@ -1521,12 +1555,15 @@ function renderCostumeShop() {
     const cls = ['costume-tile',
       isEq  ? 'ct-equipped' : '',
       isSel && !isEq ? 'ct-selected' : '',
-      locked ? 'ct-locked' : '',
-      !locked && c.section === 'world' && !isPurchased && !canBuy ? 'ct-nocoin' : ''
+      rankLocked ? 'ct-locked' : '',
+      isGirlLocked ? 'ct-girl-locked' : '',
+      isGirlLocked && justUnlocked ? 'ct-just-unlocked' : '',
+      !rankLocked && !isGirlLocked && c.section === 'world' && !isPurchased && !canBuy ? 'ct-nocoin' : ''
     ].filter(Boolean).join(' ');
-    const badge  = isEq   ? '<span class="ct-badge">✅</span>' : '';
-    const lockEl = locked ? '<div class="ct-lock">🔒</div>'    : '';
-    const onclick = locked ? '' : `selectCostume('${c.id}','${gender}')`;
+    const badge   = isEq        ? '<span class="ct-badge">✅</span>' : '';
+    const lockEl  = rankLocked  ? '<div class="ct-lock">🔒</div>' :
+                    isGirlLocked? '<div class="ct-girl-lock">🔒</div>' : '';
+    const onclick = rankLocked  ? '' : `selectCostume('${c.id}','${gender}')`;
     return `<div class="${cls}" ${onclick ? `onclick="${onclick}"` : ''}>
       ${badge}
       <img class="ct-img" src="${img}" alt="${c.name}" onerror="this.src='images/char_boy_basic.png'">
@@ -1553,26 +1590,20 @@ function renderCostumeShop() {
   document.getElementById('shop-boy-panel').innerHTML =
     '<div class="shop-gender-panel-header">👦 남자 의상</div>' + renderPanel('boy');
 
-  // 여자 패널
+  // 여자 패널 (항상 의상 그리드 표시 + 잠금 시 상단에 해금 버튼)
   const girlPanel = document.getElementById('shop-girl-panel');
-  if (window._hasGirlCharacter) {
-    girlPanel.innerHTML =
-      '<div class="shop-gender-panel-header">👧 여자 의상</div>' + renderPanel('girl');
-  } else {
+  let girlHtml = '<div class="shop-gender-panel-header">👧 여자 의상</div>';
+  if (girlLocked) {
     const canUnlock = state.coins >= 1000;
-    girlPanel.innerHTML = `<div class="shop-gender-panel-header">👧 여자 의상</div>
-      <div class="girl-lock-overlay">
-        <div style="font-size:2.2rem;">🔒</div>
-        <div style="color:#ffd700;font-size:.9rem;font-weight:700;">여자 캐릭터 잠금</div>
-        <div style="color:#a78bfa;font-size:.75rem;text-align:center;line-height:1.6;">
-          여자 캐릭터를 해금하면<br>여자 전용 의상을 착용할 수 있어요!
-        </div>
-        <button class="girl-unlock-btn" ${canUnlock ? '' : 'disabled'} onclick="unlockGirlCharacter()">
-          해금하기 🪙1000코인
-        </button>
-        ${!canUnlock ? '<div style="color:#ef4444;font-size:.72rem;">코인이 부족해요!</div>' : ''}
-      </div>`;
+    girlHtml += `<div class="girl-unlock-bar">
+      <button class="girl-unlock-btn" ${canUnlock ? '' : 'disabled'} onclick="unlockGirlCharacter()">
+        👧 여자 캐릭터 해금 🪙1000코인
+      </button>
+      ${!canUnlock ? '<div class="girl-unlock-coin-msg">코인이 부족해요!</div>' : ''}
+    </div>`;
   }
+  girlHtml += renderPanel('girl');
+  girlPanel.innerHTML = girlHtml;
 
   // 미리보기 업데이트
   const previewC = COSTUME_DATA.find(c => c.id === costumePreviewId) || COSTUME_DATA[0];
@@ -1591,10 +1622,25 @@ function selectCostume(id, gender) {
 function updateCostumePreview(c, gender) {
   const g   = gender || shopPreviewGender || window._gender || 'boy';
   const img = g === 'girl' ? (c.girlImg || c.boyImg) : c.boyImg;
-  document.getElementById('costume-preview-img').src = img;
-  document.getElementById('costume-preview-name').textContent = c.name + (c.country ? ` (${c.country})` : '');
-  document.getElementById('costume-preview-desc').textContent = c.desc;
+  const isGirlLocked = g === 'girl' && !window._hasGirlCharacter;
+  const imgEl = document.getElementById('costume-preview-img');
+  imgEl.src = img;
+  imgEl.style.transition = 'filter .5s ease';
+  imgEl.style.filter = isGirlLocked ? 'grayscale(100%) brightness(25%)' : '';
+  document.getElementById('costume-preview-name').textContent =
+    isGirlLocked ? `🔒 ${c.name}` : c.name + (c.country ? ` (${c.country})` : '');
+  document.getElementById('costume-preview-desc').textContent =
+    isGirlLocked ? '잠긴 의상입니다 — 여자 캐릭터를 해금하세요' : c.desc;
   const btn = document.getElementById('costume-action-btn');
+  if (isGirlLocked) {
+    const canUnlock = state.coins >= 1000;
+    btn.textContent = canUnlock ? '👧 여자 캐릭터 해금 🪙1000' : `🔒 ${1000 - state.coins}코인 부족`;
+    btn.className   = canUnlock ? 'ca-buy' : 'ca-locked';
+    btn.disabled    = !canUnlock;
+    btn.onclick     = canUnlock ? () => unlockGirlCharacter() : null;
+    return;
+  }
+  btn.onclick = () => costumeActionClick();
   const rankIdx = getCurrentRankIdx();
   if (window._currentCostume === c.id && window._gender === g) {
     btn.textContent = '✅ 착용 중'; btn.className = 'ca-equipped'; btn.disabled = true;
@@ -1676,6 +1722,7 @@ async function unlockGirlCharacter() {
   if (state.coins < 1000) return;
   state.coins -= 1000;
   window._hasGirlCharacter = true;
+  window._girlJustUnlocked = true;
   window._gender = 'girl';
   shopPreviewGender = 'girl';
   updateHUD();
@@ -1688,6 +1735,14 @@ async function unlockGirlCharacter() {
   }
   if (typeof window.updatePlayerSprite === 'function') window.updatePlayerSprite();
   renderCostumeShop();
+  // 미리보기 필터 즉시 해제 (transition 효과)
+  const imgEl = document.getElementById('costume-preview-img');
+  if (imgEl) { imgEl.style.transition = 'filter .6s ease'; imgEl.style.filter = ''; }
+  document.getElementById('girl-unlock-popup').classList.add('active');
+}
+
+function closeGirlUnlockPopup() {
+  document.getElementById('girl-unlock-popup').classList.remove('active');
 }
 
 async function confirmGenderSetup(gender) {
