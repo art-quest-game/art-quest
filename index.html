@@ -239,40 +239,61 @@ canvas { display:block; image-rendering:pixelated; position:fixed; top:0; left:0
 .shop-equip-btn { background:linear-gradient(90deg,#6b21a8,#9333ea); color:#fff; border:none; border-radius:8px; padding:8px 0; font-size:.85rem; cursor:pointer; width:100%; transition:background .2s; }
 .shop-equip-btn.on { background:linear-gradient(90deg,#22c55e,#16a34a); }
 
-/* ─── 신규 코스튬 상점 ─── */
-#shop-inner { max-width:960px !important; }
-#costume-shop-layout { display:flex; gap:0; width:100%; min-height:460px; margin-top:10px; }
-#costume-list-panel { width:48%; overflow-y:auto; padding-right:10px; border-right:2px solid #2d1b69; flex-shrink:0; max-height:65vh; }
-#costume-preview-panel { flex:1; display:flex; flex-direction:column; align-items:center; padding:16px 20px 20px; gap:10px; }
-.costume-section-header { color:#ffd700; font-size:.76rem; font-weight:700; letter-spacing:1px; padding:10px 6px 5px; border-bottom:1px solid #ffd70030; margin-top:4px; }
-/* 그리드 컨테이너 */
-.costume-grid { display:grid; grid-template-columns:1fr 1fr; gap:7px; padding:4px 2px 8px; }
-/* 그리드 카드 타일 */
-.costume-tile { position:relative; border-radius:10px; border:2px solid #2d1b69; cursor:pointer; background:#1a0a2e; text-align:center; transition:all .15s; padding:8px 6px 7px; display:flex; flex-direction:column; align-items:center; }
-.costume-tile:hover { border-color:#a855f7; background:#2d1b69; }
-.costume-tile.ct-selected { border-color:#ffd700; background:rgba(45,27,105,.6); box-shadow:0 0 10px #ffd70030; }
-.costume-tile.ct-equipped { border-color:#22c55e; background:rgba(5,46,22,.5); }
-.costume-tile.ct-locked { opacity:.45; cursor:default; }
-.costume-tile .ct-img { width:60px; height:76px; object-fit:contain; display:block; }
-.costume-tile .ct-name { font-size:.7rem; color:#e2c4ff; margin-top:5px; font-weight:700; line-height:1.3; word-break:keep-all; }
-.costume-tile .ct-badge { position:absolute; top:3px; left:4px; font-size:.7rem; line-height:1; }
-.costume-tile .ct-lock { position:absolute; inset:0; display:flex; align-items:center; justify-content:center; font-size:1.5rem; background:rgba(0,0,0,.38); border-radius:8px; pointer-events:none; }
-/* 구 카드 스타일(하위호환 유지) */
-.costume-card { display:flex; align-items:center; gap:9px; padding:8px 9px; border-radius:10px; border:2px solid transparent; cursor:pointer; transition:all .15s; margin-bottom:3px; background:#1a0a2e; }
-.costume-card-name { color:#e2c4ff; font-size:.83rem; font-weight:700; }
-.costume-card-sub { font-size:.72rem; margin-top:2px; color:#6b7280; }
-.costume-card-sub.csub-red { color:#ef4444; }
-.costume-card-sub.csub-yellow { color:#fbbf24; }
-.costume-card-sub.csub-green { color:#22c55e; }
-#costume-preview-img-wrap { width:200px; height:260px; display:flex; align-items:center; justify-content:center; background:#0f0720; border:2px solid #ffd70040; border-radius:16px; overflow:hidden; flex-shrink:0; }
+/* ─── 캐릭터 상점 반응형 ─── */
+#shop-inner { max-width:1200px !important; width:100%; }
+/* 성별 탭 (기본 숨김 → 좁은 화면에서만 표시) */
+.shop-gender-tabs { display:none; gap:8px; margin-bottom:8px; }
+.shop-gender-tab { flex:1; padding:10px; background:#1a0a2e; border:2px solid #4b1d7e; border-radius:10px; color:#a78bfa; font-size:.88rem; font-weight:700; cursor:pointer; transition:all .15s; }
+.shop-gender-tab.active { background:linear-gradient(90deg,#7c3aed,#a855f7); border-color:#a855f7; color:#fff; }
+/* 3열 레이아웃 (PC) */
+#costume-shop-layout { display:flex; gap:10px; width:100%; margin-top:8px; align-items:flex-start; }
+.shop-gender-panel { flex:1; overflow-y:auto; max-height:62vh; padding:0 2px; }
+.shop-gender-panel-header { color:#ffd700; font-size:.85rem; font-weight:700; text-align:center; padding:6px 0 5px; border-bottom:2px solid #ffd70030; margin-bottom:6px; }
+/* 여자 잠금 오버레이 */
+.girl-lock-overlay { display:flex; flex-direction:column; align-items:center; justify-content:center; min-height:260px; text-align:center; gap:12px; padding:16px; }
+.girl-unlock-btn { background:linear-gradient(90deg,#ffd700,#ff9900); color:#1a0a2e; border:none; border-radius:10px; padding:11px 18px; font-size:.88rem; font-weight:700; cursor:pointer; transition:all .15s; }
+.girl-unlock-btn:disabled { background:#2d2d2d; color:#666; cursor:default; }
+/* 가운데 미리보기 */
+#costume-preview-panel { width:210px; flex-shrink:0; display:flex; flex-direction:column; align-items:center; padding:12px 12px 16px; gap:8px; background:#08031a; border-radius:14px; border:2px solid #2d1b69; }
+#costume-preview-img-wrap { width:155px; height:200px; display:flex; align-items:center; justify-content:center; background:#060312; border:2px solid #ffd70030; border-radius:12px; overflow:hidden; }
 #costume-preview-img { width:100%; height:100%; object-fit:contain; }
-#costume-preview-name { color:#ffd700; font-size:1.05rem; font-weight:700; text-align:center; }
-#costume-preview-desc { color:#a78bfa; font-size:.8rem; text-align:center; line-height:1.5; }
-#costume-action-btn { padding:10px 30px; border:none; border-radius:10px; font-weight:700; font-size:.93rem; cursor:pointer; transition:all .15s; width:100%; max-width:200px; }
-#costume-action-btn.ca-equip { background:linear-gradient(90deg,#3b82f6,#2563eb); color:#fff; }
-#costume-action-btn.ca-buy { background:linear-gradient(90deg,#ffd700,#ff9900); color:#1a0a2e; }
-#costume-action-btn.ca-locked { background:#2d2d2d; color:#666; cursor:default; }
-#costume-action-btn.ca-equipped { background:linear-gradient(90deg,#22c55e,#16a34a); color:#fff; cursor:default; }
+#costume-preview-name { color:#ffd700; font-size:.88rem; font-weight:700; text-align:center; }
+#costume-preview-desc { color:#a78bfa; font-size:.72rem; text-align:center; line-height:1.5; }
+#costume-action-btn { padding:8px 16px; border:none; border-radius:9px; font-weight:700; font-size:.84rem; cursor:pointer; transition:all .15s; width:100%; }
+#costume-action-btn.ca-equip   { background:linear-gradient(90deg,#3b82f6,#2563eb); color:#fff; }
+#costume-action-btn.ca-buy     { background:linear-gradient(90deg,#ffd700,#ff9900); color:#1a0a2e; }
+#costume-action-btn.ca-locked  { background:#2d2d2d; color:#666; cursor:default; }
+#costume-action-btn.ca-equipped{ background:linear-gradient(90deg,#22c55e,#16a34a); color:#fff; cursor:default; }
+/* 섹션 헤더 */
+.costume-section-header { color:#ffd700; font-size:.68rem; font-weight:700; letter-spacing:.5px; padding:7px 4px 3px; border-bottom:1px solid #ffd70020; margin-top:6px; margin-bottom:4px; }
+/* 바둑판 그리드 */
+.costume-grid { display:grid; grid-template-columns:1fr 1fr; gap:5px; }
+.costume-tile { position:relative; border-radius:9px; border:2px solid #2d1b69; cursor:pointer; background:#1a0a2e; text-align:center; transition:all .15s; padding:6px 4px 5px; display:flex; flex-direction:column; align-items:center; }
+.costume-tile:hover { border-color:#a855f7; background:#2d1b69; }
+.costume-tile.ct-selected { border-color:#ffd700; background:rgba(45,27,105,.6); box-shadow:0 0 8px #ffd70030; }
+.costume-tile.ct-equipped { border-color:#22c55e; background:rgba(5,46,22,.5); }
+.costume-tile.ct-locked { opacity:.42; cursor:default; filter:grayscale(.6); }
+.costume-tile.ct-nocoin { opacity:.75; }
+.costume-tile .ct-img { width:50px; height:64px; object-fit:contain; display:block; }
+.costume-tile .ct-name { font-size:.62rem; color:#e2c4ff; margin-top:3px; font-weight:700; line-height:1.2; word-break:keep-all; }
+.costume-tile .ct-sub { font-size:.56rem; margin-top:1px; color:#6b7280; line-height:1.2; }
+.costume-tile .ct-sub.csub-red { color:#ef4444; }
+.costume-tile .ct-sub.csub-yellow { color:#fbbf24; }
+.costume-tile .ct-sub.csub-green { color:#22c55e; }
+.costume-tile .ct-badge { position:absolute; top:2px; left:3px; font-size:.62rem; line-height:1; }
+.costume-tile .ct-lock { position:absolute; inset:0; display:flex; align-items:center; justify-content:center; font-size:1.3rem; background:rgba(0,0,0,.42); border-radius:7px; pointer-events:none; }
+/* 태블릿/모바일 ≤1023px */
+@media (max-width:1023px) {
+  .shop-gender-tabs { display:flex; }
+  #costume-shop-layout { flex-direction:column; }
+  .shop-gender-panel { max-height:44vh; }
+  #costume-preview-panel { width:100%; border:none; background:transparent; padding:6px 0; flex-direction:row; flex-wrap:wrap; justify-content:center; gap:8px; order:-1; }
+  #costume-preview-img-wrap { width:110px; height:144px; }
+}
+@media (max-width:767px) {
+  #costume-preview-panel { flex-direction:column; align-items:center; }
+  .shop-gender-panel { max-height:36vh; }
+}
 .gender-section-inner { padding:6px 4px 10px; }
 .gender-change-btn { width:100%; padding:9px; background:#2d1b69; border:2px solid #a855f7; border-radius:8px; color:#e2c4ff; font-size:.84rem; cursor:pointer; transition:all .15s; }
 .gender-change-btn:hover:not(:disabled) { background:#3d1b80; border-color:#ffd700; color:#ffd700; }
@@ -403,6 +424,8 @@ auth.onAuthStateChanged(async (user) => {
       window._gender = data.gender || 'boy';
       window._currentCostume = data.currentCostume || 'c_basic';
       purchasedCostumes = new Set(data.ownedCostumes || []);
+      window._hasGirlCharacter = data.hasGirlCharacter || false;
+      shopPreviewGender = window._gender;
       costumePreviewId = window._currentCostume;
       updateHUD();
       if (!data.gender) {
@@ -430,6 +453,9 @@ auth.onAuthStateChanged(async (user) => {
     window._currentCostume = 'c_basic';
     purchasedCostumes = new Set();
     costumePreviewId = 'c_basic';
+    window._hasGirlCharacter = false;
+    shopActiveTab = 'boy';
+    shopPreviewGender = 'boy';
     window._selectedSignupGender = '';
     if (typeof updateHUD === 'function') updateHUD();
     window._currentUser = null;
@@ -1236,8 +1262,12 @@ async function openTeacherDashboard() {
   </div>
   <div id="shop-inner">
     <div id="shop-rank-banner"></div>
+    <div class="shop-gender-tabs">
+      <button class="shop-gender-tab active" id="shop-tab-boy" onclick="setShopTab('boy')">👦 남자</button>
+      <button class="shop-gender-tab" id="shop-tab-girl" onclick="setShopTab('girl')">👧 여자</button>
+    </div>
     <div id="costume-shop-layout">
-      <div id="costume-list-panel"><!-- JS로 렌더링 --></div>
+      <div class="shop-gender-panel" id="shop-boy-panel"><!-- JS로 렌더링 --></div>
       <div id="costume-preview-panel">
         <div id="costume-preview-img-wrap">
           <img id="costume-preview-img" src="images/char_boy_basic.png" alt="의상 미리보기">
@@ -1246,6 +1276,7 @@ async function openTeacherDashboard() {
         <div id="costume-preview-desc">견습생의 기본 의상</div>
         <button id="costume-action-btn" class="ca-equipped" disabled onclick="costumeActionClick()">✅ 착용 중</button>
       </div>
+      <div class="shop-gender-panel" id="shop-girl-panel"><!-- JS로 렌더링 --></div>
     </div>
   </div>
 </div>
@@ -1284,7 +1315,8 @@ const RANKS = [
   { name:'견습생',     minCoins:0,   tint:0x4488ff, scale:1.76, icon:'🖌️', desc:'예술의 세계에 첫 발을 내딛었습니다!\n명화를 감상하고 미니게임을 즐겨보세요.' },
   { name:'화가지망생', minCoins:50,  tint:0x44cc44, scale:1.98, icon:'🎨', desc:'열정 넘치는 화가 지망생이 되었습니다!\n밀짚모자를 눌러쓰고 붓을 잡아보세요.' },
   { name:'화가',       minCoins:150, tint:0xffff44, scale:2.2,  icon:'🖼️', desc:'실력을 인정받은 화가가 되었습니다!\n아름다운 작품으로 세상을 물들이세요.' },
-  { name:'거장',       minCoins:300, tint:0xff8833, scale:2.53, icon:'👑', desc:'예술계의 거장으로 이름을 떨칩니다!\n황금빛 후광이 당신을 감쌉니다.' },
+  { name:'숙련화가',   minCoins:250, tint:0xff8833, scale:2.42, icon:'🎭', desc:'숙련된 기법으로 명작을 탄생시킵니다!\n황금빛 팔레트가 당신을 빛냅니다.' },
+  { name:'거장',       minCoins:350, tint:0xff4422, scale:2.64, icon:'👑', desc:'예술계의 거장으로 이름을 떨칩니다!\n황금빛 후광이 당신을 감쌉니다.' },
   { name:'마에스트로', minCoins:500, tint:0xFFD700, scale:2.86, icon:'✨', desc:'모든 예술가의 꿈, 마에스트로 달성!\n무지개빛 파티클이 당신을 빛냅니다!' },
 ];
 let _prevRankIdx = 0;
@@ -1311,8 +1343,6 @@ function updateRank() {
   const idx  = RANKS.indexOf(rank);
   if (gameScene) {
     gameScene.playerLabel.setText(rank.name);
-    gameScene.player.setTexture('char' + (idx + 1));
-    gameScene.player.setDisplaySize(192, 224);
     updateCharacterOverlays();
   }
   if (idx > _prevRankIdx) {
@@ -1344,25 +1374,29 @@ const ALL_ITEMS = [
 // ─── 코스튬 데이터 ───────────────────────────────────────────
 const COSTUME_DATA = [
   // 등급 보상 (rankReq = RANKS 인덱스)
-  { id:'c_basic',      section:'grade', rankReq:0, name:'기본 의상',       img:'images/char_boy_basic.png',      desc:'견습생의 기본 의상' },
-  { id:'c_artist',     section:'grade', rankReq:1, name:'화가지망생 의상', img:'images/char_boy_artist.png',     desc:'화가지망생 달성 보상 의상' },
-  { id:'c_noble',      section:'grade', rankReq:2, name:'귀족 의상',       img:'images/char_boy_noble.png',      desc:'화가 달성 보상 의상' },
-  { id:'c_royal',      section:'grade', rankReq:3, name:'왕실 의상',       img:'images/char_boy_royal.png',      desc:'거장 달성 보상 의상' },
-  { id:'c_maestro',    section:'grade', rankReq:4, name:'마에스트로 의상', img:'images/char_boy_maestro.png',    desc:'마에스트로 달성 보상 의상' },
+  { id:'c_basic',      section:'grade', rankReq:0, name:'기본 의상',       boyImg:'images/char_boy_basic.png',      girlImg:'images/char_girl_basic.png',     desc:'견습생의 기본 의상' },
+  { id:'c_artist',     section:'grade', rankReq:1, name:'화가지망생 의상', boyImg:'images/char_boy_artist.png',     girlImg:'images/char_girl_artist.png',    desc:'화가지망생 달성 보상 의상' },
+  { id:'c_noble',      section:'grade', rankReq:2, name:'귀족 의상',       boyImg:'images/char_boy_noble.png',      girlImg:'images/char_girl_noble.png',     desc:'화가 달성 보상 의상' },
+  { id:'c_skilled',    section:'grade', rankReq:3, name:'숙련화가 의상',   boyImg:'images/char_boy_skilled.png',    girlImg:'images/char_girl_skilled.png',   desc:'숙련화가 달성 보상 의상' },
+  { id:'c_royal',      section:'grade', rankReq:4, name:'왕실 의상',       boyImg:'images/char_boy_royal.png',      girlImg:'images/char_girl_royal.png',     desc:'거장 달성 보상 의상' },
+  { id:'c_maestro',    section:'grade', rankReq:5, name:'마에스트로 의상', boyImg:'images/char_boy_maestro.png',    girlImg:'images/char_girl_maestro.png',   desc:'마에스트로 달성 보상 의상' },
   // 세계 전통의상 (구매)
-  { id:'c_hanbok',     section:'world', price:100, name:'한복',    country:'한국',   img:'images/char_boy_hanbok.png',      desc:'아름다운 한국 전통 의상 한복' },
-  { id:'c_kimono',     section:'world', price:120, name:'기모노',  country:'일본',   img:'images/char_boy_kimono.png',      desc:'아름다운 일본 전통 의상 기모노' },
-  { id:'c_changpao',   section:'world', price:120, name:'창파오',  country:'중국',   img:'images/char_boy_changpao.png',    desc:'중국 전통 의상 창파오' },
-  { id:'c_aodai',      section:'world', price:120, name:'아오자이',country:'베트남', img:'images/char_boy_aodai.png',       desc:'베트남 전통 의상 아오자이' },
-  { id:'c_lederhosen', section:'world', price:120, name:'레더호젠',country:'독일',   img:'images/char_boy_lederhosen.png',  desc:'독일 전통 의상 레더호젠' },
-  { id:'c_kurta',      section:'world', price:120, name:'쿠르타',  country:'인도',   img:'images/char_boy_kurta.png',       desc:'인도 전통 의상 쿠르타' },
-  { id:'c_flamenco',   section:'world', price:120, name:'플라멩코',country:'스페인', img:'images/char_boy_flamenco.png',    desc:'스페인 전통 의상 플라멩코' },
+  { id:'c_hanbok',     section:'world', price:100, name:'한복',    country:'한국',   boyImg:'images/char_boy_hanbok.png',     girlImg:'images/char_girl_hanbok.png',    desc:'아름다운 한국 전통 의상 한복' },
+  { id:'c_kimono',     section:'world', price:120, name:'기모노',  country:'일본',   boyImg:'images/char_boy_kimono.png',     girlImg:'images/char_girl_kimono.png',    desc:'아름다운 일본 전통 의상 기모노' },
+  { id:'c_changpao',   section:'world', price:120, name:'창파오',  country:'중국',   boyImg:'images/char_boy_changpao.png',   girlImg:'images/char_girl_qipao.png',     desc:'중국 전통 의상 창파오/치파오' },
+  { id:'c_aodai',      section:'world', price:120, name:'아오자이',country:'베트남', boyImg:'images/char_boy_aodai.png',      girlImg:'images/char_girl_aodai.png',     desc:'베트남 전통 의상 아오자이' },
+  { id:'c_lederhosen', section:'world', price:120, name:'레더호젠',country:'독일',   boyImg:'images/char_boy_lederhosen.png', girlImg:'images/char_girl_dirndl.png',    desc:'독일 전통 의상 레더호젠/디른들' },
+  { id:'c_kurta',      section:'world', price:120, name:'쿠르타',  country:'인도',   boyImg:'images/char_boy_kurta.png',      girlImg:'images/char_girl_sari.png',      desc:'인도 전통 의상 쿠르타/사리' },
+  { id:'c_flamenco',   section:'world', price:120, name:'플라멩코',country:'스페인', boyImg:'images/char_boy_flamenco.png',   girlImg:'images/char_girl_flamenco.png',  desc:'스페인 전통 의상 플라멩코' },
 ];
-let purchasedCostumes = new Set();   // 구매한 월드 코스튬 ID
-let costumePreviewId  = 'c_basic';   // 현재 미리보기 중인 코스튬
-window._currentCostume = 'c_basic';  // 현재 착용 중인 코스튬
-window._gender = 'boy';              // 성별
-window._selectedSignupGender = '';   // 회원가입 중 선택한 성별
+let purchasedCostumes   = new Set();  // 구매한 월드 코스튬 ID
+let costumePreviewId    = 'c_basic';  // 현재 미리보기 중인 코스튬
+let shopActiveTab       = 'boy';      // 모바일 탭 상태 (boy/girl)
+let shopPreviewGender   = 'boy';      // 미리보기 패널에서 선택된 성별
+window._currentCostume  = 'c_basic';  // 현재 착용 중인 코스튬
+window._gender          = 'boy';      // 성별
+window._hasGirlCharacter = false;     // 여자 캐릭터 해금 여부
+window._selectedSignupGender = '';    // 회원가입 중 선택한 성별
 
 const shopOwned    = new Set();
 const shopEquipped = new Set(); // 장착 중인 아이템 ID 집합 (다중 장착 허용)
@@ -1450,74 +1484,97 @@ function getCurrentRankIdx() { return RANKS.indexOf(getCurrentRank()); }
 function renderCostumeShop() {
   const rankIdx = getCurrentRankIdx();
 
-  // 성별에 맞는 이미지 경로 반환
-  function costumeImg(c) {
-    const gender = window._gender || 'boy';
-    return c.img.replace('char_boy_', `char_${gender}_`);
-  }
-
-  function makeTile(c, locked, onclick) {
-    const isEq  = window._currentCostume === c.id;
-    const isSel = costumePreviewId === c.id;
-    const cls   = ['costume-tile',
+  function makeTile(c, gender, locked, canBuy, isPurchased) {
+    const img   = gender === 'girl' ? (c.girlImg || c.boyImg) : c.boyImg;
+    const isEq  = window._currentCostume === c.id && window._gender === gender;
+    const isSel = costumePreviewId === c.id && shopPreviewGender === gender;
+    let subText = '', subClass = '';
+    if (c.section === 'world') {
+      if (isPurchased)  { subText = '보유';        subClass = 'csub-green'; }
+      else if (canBuy)  { subText = `🪙${c.price}`; subClass = 'csub-yellow'; }
+      else              { subText = `🪙${c.price}`; subClass = 'csub-red'; }
+    } else {
+      subText = RANKS[c.rankReq]?.name || '';
+    }
+    const cls = ['costume-tile',
       isEq  ? 'ct-equipped' : '',
       isSel && !isEq ? 'ct-selected' : '',
-      locked ? 'ct-locked'   : ''
+      locked ? 'ct-locked' : '',
+      !locked && c.section === 'world' && !isPurchased && !canBuy ? 'ct-nocoin' : ''
     ].filter(Boolean).join(' ');
-    const badge = isEq ? '<span class="ct-badge">✅</span>' : '';
-    const lock  = locked ? '<div class="ct-lock">🔒</div>' : '';
-    return `<div class="${cls}" onclick="${onclick}">
+    const badge  = isEq   ? '<span class="ct-badge">✅</span>' : '';
+    const lockEl = locked ? '<div class="ct-lock">🔒</div>'    : '';
+    const onclick = locked ? '' : `selectCostume('${c.id}','${gender}')`;
+    return `<div class="${cls}" ${onclick ? `onclick="${onclick}"` : ''}>
       ${badge}
-      <img class="ct-img" src="${costumeImg(c)}" alt="${c.name}" onerror="this.src='${c.img}'">
+      <img class="ct-img" src="${img}" alt="${c.name}" onerror="this.src='images/char_boy_basic.png'">
       <div class="ct-name">${c.name}</div>
-      ${lock}
+      <div class="ct-sub ${subClass}">${subText}</div>
+      ${lockEl}
     </div>`;
   }
 
-  let html = '';
+  function renderPanel(gender) {
+    let h = '<div class="costume-section-header">🏆 등급 보상</div><div class="costume-grid">';
+    COSTUME_DATA.filter(c => c.section === 'grade').forEach(c => {
+      h += makeTile(c, gender, rankIdx < c.rankReq, false, false);
+    });
+    h += '</div><div class="costume-section-header">🌏 세계 전통의상</div><div class="costume-grid">';
+    COSTUME_DATA.filter(c => c.section === 'world').forEach(c => {
+      h += makeTile(c, gender, false, state.coins >= c.price, purchasedCostumes.has(c.id));
+    });
+    h += '</div>';
+    return h;
+  }
 
-  // [등급 보상]
-  html += '<div class="costume-section-header">🏆 등급 보상</div><div class="costume-grid">';
-  COSTUME_DATA.filter(c => c.section === 'grade').forEach(c => {
-    const unlocked = rankIdx >= c.rankReq;
-    html += makeTile(c, !unlocked, unlocked ? `selectCostume('${c.id}')` : '');
-  });
-  html += '</div>';
+  // 남자 패널
+  document.getElementById('shop-boy-panel').innerHTML =
+    '<div class="shop-gender-panel-header">👦 남자 의상</div>' + renderPanel('boy');
 
-  // [세계 전통의상]
-  html += '<div class="costume-section-header">🌏 세계 전통의상</div><div class="costume-grid">';
-  COSTUME_DATA.filter(c => c.section === 'world').forEach(c => {
-    html += makeTile(c, false, `selectCostume('${c.id}')`);
-  });
-  html += '</div>';
+  // 여자 패널
+  const girlPanel = document.getElementById('shop-girl-panel');
+  if (window._hasGirlCharacter) {
+    girlPanel.innerHTML =
+      '<div class="shop-gender-panel-header">👧 여자 의상</div>' + renderPanel('girl');
+  } else {
+    const canUnlock = state.coins >= 1000;
+    girlPanel.innerHTML = `<div class="shop-gender-panel-header">👧 여자 의상</div>
+      <div class="girl-lock-overlay">
+        <div style="font-size:2.2rem;">🔒</div>
+        <div style="color:#ffd700;font-size:.9rem;font-weight:700;">여자 캐릭터 잠금</div>
+        <div style="color:#a78bfa;font-size:.75rem;text-align:center;line-height:1.6;">
+          여자 캐릭터를 해금하면<br>여자 전용 의상을 착용할 수 있어요!
+        </div>
+        <button class="girl-unlock-btn" ${canUnlock ? '' : 'disabled'} onclick="unlockGirlCharacter()">
+          해금하기 🪙1000코인
+        </button>
+        ${!canUnlock ? '<div style="color:#ef4444;font-size:.72rem;">코인이 부족해요!</div>' : ''}
+      </div>`;
+  }
 
-  // [성별 변경]
-  const gLabel = window._gender === 'girl' ? '👧 여자' : '👦 남자';
-  const canAfford = state.coins >= 100;
-  html += `<div class="costume-section-header">⚧ 성별 변경</div>
-  <div class="gender-section-inner">
-    <div style="color:#a78bfa;font-size:.8rem;margin-bottom:8px;">현재 성별: <strong style="color:#ffd700;">${gLabel}</strong></div>
-    <button class="gender-change-btn" ${canAfford?'':'disabled'} onclick="changeGender()">성별 변경하기 &nbsp;🪙 100코인</button>
-    ${!canAfford?'<div style="color:#ef4444;font-size:.74rem;margin-top:4px;">코인이 부족해요!</div>':''}
-  </div>`;
-
-  document.getElementById('costume-list-panel').innerHTML = html;
+  // 미리보기 업데이트
   const previewC = COSTUME_DATA.find(c => c.id === costumePreviewId) || COSTUME_DATA[0];
-  updateCostumePreview(previewC);
+  updateCostumePreview(previewC, shopPreviewGender);
+
+  // 탭 상태 적용 (모바일)
+  setShopTab(shopActiveTab);
 }
 
-function selectCostume(id) {
-  costumePreviewId = id;
+function selectCostume(id, gender) {
+  costumePreviewId  = id;
+  shopPreviewGender = gender || 'boy';
   renderCostumeShop();
 }
 
-function updateCostumePreview(c) {
-  document.getElementById('costume-preview-img').src = c.img;
+function updateCostumePreview(c, gender) {
+  const g   = gender || shopPreviewGender || window._gender || 'boy';
+  const img = g === 'girl' ? (c.girlImg || c.boyImg) : c.boyImg;
+  document.getElementById('costume-preview-img').src = img;
   document.getElementById('costume-preview-name').textContent = c.name + (c.country ? ` (${c.country})` : '');
   document.getElementById('costume-preview-desc').textContent = c.desc;
   const btn = document.getElementById('costume-action-btn');
   const rankIdx = getCurrentRankIdx();
-  if (window._currentCostume === c.id) {
+  if (window._currentCostume === c.id && window._gender === g) {
     btn.textContent = '✅ 착용 중'; btn.className = 'ca-equipped'; btn.disabled = true;
   } else if (c.section === 'grade') {
     if (rankIdx >= c.rankReq) {
@@ -1529,7 +1586,7 @@ function updateCostumePreview(c) {
     if (purchasedCostumes.has(c.id)) {
       btn.textContent = '착용하기'; btn.className = 'ca-equip'; btn.disabled = false;
     } else if (state.coins >= c.price) {
-      btn.textContent = `구매하기  🪙${c.price}`; btn.className = 'ca-buy'; btn.disabled = false;
+      btn.textContent = `구매하기 🪙${c.price}`; btn.className = 'ca-buy'; btn.disabled = false;
     } else {
       btn.textContent = `🪙 ${c.price - state.coins}코인 부족`; btn.className = 'ca-locked'; btn.disabled = true;
     }
@@ -1538,28 +1595,32 @@ function updateCostumePreview(c) {
 
 function costumeActionClick() {
   const c = COSTUME_DATA.find(cc => cc.id === costumePreviewId);
-  if (!c || window._currentCostume === c.id) return;
+  if (!c) return;
+  const g = shopPreviewGender;
+  if (window._currentCostume === c.id && window._gender === g) return;
   if (c.section === 'grade') {
-    if (getCurrentRankIdx() >= c.rankReq) equipCostume(c.id);
+    if (getCurrentRankIdx() >= c.rankReq) equipCostume(c.id, g);
   } else {
-    if (purchasedCostumes.has(c.id)) equipCostume(c.id);
-    else buyCostume(c.id);
+    if (purchasedCostumes.has(c.id)) equipCostume(c.id, g);
+    else buyCostume(c.id, g);
   }
 }
 
-async function equipCostume(id) {
+async function equipCostume(id, gender) {
+  const g = gender || shopPreviewGender || window._gender || 'boy';
   window._currentCostume = id;
+  window._gender = g;
   if (window._currentUser) {
-    db.collection('users').doc(window._currentUser.uid).update({ currentCostume: id }).catch(() => {});
+    db.collection('users').doc(window._currentUser.uid).update({ currentCostume: id, gender: g }).catch(() => {});
   }
   if (typeof window.updatePlayerSprite === 'function') window.updatePlayerSprite();
   renderCostumeShop();
 }
 
-async function buyCostume(id) {
+async function buyCostume(id, gender) {
   const c = COSTUME_DATA.find(cc => cc.id === id);
   if (!c || c.section !== 'world') return;
-  if (purchasedCostumes.has(id)) { equipCostume(id); return; }
+  if (purchasedCostumes.has(id)) { equipCostume(id, gender); return; }
   if (state.coins < c.price) return;
   state.coins -= c.price;
   purchasedCostumes.add(id);
@@ -1570,7 +1631,41 @@ async function buyCostume(id) {
       ownedCostumes: [...purchasedCostumes]
     }).catch(() => {});
   }
-  equipCostume(id);
+  equipCostume(id, gender);
+}
+
+function setShopTab(tab) {
+  shopActiveTab = tab;
+  const tabBoy  = document.getElementById('shop-tab-boy');
+  const tabGirl = document.getElementById('shop-tab-girl');
+  if (tabBoy)  tabBoy.classList.toggle('active',  tab === 'boy');
+  if (tabGirl) tabGirl.classList.toggle('active', tab === 'girl');
+  const tabsEl    = document.querySelector('.shop-gender-tabs');
+  const boyPanel  = document.getElementById('shop-boy-panel');
+  const girlPanel = document.getElementById('shop-girl-panel');
+  if (tabsEl && boyPanel && girlPanel) {
+    const isMobileLayout = getComputedStyle(tabsEl).display !== 'none';
+    boyPanel.style.display  = isMobileLayout && tab !== 'boy'  ? 'none' : '';
+    girlPanel.style.display = isMobileLayout && tab !== 'girl' ? 'none' : '';
+  }
+}
+
+async function unlockGirlCharacter() {
+  if (state.coins < 1000) return;
+  state.coins -= 1000;
+  window._hasGirlCharacter = true;
+  window._gender = 'girl';
+  shopPreviewGender = 'girl';
+  updateHUD();
+  if (window._currentUser) {
+    db.collection('users').doc(window._currentUser.uid).update({
+      coins: state.coins,
+      hasGirlCharacter: true,
+      gender: 'girl'
+    }).catch(() => {});
+  }
+  if (typeof window.updatePlayerSprite === 'function') window.updatePlayerSprite();
+  renderCostumeShop();
 }
 
 async function confirmGenderSetup(gender) {
@@ -1707,9 +1802,9 @@ function updateCharacterOverlays() {
   // 등급 글로우·파티클 동기화
   gameScene._curRankIdx = rankIdx;
   if (gameScene.sparkleEmitter) {
-    if (rankIdx >= 4 && !gameScene._maestroActive) {
+    if (rankIdx >= 5 && !gameScene._maestroActive) {
       gameScene._maestroActive = true; gameScene.sparkleEmitter.start();
-    } else if (rankIdx < 4 && gameScene._maestroActive) {
+    } else if (rankIdx < 5 && gameScene._maestroActive) {
       gameScene._maestroActive = false; gameScene.sparkleEmitter.stop();
     }
   }
@@ -1786,16 +1881,14 @@ function mobileEnter() {
 // 현재 gender + currentCostume 기반으로 맵 캐릭터 스프라이트 업데이트
 window.updatePlayerSprite = function() {
   if (!gameScene || !gameScene.player) return;
-  const gender  = window._gender || '';
+  const gender  = window._gender || 'boy';
   const costume = window._currentCostume || 'c_basic';
-  if (!gender) return; // gender 없으면 기존 char1 유지
   const suffix  = costume.replace('c_', '');
   const gKey    = 'char_' + gender + '_' + suffix;
   const boyKey  = 'char_boy_' + suffix;
-  let texKey    = 'char1';
-  if (gameScene.textures.exists(gKey)) texKey = gKey;
-  else if (gameScene.textures.exists(boyKey)) texKey = boyKey;
-  gameScene.player.setTexture(texKey);
+  if (gameScene.textures.exists(gKey)) gameScene.player.setTexture(gKey);
+  else if (gameScene.textures.exists(boyKey)) gameScene.player.setTexture(boyKey);
+  else gameScene.player.setTexture('char1');
 };
 
 function disablePhaserInput() {
@@ -1810,13 +1903,10 @@ function disablePhaserInput() {
 // ── Phaser 입력 완전 복구 ──────────────────────
 function enablePhaserInput() {
   miniGameActive = false;
+  _keysDown.clear();
   if (!gameScene) return;
-  // 플러그인 재활성화 (window 이벤트 리스너 재등록)
   gameScene.input.keyboard.enabled = true;
-  // 모든 키 상태 초기화 — isDown 등 stuck 상태 해소
   const resetKey = k => { if (k && typeof k.reset === 'function') k.reset(); };
-  if (gameScene.cursors) Object.values(gameScene.cursors).forEach(resetKey);
-  if (gameScene.wasd)    Object.values(gameScene.wasd).forEach(resetKey);
   resetKey(gameScene.spaceKey);
   resetKey(gameScene.enterKey);
 }
@@ -3354,9 +3444,12 @@ class GameScene extends Phaser.Scene {
     COSTUME_DATA.forEach(c => {
       const suffix = c.id.replace('c_', '');
       const boyKey = 'char_boy_' + suffix;
-      if (!this.textures.exists(boyKey)) this.load.image(boyKey, BASE + 'char_boy_' + suffix + '.png');
-      const girlKey = 'char_girl_' + suffix;
-      if (!this.textures.exists(girlKey)) this.load.image(girlKey, BASE + 'char_girl_' + suffix + '.png');
+      if (!this.textures.exists(boyKey))
+        this.load.image(boyKey, BASE + c.boyImg.split('/').pop());
+      const girlKey  = 'char_girl_' + suffix;
+      const girlFile = (c.girlImg || c.boyImg).split('/').pop();
+      if (!this.textures.exists(girlKey))
+        this.load.image(girlKey, BASE + girlFile);
     });
     // 맵 이미지
     this.load.image('tile_grass',        BASE+'tile_grass.png');
@@ -3556,14 +3649,6 @@ class GameScene extends Phaser.Scene {
     document.addEventListener('keydown', _onMovKeyDown);
     window.addEventListener('keyup',     _onMovKeyUp, true); // capture phase: 항상 가장 먼저 실행
     window.addEventListener('blur',      _onWinBlur);        // 포커스 이탈 시 stuck key 방지
-    // Phaser 커서키는 enablePhaserInput() reset 호환용으로만 유지
-    this.cursors = this.input.keyboard.createCursorKeys();
-    this.wasd    = this.input.keyboard.addKeys({
-      up:   Phaser.Input.Keyboard.KeyCodes.W,
-      down: Phaser.Input.Keyboard.KeyCodes.S,
-      left: Phaser.Input.Keyboard.KeyCodes.A,
-      right:Phaser.Input.Keyboard.KeyCodes.D
-    });
     // Enter / Space → 건물 입장
     this.enterKey = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.ENTER, false);
     this.spaceKey = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.SPACE, false);
@@ -3646,12 +3731,12 @@ class GameScene extends Phaser.Scene {
     // 등급 후광 링 (매 프레임 재드로우)
     if (this.rankGlow) {
       this.rankGlow.clear();
-      if (this._curRankIdx >= 3) {
-        const color = this._curRankIdx >= 4 ? 0xff99ff : 0xffd700;
-        const alpha = this._curRankIdx >= 4 ? 0.78 : 0.58;
+      if (this._curRankIdx >= 4) {
+        const color = this._curRankIdx >= 5 ? 0xff99ff : 0xffd700;
+        const alpha = this._curRankIdx >= 5 ? 0.78 : 0.58;
         this.rankGlow.lineStyle(4, color, alpha);
         this.rankGlow.strokeCircle(this.player.x, this.player.y, hw * 1.35);
-        if (this._curRankIdx >= 4) {
+        if (this._curRankIdx >= 5) {
           this.rankGlow.lineStyle(2, 0xffffff, 0.28);
           this.rankGlow.strokeCircle(this.player.x, this.player.y, hw * 1.75);
         }
