@@ -17,6 +17,10 @@ canvas { display:block; image-rendering:pixelated; position:fixed; top:0; left:0
 /* Hint */
 #hint { position:fixed; bottom:22px; left:50%; transform:translateX(-50%); background:rgba(45,27,105,.88); border:2px solid #a855f7; border-radius:24px; padding:8px 22px; color:#e2c4ff; font-size:.88rem; z-index:50; opacity:0; transition:opacity .3s; pointer-events:none; }
 #hint.visible { opacity:1; }
+/* 큐레이터 말풍선 */
+#curator-bubble { position:fixed; z-index:150; display:none; background:#1a0a2e; border:3px solid #ffd700; border-radius:6px; padding:10px 14px; color:#e2c4ff; font-size:.8rem; max-width:190px; text-align:center; line-height:1.6; cursor:pointer; box-shadow:4px 4px 0 #000,-1px -1px 0 #000,0 0 14px #ffd70055; transform:translateX(-50%); pointer-events:auto; }
+#curator-bubble::after { content:''; position:absolute; bottom:-10px; left:50%; transform:translateX(-50%); border:5px solid transparent; border-top-color:#ffd700; }
+#curator-bubble-name { color:#ffd700; font-size:.72rem; font-weight:700; margin-bottom:5px; }
 
 /* Building popup */
 #popup-overlay { display:none; position:fixed; inset:0; background:rgba(0,0,0,.72); z-index:100; justify-content:center; align-items:center; }
@@ -1163,6 +1167,10 @@ async function openTeacherDashboard() {
   <div class="hud-chip">🖼️ <span id="hud-artworks">0</span>/56</div>
 </div>
 <div id="hint" onclick="if(gameScene&&gameScene.nearBuilding&&!miniGameActive)showPopup(gameScene.nearBuilding)" style="cursor:pointer;">Space / Enter 키로 입장</div>
+<div id="curator-bubble" onclick="this.style.display='none';if(gameScene)gameScene._curatorDismissed=true;">
+  <div id="curator-bubble-name">💬 큐레이터 반고흐</div>
+  <div id="curator-bubble-text"></div>
+</div>
 <div id="coin-toast"></div>
 <button id="mobile-enter-btn" onclick="mobileEnter()">🚪<br>입장</button>
 <div id="touch-drag-ring"></div>
@@ -1514,12 +1522,12 @@ async function openTeacherDashboard() {
 //  건물 데이터
 // ─────────────────────────────────────────────
 const BUILDINGS = [
-  { id:'gallery', name:'명화 갤러리', icon:'🏛️', desc:'세계 각국의 명화를 감상하세요!\n유럽·한국·일본·중남미 작품을 만날 수 있어요.', color:0xffd700, tx:22, ty:6,  width:6, height:5 },
-  { id:'quiz',    name:'퀴즈 타워',   icon:'🎯', desc:'명화 4지선다 퀴즈를 풀고 코인을 획득하세요!\n10문제, 정답당 +10 코인.',                    color:0xff6b35, tx:35, ty:5,  width:6, height:5 },
-  { id:'shop',    name:'캐릭터 상점', icon:'🛍️', desc:'코인으로 캐릭터를 꾸며보세요!\n모자·의상·액세서리를 구매하고 장착하세요.',                    color:0xf59e0b, tx:10, ty:5,  width:6, height:5 },
-  { id:'typing',  name:'타자 연습장', icon:'⌨️', desc:'명화 관련 문장을 타이핑하세요!\n60초, 정확도에 따라 최대 +60 코인.',                      color:0x38bdf8, tx:35, ty:17, width:6, height:5 },
-  { id:'memory',  name:'메모리 카드', icon:'🃏', desc:'명화 카드 16장의 짝을 맞추세요!\n짝 맞출 때마다 +5코인, 전체 완성 +20 보너스!',           color:0xa855f7, tx:10, ty:17, width:6, height:5 },
-  { id:'coloring',name:'색칠 스튜디오',icon:'🎨',desc:'명화 윤곽선을 직접 색칠하세요!\n5가지 명화, 16색 팔레트, 완성시 +20 코인.',              color:0x22c55e, tx:22, ty:18, width:6, height:5 }
+  { id:'gallery', name:'명화 갤러리',   icon:'🏛️', desc:'세계 각국의 명화를 감상하세요!\n유럽·한국·일본·중남미 작품을 만날 수 있어요.', color:0xffd700, tx:23, ty:4,  width:6, height:5 },
+  { id:'shop',    name:'캐릭터 상점',   icon:'🛍️', desc:'코인으로 캐릭터를 꾸며보세요!\n모자·의상·액세서리를 구매하고 장착하세요.',          color:0xf59e0b, tx:7,  ty:7,  width:6, height:5 },
+  { id:'quiz',    name:'퀴즈 타워',     icon:'🎯', desc:'명화 4지선다 퀴즈를 풀고 코인을 획득하세요!\n10문제, 정답당 +10 코인.',              color:0xff6b35, tx:38, ty:7,  width:6, height:5 },
+  { id:'memory',  name:'메모리 카드',   icon:'🃏', desc:'명화 카드 16장의 짝을 맞추세요!\n짝 맞출 때마다 +5코인, 전체 완성 +20 보너스!',     color:0xa855f7, tx:7,  ty:18, width:6, height:5 },
+  { id:'typing',  name:'타자 연습장',   icon:'⌨️', desc:'명화 관련 문장을 타이핑하세요!\n60초, 정확도에 따라 최대 +60 코인.',                color:0x38bdf8, tx:38, ty:18, width:6, height:5 },
+  { id:'coloring',name:'색칠 스튜디오', icon:'🎨', desc:'명화 윤곽선을 직접 색칠하세요!\n5가지 명화, 16색 팔레트, 완성시 +20 코인.',          color:0x22c55e, tx:23, ty:20, width:6, height:5 }
 ];
 
 // ─────────────────────────────────────────────
@@ -1560,6 +1568,7 @@ function showRankUpPopup(rank) {
   document.getElementById('rank-up-name').textContent = rank.name;
   document.getElementById('rank-up-desc').textContent = rank.desc.replace(/\n/g, ' ');
   document.getElementById('rank-up-overlay').classList.add('active');
+  window._curatorRankUp = rank.name; // 큐레이터 등급업 축하 대사 트리거
 }
 function closeRankUp() {
   document.getElementById('rank-up-overlay').classList.remove('active');
@@ -2152,6 +2161,7 @@ window.updatePlayerSprite = function() {
 function disablePhaserInput() {
   miniGameActive = true;
   _keysDown.clear(); // 미니게임 진입 시 눌린 키 상태 즉시 초기화 → stuck 방지
+  const _cb = document.getElementById('curator-bubble'); if (_cb) _cb.style.display = 'none';
   if (!gameScene) return;
   gameScene.input.keyboard.enabled = false;
   gameScene._dragging = false;
@@ -3716,6 +3726,30 @@ typingInput.addEventListener('keydown', function(e) {
 const TILE = 32, COLS = 52, ROWS = 28;
 const W = COLS * TILE, H = ROWS * TILE;
 
+// ─────────────────────────────────────────────
+//  큐레이터 대사 로직
+// ─────────────────────────────────────────────
+function getCuratorDialogue() {
+  if (!window._currentUser) {
+    return '🎨 명화의 숲에 오신 걸 환영해요!\n회원가입하면 퀘스트와 코인을\n모두 이용할 수 있어요!';
+  }
+  const fKey = _aqPrefix() + 'curator_first';
+  if (!localStorage.getItem(fKey)) {
+    localStorage.setItem(fKey, '1');
+    return '🎨 명화의 숲에 오신 걸 환영해요!\n저는 큐레이터 반고흐예요.\n저 앞 명화 갤러리에서\n명화를 감상해보세요!';
+  }
+  if (state.artworks >= 56) return '🌟 56개 명화를 모두 감상했어요!\n진정한 명화의 숲 마스터예요!';
+  if (getCurrentRank().name === '마에스트로') return '👑 마에스트로 달성을 축하해요!\n당신은 이제 진정한 예술가예요!';
+  if (window._curatorRankUp) {
+    const rn = window._curatorRankUp; window._curatorRankUp = null;
+    return `🎉 축하해요! ${rn} 등급이 됐군요!\n캐릭터 상점에서 새 의상을\n확인해보세요!`;
+  }
+  if (state.artworks >= 20) return `대단해요! 벌써 ${state.artworks}개의 명화를\n감상했군요! 진짜 화가가 될 것 같아요 🎨`;
+  if (state.artworks === 0) return '🖼 아직 갤러리를 안 가봤군요!\n갤러리 퀘스트를 완료하면\n코인을 가장 많이 얻을 수 있어요!';
+  if (state.coins < 50) return '💰 코인이 부족한가요?\n갤러리 퀘스트를 완료하면\n코인을 많이 얻을 수 있어요!';
+  return '오늘도 명화를 감상하러 왔군요!\n새로운 명화가 기다리고 있어요 🖼';
+}
+
 // 이동 키 상태 — document keydown / window capture keyup으로 관리
 const _keysDown = new Set();
 const _MOV_KEYS = new Set(['ArrowLeft','ArrowRight','ArrowUp','ArrowDown','KeyA','KeyD','KeyW','KeyS']);
@@ -3766,6 +3800,7 @@ class GameScene extends Phaser.Scene {
     this.load.image('deco_rock',         BASE+'deco_rock.png');
     this.load.image('deco_bush',         BASE+'deco_bush.png');
     this.load.image('deco_mushroom',     BASE+'deco_mushroom.png');
+    this.load.image('curator',           BASE+'curator.png');
   }
   create() {
     gameScene = this;
@@ -3775,6 +3810,7 @@ class GameScene extends Phaser.Scene {
     this._setupCamera();
     this._setupInput();
     this._setupZones();
+    this._createCurator();
     this.nearBuilding = null;
     updateCharacterOverlays();
   }
@@ -3904,7 +3940,7 @@ class GameScene extends Phaser.Scene {
       const k = 'char_' + window._gender + '_' + s;
       return (this.textures.exists(k)) ? k : 'char1';
     })() : 'char1';
-    this.player = this.add.image(25*TILE+TILE/2, 13*TILE+TILE/2, _initTex).setDisplaySize(192,224).setDepth(1100);
+    this.player = this.add.image(23*TILE+TILE/2, 13*TILE+TILE/2, _initTex).setDisplaySize(192,224).setDepth(1100);
     this.playerLabel = this.add.text(0,0,'견습생',{fontSize:'12px',color:'#ffd700',stroke:'#000',strokeThickness:3}).setOrigin(.5,1).setDepth(11);
     // 아이템 오버레이: 작은 뱃지(16~20px)로 캐릭터 주변 배치
     this.itemOverlays = {};
@@ -4022,6 +4058,21 @@ class GameScene extends Phaser.Scene {
   _setupZones() {
     this.zones=BUILDINGS.map(b=>({ building:b, x1:b.tx*TILE-TILE*1.5, y1:b.ty*TILE-TILE*1.5, x2:(b.tx+b.width)*TILE+TILE*1.5, y2:(b.ty+b.height)*TILE+TILE*1.5 }));
   }
+  _createCurator() {
+    const cx = 23*TILE + TILE/2;
+    const cy = 11*TILE + TILE/2;
+    const cDepth = 11*10 + 5;
+    this.curator = this.add.image(cx, cy, 'curator')
+      .setDisplaySize(200, 250).setOrigin(0.5, 0.5).setDepth(cDepth);
+    // 좌우 흔들리는 애니메이션
+    this.tweens.add({ targets:this.curator, angle:{from:-5,to:5}, duration:1400, yoyo:true, repeat:-1, ease:'Sine.easeInOut' });
+    // 💬 아이콘 (머리 위에서 위아래 bounce)
+    this.curatorIcon = this.add.text(cx, cy - 140, '💬', {fontSize:'22px'})
+      .setOrigin(0.5, 1).setDepth(cDepth + 1);
+    this.tweens.add({ targets:this.curatorIcon, y:cy-152, duration:700, yoyo:true, repeat:-1, ease:'Sine.easeInOut' });
+    this._curatorNear = false;
+    this._curatorDismissed = false;
+  }
   update(time, delta) {
     const hh=this.player.displayHeight/2;
     const hw=this.player.displayWidth/2;
@@ -4047,6 +4098,33 @@ class GameScene extends Phaser.Scene {
       }
     }
     if (this.sparkleEmitter) this.sparkleEmitter.setPosition(this.player.x, this.player.y);
+    // 큐레이터 말풍선 근접 감지 + 위치 업데이트
+    if (this.curator) {
+      const cdx = this.player.x - this.curator.x;
+      const cdy = this.player.y - this.curator.y;
+      const cdist = Math.sqrt(cdx*cdx + cdy*cdy);
+      const cb = document.getElementById('curator-bubble');
+      if (cdist < 120 && !miniGameActive) {
+        if (!this._curatorNear) {
+          this._curatorNear = true;
+          this._curatorDismissed = false;
+          document.getElementById('curator-bubble-text').innerHTML = getCuratorDialogue().replace(/\n/g,'<br>');
+        }
+        if (!this._curatorDismissed && cb) {
+          const rect = game.canvas.getBoundingClientRect();
+          const cam  = this.cameras.main;
+          const sx = rect.left + (this.curator.x - cam.scrollX) * (rect.width  / _gameW);
+          const sy = rect.top  + (this.curator.y - this.curator.displayHeight * 0.5 - 8 - cam.scrollY) * (rect.height / _gameH);
+          cb.style.display = 'block';
+          cb.style.left = sx + 'px';
+          cb.style.top  = (sy - (cb.offsetHeight || 80)) + 'px';
+        }
+      } else if (this._curatorNear) {
+        this._curatorNear = false;
+        this._curatorDismissed = false;
+        if (cb) cb.style.display = 'none';
+      }
+    }
     // 미니게임/팝업 열려 있으면 이동·입장 처리 스킵
     if (miniGameActive) return;
     // 입력창에 포커스가 있으면 이동 처리 스킵
