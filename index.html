@@ -780,7 +780,8 @@ window.doLogout = doLogout;
         </div>
 
         <div id="signup-fields" style="display:none;">
-          <input id="login-name" class="px-input" placeholder="▸ 이름">
+          <input id="login-name" class="px-input" placeholder="▸ 이름" maxlength="10" oninput="document.getElementById('name-char-count').textContent=this.value.length+'/10자'">
+          <div id="name-char-count" style="color:#a78bfa;font-size:.72rem;text-align:right;margin:-4px 2px 6px;min-height:14px;">0/10자</div>
           <div id="gender-row" style="margin-bottom:8px;">
             <div style="color:#a78bfa;font-size:.76rem;margin-bottom:6px;padding-left:2px;">▸ 성별 선택 <span style="color:#ff6b6b;">*</span></div>
             <div style="display:flex;gap:8px;">
@@ -936,6 +937,7 @@ async function openClassRanking() {
     function getRank(c) { if(c>=500)return 4;if(c>=200)return 3;if(c>=80)return 2;if(c>=30)return 1;return 0; }
     const students = [];
     snap.forEach(doc => students.push(doc.data()));
+    const trimName = n => (n && n.length > 10) ? n.slice(0,10)+'...' : (n||'-');
     students.sort((a,b) => (b.totalCoins||0)-(a.totalCoins||0));
     let rows = '';
     students.forEach((d,i) => {
@@ -943,7 +945,7 @@ async function openClassRanking() {
       const isMe = d.userId === (window._currentUser?.email?.replace('@artquest.game','') || '');
       rows += `<tr style="border-bottom:1px solid #ffffff20;${isMe?'background:#1e3a5f;':''}">
         <td style="padding:8px 6px;color:#ffd700;font-weight:700;">${i+1}</td>
-        <td style="padding:8px 6px;">${d.name||'-'}${isMe?' <span style="color:#38bdf8;font-size:.7rem;">(나)</span>':''}</td>
+        <td style="padding:8px 6px;">${trimName(d.name)}${isMe?' <span style="color:#38bdf8;font-size:.7rem;">(나)</span>':''}</td>
         <td style="padding:8px 6px;">${rankIcons[r]} ${ranks[r]}</td>
         <td style="padding:8px 6px;color:#ffd700;">🪙 ${d.coins||0}</td>
         <td style="padding:8px 6px;color:#7dd3fc;">누적 ${d.totalCoins||0}</td>
