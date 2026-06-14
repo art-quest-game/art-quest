@@ -26,17 +26,17 @@ canvas { display:block; image-rendering:pixelated; margin:0 auto; }
 /* Building popup */
 #popup-overlay { display:none; position:fixed; inset:0; background:rgba(0,0,0,.75); z-index:1000; justify-content:center; align-items:center; }
 #popup-overlay.active { display:flex; }
-#popup-box { background:linear-gradient(135deg,#2d1b69,#1a0a2e 60%,#3d1060); border:3px solid #ffd700; border-radius:16px; padding:34px 42px; max-width:400px; width:90%; text-align:center; box-shadow:0 0 40px #a855f780,0 0 80px #ffd70040; position:relative; }
-#popup-box h2 { font-size:1.7rem; color:#ffd700; text-shadow:0 0 12px #ffd700aa; margin-bottom:10px; }
-.popup-icon { font-size:3.2rem; margin-bottom:12px; }
-#popup-box p { color:#ffffff; font-size:.97rem; line-height:1.6; margin-bottom:22px; }
+#popup-box { background:linear-gradient(135deg,#2d1b69,#1a0a2e 60%,#3d1060); border:3px solid #ffd700; border-radius:16px; padding:40px 52px; max-width:500px; width:90%; text-align:center; box-shadow:0 0 40px #a855f780,0 0 80px #ffd70040; position:relative; }
+#popup-box h2 { font-size:2rem; color:#ffd700; text-shadow:0 0 12px #ffd700aa; margin-bottom:12px; }
+.popup-icon { font-size:3.8rem; margin-bottom:14px; }
+#popup-box p { color:#ffffff; font-size:1rem; line-height:1.6; margin-bottom:28px; }
 .popup-btn { background:linear-gradient(90deg,#ffd700,#ff9900); color:#1a0a2e; border:none; border-radius:8px; padding:11px 30px; font-size:.97rem; font-weight:700; cursor:pointer; margin:4px 6px; transition:transform .1s; box-shadow:0 4px 14px #ffd70055; }
 .popup-btn:hover { transform:translateY(-2px); }
-#popup-enter { background:linear-gradient(90deg,#22c55e,#16a34a); color:#fff; box-shadow:0 4px 14px #22c55e55; }
-#popup-enter:hover { transform:translateY(-2px); }
+#popup-enter { background:linear-gradient(90deg,#22c55e,#16a34a); color:#fff; font-size:1.15rem; padding:15px 48px; box-shadow:0 6px 20px #22c55e66; letter-spacing:.5px; }
+#popup-enter:hover { transform:translateY(-3px); box-shadow:0 8px 24px #22c55e88; }
 #popup-close { position:absolute; top:12px; right:14px; background:none; border:none; color:#a78bfa; font-size:1.3rem; cursor:pointer; padding:4px 8px; line-height:1; border-radius:6px; transition:color .15s,background .15s; }
 #popup-close:hover { color:#fff; background:rgba(255,255,255,.1); }
-@media(max-width:767px){ #popup-box { width:80%; padding:24px 20px; } }
+@media(max-width:767px){ #popup-box { width:90%; padding:28px 22px; } }
 
 /* Coin toast */
 #coin-toast { position:fixed; top:68px; left:50%; transform:translateX(-50%); background:linear-gradient(90deg,#ffd700,#ff9900); color:#1a0a2e; font-weight:700; font-size:1.05rem; padding:9px 26px; border-radius:24px; z-index:500; opacity:0; transition:opacity .3s; pointer-events:none; box-shadow:0 4px 20px #ffd70066; }
@@ -3821,7 +3821,7 @@ class GameScene extends Phaser.Scene {
       this.load.image(item.id + '_ov', item.img);
     });
     this.load.image('char1', BASE+'char1.png');
-    this.load.spritesheet('char1_walk', BASE+'images/char1_walk.png', { frameWidth: 768, frameHeight: 1024 });
+    this.load.spritesheet('char1_walk', BASE+'char1_walk.png', { frameWidth: 768, frameHeight: 1024 });
     this.load.image('char2', BASE+'char2.png');
     this.load.image('char3', BASE+'char3.png');
     this.load.image('char4', BASE+'char4.png');
@@ -4243,7 +4243,16 @@ class GameScene extends Phaser.Scene {
     for(const z of this.zones){ if(px>=z.x1&&px<=z.x2&&py>=z.y1&&py<=z.y2){ found=z.building; break; } }
     if(found!==this.nearBuilding){
       this.nearBuilding=found;
-      if(found && !miniGameActive){ showPopup(found); }
+      const hint=document.getElementById('hint');
+      const mobileBtn=document.getElementById('mobile-enter-btn');
+      if(found){
+        hint.textContent=`${found.icon} ${found.name} — ${isMobile ? '버튼으로 입장' : 'Space / Enter 키로 입장'}`;
+        hint.classList.add('visible');
+        if(isMobile) mobileBtn.classList.add('visible');
+      } else {
+        hint.classList.remove('visible');
+        mobileBtn.classList.remove('visible');
+      }
     }
   }
 }
