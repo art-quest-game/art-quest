@@ -4372,12 +4372,21 @@ class GameScene extends Phaser.Scene {
     const _moving = !!(dx || dy || this._dragging);
     const _tk = this.player.texture?.key;
     const _isChar1 = (_tk === 'char1' || _tk === 'char1_walk');
+    if (_moving && !this._dbgLogged) {
+      this._dbgLogged = true;
+      console.log('[walk] texture key:', _tk, '| isChar1:', _isChar1, '| anim exists:', this.anims.exists('char1_walk'));
+    }
     if (_moving && _isChar1) {
-      if (!this._char1Walking) { this._char1Walking = true; this.player.play('char1_walk', true); }
+      if (!this._char1Walking) {
+        this._char1Walking = true;
+        console.log('[walk] play char1_walk');
+        this.player.play('char1_walk', true);
+      }
     } else if (!_moving && this._char1Walking) {
       this._char1Walking = false;
       this.player.anims.stop();
       this.player.setFrame(0);
+      console.log('[walk] stop → frame 0');
     }
     // 플레이어 depth를 y좌표 기반으로 업데이트 (건물보다 항상 위)
     const pd = Math.floor(this.player.y/TILE)*10+5;
