@@ -4138,7 +4138,7 @@ class GameScene extends Phaser.Scene {
       return (this.textures.exists(k)) ? k : 'char1';
     })() : 'char1';
     this.player = this.add.sprite(23*TILE+TILE/2, 13*TILE+TILE/2, _initTex).setDisplaySize(192,224).setOrigin(0.5,0).setDepth(1100);
-    this.playerLabel = this.add.text(0,0,'견습생',{fontSize:'16px',color:'#ffd700',stroke:'#000',strokeThickness:3}).setOrigin(.5,0).setDepth(11);
+    this.playerLabel = this.add.text(0,0,'견습생',{fontSize:'16px',color:'#ffd700',stroke:'#000',strokeThickness:3}).setOrigin(.5,1).setDepth(11);
     // 아이템 오버레이: 작은 뱃지(16~20px)로 캐릭터 주변 배치
     this.itemOverlays = {};
     ALL_ITEMS.forEach(item => {
@@ -4259,7 +4259,7 @@ class GameScene extends Phaser.Scene {
       .setDisplaySize(200, 250).setOrigin(0.5, 0.5).setDepth(cDepth).setFlipX(true);
     this.tweens.add({ targets:this.curator, y:cy-4, duration:2000, yoyo:true, repeat:-1, ease:'Sine.easeInOut' });
     // 💬 아이콘 (머리 위에서 위아래 bounce)
-    this.add.text(cx, cy - 135, '큐레이터', { fontSize:'14px', color:'#ffd700', stroke:'#000', strokeThickness:3, fontStyle:'bold' })
+    this.add.text(cx, cy - 105, '큐레이터', { fontSize:'14px', color:'#ffd700', stroke:'#000', strokeThickness:3, fontStyle:'bold' })
       .setOrigin(0.5, 1).setDepth(cDepth + 1);
     this.curatorIcon = this.add.text(cx, cy - 140, '💬', {fontSize:'22px'})
       .setOrigin(0.5, 1).setDepth(cDepth + 1);
@@ -4291,7 +4291,7 @@ class GameScene extends Phaser.Scene {
     const hh=this.player.displayHeight/2;
     const hw=this.player.displayWidth/2;
     // 레이블 + 아이템 오버레이 위치 갱신 (항상)
-    this.playerLabel.setPosition(this.player.x, this.player.y + this.player.displayHeight + 10);
+    this.playerLabel.setPosition(this.player.x, this.player.y - 20);
     if (this.itemOverlays) {
       Object.values(this.itemOverlays).forEach(ov => {
         ov.obj.setPosition(this.player.x + ov.dx, this.player.y + ov.dy);
