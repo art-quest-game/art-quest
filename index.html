@@ -3443,7 +3443,7 @@ async function loadFriendsWorks() {
     grid.innerHTML = '';
     docs.forEach(doc => {
       const d = doc.data();
-      const isOwn = d.uid && d.uid === window._currentUser?.uid;
+      const isOwn = window._isTeacher || (d.uid && d.uid === window._currentUser?.uid);
       const card = document.createElement('div');
       card.className = 'cf-card';
       card.innerHTML = `
@@ -3463,7 +3463,7 @@ async function loadFriendsWorks() {
 }
 
 async function deleteColoringCard(docId, cardEl) {
-  if (!confirm('내 작품을 삭제할까요?')) return;
+  if (!confirm(window._isTeacher ? '이 작품을 삭제할까요?' : '내 작품을 삭제할까요?')) return;
   try {
     await db.collection('colorings').doc(docId).delete();
     cardEl.remove();
