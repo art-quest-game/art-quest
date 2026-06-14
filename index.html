@@ -3821,6 +3821,7 @@ class GameScene extends Phaser.Scene {
       this.load.image(item.id + '_ov', item.img);
     });
     this.load.image('char1', BASE+'char1.png');
+    this.load.spritesheet('char1_walk', BASE+'images/char1_walk.png', { frameWidth: 768, frameHeight: 1024 });
     this.load.image('char2', BASE+'char2.png');
     this.load.image('char3', BASE+'char3.png');
     this.load.image('char4', BASE+'char4.png');
@@ -3855,6 +3856,7 @@ class GameScene extends Phaser.Scene {
   }
   create() {
     gameScene = this;
+    this.anims.create({ key: 'char1_walk', frames: this.anims.generateFrameNumbers('char1_walk', { start: 0, end: 1 }), frameRate: 4, repeat: -1 });
     this._createTextures();
     this._buildMap();
     this._createPlayer();
@@ -3991,7 +3993,7 @@ class GameScene extends Phaser.Scene {
       const k = 'char_' + window._gender + '_' + s;
       return (this.textures.exists(k)) ? k : 'char1';
     })() : 'char1';
-    this.player = this.add.image(23*TILE+TILE/2, 13*TILE+TILE/2, _initTex).setDisplaySize(192,224).setDepth(1100);
+    this.player = this.add.sprite(23*TILE+TILE/2, 13*TILE+TILE/2, _initTex).setDisplaySize(192,224).setDepth(1100);
     this.playerLabel = this.add.text(0,0,'견습생',{fontSize:'16px',color:'#ffd700',stroke:'#000',strokeThickness:3}).setOrigin(.5,1).setDepth(11);
     // 아이템 오버레이: 작은 뱃지(16~20px)로 캐릭터 주변 배치
     this.itemOverlays = {};
@@ -4221,6 +4223,16 @@ class GameScene extends Phaser.Scene {
     this.player.x=Phaser.Math.Clamp(this.player.x+dx,hw,W-hw);
     this.player.y=Phaser.Math.Clamp(this.player.y+dy,hh,H-hh);
     if(dx||dy){ this._wt+=delta; if(this._wt>120){ this._wf=1-this._wf; this._wt=0; this.player.y+=this._wf?1:-1; } }
+    // char1 걷기 애니메이션
+    const _moving = !!(dx || dy || this._dragging);
+    const _tk = this.player.texture?.key;
+    if (_moving && (_tk === 'char1' || _tk === 'char1_walk')) {
+      if (!this._char1Walking) { this._char1Walking = true; this.player.play('char1_walk', true); }
+    } else if (!_moving && this._char1Walking) {
+      this._char1Walking = false;
+      this.player.anims.stop();
+      this.player.setTexture('char1');
+    }
     // 플레이어 depth를 y좌표 기반으로 업데이트 (건물보다 항상 위)
     const pd = Math.floor(this.player.y/TILE)*10+5;
     this.player.setDepth(pd+1000);
