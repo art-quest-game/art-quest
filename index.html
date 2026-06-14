@@ -2829,13 +2829,13 @@ function renderGalleryTab(tab) {
 // ─────────────────────────────────────────────
 const QUEST_DATA = {
   // ── 감상문 (review) ──
-  'mongyu':         { type:'review', instruction:'몽유도원도를 감상한 후 느낀 점을 자유롭게 써보세요. (30자 이상)' },
-  'monalisa':       { type:'review', instruction:'모나리자를 보고 느낀 감상을 자유롭게 써보세요. (30자 이상)' },
-  'pearlgirl':      { type:'review', instruction:'진주 귀걸이를 한 소녀를 감상한 후 느낀 점을 써보세요. (30자 이상)' },
-  'waterlilies':    { type:'review', instruction:'모네의 수련을 보고 느낀 감상을 자유롭게 써보세요. (30자 이상)' },
-  'americangothic': { type:'review', instruction:'아메리칸 고딕을 보고 느낀 감상을 자유롭게 써보세요. (30자 이상)' },
-  'fuchun':         { type:'review', instruction:'부춘산거도를 감상한 후 느낀 점을 자유롭게 써보세요. (30자 이상)' },
-  'sehando':        { type:'review', instruction:'세한도를 보고 느낀 점을 자유롭게 써보세요. (30자 이상)' },
+  'mongyu':         { type:'review', instruction:'몽유도원도를 감상한 후 느낀 점을 자유롭게 써보세요. (10자 이상)' },
+  'monalisa':       { type:'review', instruction:'모나리자를 보고 느낀 감상을 자유롭게 써보세요. (10자 이상)' },
+  'pearlgirl':      { type:'review', instruction:'진주 귀걸이를 한 소녀를 감상한 후 느낀 점을 써보세요. (10자 이상)' },
+  'waterlilies':    { type:'review', instruction:'모네의 수련을 보고 느낀 감상을 자유롭게 써보세요. (10자 이상)' },
+  'americangothic': { type:'review', instruction:'아메리칸 고딕을 보고 느낀 감상을 자유롭게 써보세요. (10자 이상)' },
+  'fuchun':         { type:'review', instruction:'부춘산거도를 감상한 후 느낀 점을 자유롭게 써보세요. (10자 이상)' },
+  'sehando':        { type:'review', instruction:'세한도를 보고 느낀 점을 자유롭게 써보세요. (10자 이상)' },
   // ── 숨은 요소 찾기 (hidden) ──
   'goguryeo-hunt': { type:'hidden', instruction:'그림 속 숨겨진 요소 2가지를 모두 찾아보세요!', spots:[
     {x:20, y:22, label:'🦌 사슴'},
@@ -2913,17 +2913,17 @@ const QUEST_DATA = {
     {q:'서당에서 가르치는 선생님을 스승이라 부른다.',         a:false, explain:'서당에서 가르치는 분은 훈장이라고 합니다.'},
     {q:'단원 김홍도는 조선 후기를 대표하는 풍속화가이다.',    a:true,  explain:'김홍도는 18세기 조선 후기를 대표하는 풍속화가입니다.'},
   ]},
-  'tajak': { type:'review', instruction:'타작도를 감상한 후 느낀 점을 자유롭게 써보세요. (30자 이상)' },
-  'yunduseo': { type:'review', instruction:'윤두서의 자화상을 보고 느낀 점을 자유롭게 써보세요. (30자 이상)' },
+  'tajak': { type:'review', instruction:'타작도를 감상한 후 느낀 점을 자유롭게 써보세요. (10자 이상)' },
+  'yunduseo': { type:'review', instruction:'윤두서의 자화상을 보고 느낀 점을 자유롭게 써보세요. (10자 이상)' },
   'puppies': { type:'coloring', instruction:'강아지 그림을 원하는 색으로 칠해보세요!', regions:['🐶 강아지', '🌸 꽃', '🌿 풀잎', '🍃 배경'] },
-  'desertedmountain': { type:'review', instruction:'공산무인도를 감상한 후 느낀 점을 자유롭게 써보세요. (30자 이상)' },
+  'desertedmountain': { type:'review', instruction:'공산무인도를 감상한 후 느낀 점을 자유롭게 써보세요. (10자 이상)' },
   'plumblossom': { type:'coloring', instruction:'묵매도를 원하는 색으로 칠해보세요!', regions:['🌸 매화꽃', '🌿 가지', '⬛ 먹', '☁️ 배경'] },
   'hawk': { type:'hidden', instruction:'매 그림 속 숨겨진 요소 3가지를 모두 찾아보세요!', spots:[
     {x:55, y:15, label:'🦅 매'},
     {x:40, y:45, label:'🌿 나뭇가지'},
     {x:70, y:25, label:'🍃 나뭇잎'},
   ]},
-  'inwangjesaekdo': { type:'review', instruction:'인왕제색도를 감상한 후 느낀 점을 자유롭게 써보세요. (30자 이상)' },
+  'inwangjesaekdo': { type:'review', instruction:'인왕제색도를 감상한 후 느낀 점을 자유롭게 써보세요. (10자 이상)' },
   'pajukdo': { type:'hidden', instruction:'파적도 속 숨겨진 요소 2가지를 모두 찾아보세요!', spots:[
     {x:15, y:85, label:'🐱 고양이'},
     {x:72, y:32, label:'😲 놀란 사람'},
@@ -2953,13 +2953,13 @@ const QUEST_DATA = {
     {q:'월매도의 작가 어몽룡은 조선 후기 화가이다.',       a:false, explain:'어몽룡은 조선 중기의 문인화가입니다.'},
     {q:'월매도는 먹으로만 그린 수묵화이다.',               a:true,  explain:'월매도는 채색 없이 먹만 사용한 수묵화로, 간결하고 힘찬 필치가 특징입니다.'},
   ]},
-  'gangsanmujiindo': { type:'review', instruction:'강산무진도를 감상한 후 느낀 점을 자유롭게 써보세요. (30자 이상)' },
+  'gangsanmujiindo': { type:'review', instruction:'강산무진도를 감상한 후 느낀 점을 자유롭게 써보세요. (10자 이상)' },
   'tiger': { type:'hidden', instruction:'송하맹호도 속 숨겨진 요소 2가지를 모두 찾아보세요!', spots:[
     {x:52, y:45, label:'🐯 호랑이'},
     {x:32, y:20, label:'🌲 소나무'},
   ]},
   // ── 세계명화 추가분 ──
-  'grandejatte': { type:'review', instruction:'그랑자트 섬의 일요일 오후를 감상한 후 느낀 점을 자유롭게 써보세요. (30자 이상)' },
+  'grandejatte': { type:'review', instruction:'그랑자트 섬의 일요일 오후를 감상한 후 느낀 점을 자유롭게 써보세요. (10자 이상)' },
   'impression': { type:'coloring', instruction:'인상, 해돋이를 원하는 색으로 칠해보세요!', regions:['🌅 해돋이', '⛵ 배', '🌊 바다', '🌫️ 안개'] },
   'danceclass': { type:'hidden', instruction:'무용 교실 속 숨겨진 요소 3가지를 찾아보세요!', spots:[
     {x:62, y:58, label:'🩰 발레리나'},
@@ -4599,9 +4599,40 @@ function finishQuest() {
 
 // ── 감상문 ──
 function validateReview(text) {
-  const koreanChars = (text.match(/[가-힣]/g) || []).length;
-  const hasTriple   = /(.)\1\1/.test(text);
-  return { koreanChars, hasTriple, ok: koreanChars >= 10 && !hasTriple };
+  const t = text.trim();
+  const koreanChars = (t.match(/[가-힣]/g) || []).length;
+
+  // 자음/모음 단독 나열 여부 (완성 한글 없이 자음·모음만 있는 경우)
+  const onlyJamo = koreanChars === 0 && /[ㄱ-ㅎㅏ-ㅣ]/.test(t);
+
+  // 같은 글자 3회 이상 연속 반복
+  const hasTriple = /(.)\1\1/.test(t);
+
+  // 키보드 연타 패턴: ㅁㄴㅇㄹ, asdf, ㅂㅈㄷㄱ 등 5자 이상 연속
+  const keyboardPatterns = [
+    /[ㅂㅈㄷㄱㅅ]{5,}/, /[ㅁㄴㅇㄹ]{5,}/, /[ㅗㅜㅡㅣ]{5,}/,
+    /[asdfjkl;]{5,}/i, /[qwerty]{5,}/i, /[zxcvbn]{5,}/i,
+    /[ㅎㅗㄴ다]{4,}/, /[ㅋ]{3,}/, /[ㅎ]{3,}/, /[ㅠ]{3,}/
+  ];
+  const hasKeyboard = keyboardPatterns.some(p => p.test(t));
+
+  // 의미 없는 동일 음절 반복: "좋좋좋", "하하하하" 등 (2글자 이하 패턴 반복)
+  const hasMeaninglessRepeat = /^(.{1,2})\1{3,}$/.test(t.replace(/\s/g, ''));
+
+  // 단어 다양성: 공백 기준 분리 후 고유 단어 3개 이상 (2글자 이상인 토큰)
+  const words = t.split(/\s+/).filter(w => w.replace(/[^가-힣a-zA-Z]/g, '').length >= 2);
+  const uniqueWords = new Set(words.map(w => w.replace(/[^가-힣a-zA-Z]/g, ''))).size;
+  const hasEnoughWords = uniqueWords >= 3;
+
+  const isInvalid = onlyJamo || hasTriple || hasKeyboard || hasMeaninglessRepeat || !hasEnoughWords;
+  const ok = koreanChars >= 10 && !isInvalid;
+
+  let reason = '';
+  if (onlyJamo)              reason = '자음/모음만 입력하면 안 돼요.';
+  else if (hasTriple || hasKeyboard || hasMeaninglessRepeat) reason = '의미있는 문장을 작성해주세요 😊';
+  else if (!hasEnoughWords && koreanChars >= 10)             reason = '더 다양한 단어로 작성해주세요.';
+
+  return { koreanChars, hasTriple, ok, reason };
 }
 
 function initReview() {
@@ -4618,10 +4649,10 @@ function initReview() {
   sub.disabled = true;
 
   ta.oninput = () => {
-    const { koreanChars, hasTriple, ok } = validateReview(ta.value);
+    const { koreanChars, ok, reason } = validateReview(ta.value);
     cnt.textContent = `${koreanChars} / 10자`;
-    if (hasTriple) {
-      hint.textContent = '성의 있게 작성해주세요 😊';
+    if (reason) {
+      hint.textContent = reason;
       hint.className   = 'hint-warn';
     } else if (koreanChars < 10) {
       hint.textContent = koreanChars > 0 ? '조금 더 자세히 써주세요! (한글 10자 이상)' : '';
