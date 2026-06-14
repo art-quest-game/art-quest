@@ -791,14 +791,17 @@ window.doLogout = doLogout;
 .px-btn-ghost:hover { background:#1a2a10; border-color:#5aad2a; }
 .px-select { appearance:none; cursor:pointer; }
 @media (max-height: 500px) {
-  .px-title-bar { padding: 6px 16px 5px; }
-  .px-title-bar > div:nth-child(2) { font-size: 1.2rem !important; }
-  .px-title-bar > div:nth-child(3) { margin-top: 2px !important; font-size: .72rem !important; }
-  .px-form-area { padding: 10px 16px 10px; }
-  .px-input { padding: 6px 10px; font-size: .8rem; margin-bottom: 5px; }
-  .px-tab { padding: 5px 4px; font-size: .78rem; }
-  .px-btn-main { padding: 8px; font-size: .88rem; margin-bottom: 6px; }
-  .px-btn-ghost { padding: 5px; font-size: .76rem; }
+  .px-panel { max-height: 96vh; }
+  .px-title-bar { padding: 5px 14px 4px; }
+  .px-title-bar > div:first-child { display: none !important; }
+  .px-title-bar > div:nth-child(2) { font-size: 1.1rem !important; }
+  .px-title-bar > div:nth-child(3) { display: none !important; }
+  .px-form-area { padding: 8px 14px 8px; }
+  .px-input { padding: 5px 9px; font-size: .78rem; margin-bottom: 4px; }
+  .px-tab { padding: 4px 4px; font-size: .76rem; margin-bottom: 10px; }
+  .px-btn-main { padding: 7px; font-size: .86rem; margin-bottom: 5px; }
+  .px-btn-ghost { padding: 4px; font-size: .74rem; }
+  #name-char-count { display: none !important; }
 }
 @media (max-width: 767px) {
   #login-overlay > div { width: min(380px, 80vw) !important; }
@@ -3779,7 +3782,7 @@ const W = COLS * TILE, H = ROWS * TILE;
 // ─────────────────────────────────────────────
 function getCuratorDialogue() {
   if (!window._currentUser) {
-    return '명화의 숲에 오신 걸 환영해요!\n회원가입하면 퀘스트와 코인을\n모두 이용할 수 있어요!';
+    return '명화의 숲에 오신 걸 환영해요!\n명화 갤러리에서 세계 명화를\n감상해보세요! 🎨';
   }
   const fKey = _aqPrefix() + 'curator_first';
   if (!localStorage.getItem(fKey)) {
