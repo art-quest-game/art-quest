@@ -3998,11 +3998,7 @@ class GameScene extends Phaser.Scene {
   }
   _setupCamera() {
     this.cameras.main.setBounds(0, 0, W, H);
-    if (isMobile) {
-      // 모바일: 카메라가 캐릭터를 따라가며 맵을 스크롤
-      this.cameras.main.startFollow(this.player, true, .08, .08);
-    }
-    // PC: 캔버스=맵 크기이므로 카메라 고정, 전체 맵이 한 화면에 표시
+    // 카메라 고정 (모바일/PC 동일)
     this.cameras.main.setBackgroundColor('#5aaa28');
   }
   _setupInput() {
@@ -4234,8 +4230,8 @@ const game = new Phaser.Game({
   height: _gameH,
   backgroundColor:'#5aaa28',
   scale: {
-    mode:       isMobile ? Phaser.Scale.NONE       : Phaser.Scale.FIT,
-    autoCenter: isMobile ? Phaser.Scale.NO_CENTER  : Phaser.Scale.CENTER_BOTH,
+    mode:       Phaser.Scale.FIT,
+    autoCenter: Phaser.Scale.CENTER_BOTH,
     width:  _gameW,
     height: _gameH,
   },
