@@ -351,6 +351,16 @@ canvas { display:block; image-rendering:pixelated; margin:0 auto; }
 #pw-submit-btn:disabled { background:#2d2d2d; color:#666; cursor:default; }
 #pw-cancel-btn { background:none; border:1px solid #4b1d7e; border-radius:9px; padding:8px; color:#a78bfa; font-size:.82rem; cursor:pointer; }
 #pw-cancel-btn:hover { border-color:#a855f7; color:#e2c4ff; }
+/* ─── 정보 수정 팝업 ─── */
+#info-edit-popup { display:none; position:fixed; inset:0; background:rgba(0,0,0,.88); z-index:9200; justify-content:center; align-items:center; }
+#info-edit-popup.active { display:flex; }
+#info-edit-box { background:linear-gradient(135deg,#1a0a2e,#0d0520); border:2px solid #6b21a8; border-radius:16px; padding:28px 28px 24px; width:90%; max-width:340px; display:flex; flex-direction:column; gap:10px; }
+#info-edit-box h3 { color:#ffd700; font-size:1rem; margin:0 0 4px; text-align:center; }
+#info-edit-msg { font-size:.78rem; min-height:18px; text-align:center; }
+#ie-save-btn { background:linear-gradient(90deg,#7c3aed,#a855f7); color:#fff; border:none; border-radius:9px; padding:10px; font-size:.88rem; font-weight:700; cursor:pointer; transition:all .15s; }
+#ie-save-btn:hover { filter:brightness(1.1); }
+#ie-cancel-btn { background:none; border:1px solid #4b1d7e; border-radius:9px; padding:8px; color:#a78bfa; font-size:.82rem; cursor:pointer; }
+#ie-cancel-btn:hover { border-color:#a855f7; color:#e2c4ff; }
 .gender-section-inner { padding:6px 4px 10px; }
 .gender-change-btn { width:100%; padding:9px; background:#2d1b69; border:2px solid #a855f7; border-radius:8px; color:#e2c4ff; font-size:.84rem; cursor:pointer; transition:all .15s; }
 .gender-change-btn:hover:not(:disabled) { background:#3d1b80; border-color:#ffd700; color:#ffd700; }
@@ -522,6 +532,7 @@ auth.onAuthStateChanged(async (user) => {
     if (window._isTeacher) document.getElementById('teacher-btn').style.display = 'inline-block';
     if (!window._isTeacher && window._school && window._class) document.getElementById('class-rank-btn').style.display = 'inline-block';
     document.getElementById('pw-change-menu-btn').style.display = 'block'; // 로그인 유저만 표시
+    if (!window._isTeacher) document.getElementById('info-edit-menu-btn').style.display = 'block';
     document.getElementById('guest-exit-btn').style.display = 'none';
     document.getElementById('settings-menu').style.display = '';
     if (typeof enablePhaserInput === 'function') enablePhaserInput();
@@ -544,6 +555,7 @@ auth.onAuthStateChanged(async (user) => {
     // 버튼 상태 초기화
     ['teacher-btn','class-rank-btn'].forEach(id => { const el = document.getElementById(id); if(el) el.style.display='none'; });
     const pwBtn = document.getElementById('pw-change-menu-btn'); if(pwBtn) pwBtn.style.display='none';
+    const ieBtn = document.getElementById('info-edit-menu-btn'); if(ieBtn) ieBtn.style.display='none';
     if (typeof showLoginOverlay === 'function') showLoginOverlay();
     document.getElementById('user-info-bar').style.display = 'none';
   }
@@ -629,6 +641,48 @@ function closePwChange() {
   if (window._forcePwChange) return; // 강제 모드에서는 닫기 불가
   document.getElementById('pw-change-popup').classList.remove('active');
   enablePhaserInput();
+}
+function openInfoEdit() {
+  document.getElementById('settings-dropdown').classList.remove('open');
+  // 현재 값으로 폼 초기화
+  document.getElementById('ie-school').value  = window._school || '';
+  document.getElementById('ie-grade').value   = window._grade  || '';
+  document.getElementById('ie-class').value   = window._class  || '';
+  // 번호는 Firestore에서 다시 읽어옴
+  if (window._currentUser) {
+    db.collection('users').doc(window._currentUser.uid).get().then(s => {
+      document.getElementById('ie-number').value = s.exists ? (s.data().number || '') : '';
+    }).catch(() => {});
+  }
+  document.getElementById('info-edit-msg').textContent = '';
+  document.getElementById('ie-save-btn').disabled = false;
+  document.getElementById('ie-save-btn').textContent = '저장하기';
+  document.getElementById('info-edit-popup').classList.add('active');
+  disablePhaserInput();
+}
+function closeInfoEdit() {
+  document.getElementById('info-edit-popup').classList.remove('active');
+  enablePhaserInput();
+}
+async function saveInfoEdit() {
+  const school  = document.getElementById('ie-school').value.trim();
+  const grade   = document.getElementById('ie-grade').value;
+  const cls     = document.getElementById('ie-class').value;
+  const number  = document.getElementById('ie-number').value;
+  const msg     = document.getElementById('info-edit-msg');
+  const btn     = document.getElementById('ie-save-btn');
+  if (!school)       { msg.style.color='#ef4444'; msg.textContent='학교 이름을 입력해주세요.'; return; }
+  if (!grade||!cls)  { msg.style.color='#ef4444'; msg.textContent='학년과 반을 선택해주세요.';  return; }
+  btn.disabled = true; btn.textContent = '저장 중...';
+  try {
+    await db.collection('users').doc(window._currentUser.uid).update({ school, grade, class: cls, number });
+    window._school = school; window._grade = grade; window._class = cls;
+    msg.style.color='#22c55e'; msg.textContent='저장되었습니다!';
+    setTimeout(() => closeInfoEdit(), 1200);
+  } catch(e) {
+    msg.style.color='#ef4444'; msg.textContent='저장 실패. 다시 시도해주세요.';
+    btn.disabled = false; btn.textContent = '저장하기';
+  }
 }
 function _pwValidate() {
   const cur = document.getElementById('pw-current').value;
@@ -925,6 +979,7 @@ window.doLogout = doLogout;
     <button class="settings-btn" onclick="toggleSettings(event)">⚙️ 설정</button>
     <div class="settings-dropdown" id="settings-dropdown">
       <button id="pw-change-menu-btn" onclick="openPwChange()" style="display:none;">🔑 비밀번호 변경</button>
+      <button id="info-edit-menu-btn" onclick="openInfoEdit()" style="display:none;">📝 학교/학년/반 수정</button>
       <hr>
       <button onclick="doLogout()" style="color:#f87171;">🚪 로그아웃</button>
     </div>
@@ -942,6 +997,52 @@ window.doLogout = doLogout;
     <div id="pw-change-msg"></div>
     <button id="pw-submit-btn" onclick="doChangePassword()" disabled>변경하기</button>
     <button id="pw-cancel-btn" onclick="closePwChange()">취소</button>
+  </div>
+</div>
+
+<!-- 학교/학년/반/번호 수정 팝업 -->
+<div id="info-edit-popup">
+  <div id="info-edit-box">
+    <h3>📝 학교 / 학년 / 반 / 번호 수정</h3>
+    <input class="pw-input" id="ie-school" type="text" placeholder="학교 이름 (예: 행복초등학교)" maxlength="30">
+    <div style="display:flex;gap:8px;">
+      <select class="pw-input" id="ie-grade" style="flex:1;cursor:pointer;appearance:none;">
+        <option value="">학년 선택</option>
+        <option value="1">1학년</option>
+        <option value="2">2학년</option>
+        <option value="3">3학년</option>
+      </select>
+      <select class="pw-input" id="ie-class" style="flex:1;cursor:pointer;appearance:none;">
+        <option value="">반 선택</option>
+        <option value="1">1반</option><option value="2">2반</option><option value="3">3반</option>
+        <option value="4">4반</option><option value="5">5반</option><option value="6">6반</option>
+        <option value="7">7반</option><option value="8">8반</option><option value="9">9반</option>
+        <option value="10">10반</option><option value="11">11반</option><option value="12">12반</option>
+        <option value="13">13반</option><option value="14">14반</option><option value="15">15반</option>
+        <option value="16">16반</option><option value="17">17반</option><option value="18">18반</option>
+        <option value="19">19반</option><option value="20">20반</option>
+      </select>
+    </div>
+    <select class="pw-input" id="ie-number" style="cursor:pointer;appearance:none;">
+      <option value="">출석번호 선택</option>
+      <option value="1">1번</option><option value="2">2번</option><option value="3">3번</option>
+      <option value="4">4번</option><option value="5">5번</option><option value="6">6번</option>
+      <option value="7">7번</option><option value="8">8번</option><option value="9">9번</option>
+      <option value="10">10번</option><option value="11">11번</option><option value="12">12번</option>
+      <option value="13">13번</option><option value="14">14번</option><option value="15">15번</option>
+      <option value="16">16번</option><option value="17">17번</option><option value="18">18번</option>
+      <option value="19">19번</option><option value="20">20번</option><option value="21">21번</option>
+      <option value="22">22번</option><option value="23">23번</option><option value="24">24번</option>
+      <option value="25">25번</option><option value="26">26번</option><option value="27">27번</option>
+      <option value="28">28번</option><option value="29">29번</option><option value="30">30번</option>
+      <option value="31">31번</option><option value="32">32번</option><option value="33">33번</option>
+      <option value="34">34번</option><option value="35">35번</option><option value="36">36번</option>
+      <option value="37">37번</option><option value="38">38번</option><option value="39">39번</option>
+      <option value="40">40번</option>
+    </select>
+    <div id="info-edit-msg"></div>
+    <button id="ie-save-btn" onclick="saveInfoEdit()">저장하기</button>
+    <button id="ie-cancel-btn" onclick="closeInfoEdit()">취소</button>
   </div>
 </div>
 
