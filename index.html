@@ -158,8 +158,10 @@ canvas { display:block; image-rendering:pixelated; margin:0 auto; }
 #coloring-canvas-wrapper.mode-brush { cursor:crosshair; }
 #coloring-friends-panel { width:100%;max-width:920px;padding:8px 0 20px; }
 #coloring-friends-grid { display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:12px;padding:10px 0; }
-.cf-card { background:linear-gradient(135deg,#2d1b69,#1a0a2e);border:2px solid #ffd70030;border-radius:12px;overflow:hidden;cursor:pointer;transition:transform .2s,border-color .2s; }
+.cf-card { position:relative;background:linear-gradient(135deg,#2d1b69,#1a0a2e);border:2px solid #ffd70030;border-radius:12px;overflow:hidden;cursor:pointer;transition:transform .2s,border-color .2s; }
 .cf-card:hover { transform:translateY(-3px);border-color:#ffd700; }
+.cf-delete-btn { position:absolute;top:5px;right:5px;width:26px;height:26px;border:none;border-radius:50%;background:rgba(239,68,68,.85);color:#fff;font-size:13px;line-height:26px;text-align:center;cursor:pointer;opacity:0;transition:opacity .2s;z-index:10;padding:0; }
+.cf-card:hover .cf-delete-btn { opacity:1; }
 .cf-card img { width:100%;height:130px;object-fit:cover;display:block;background:#0f0720; }
 .cf-card-info { padding:8px 10px; }
 .cf-card-title { color:#ffd700;font-weight:700;font-size:.84rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis; }
@@ -3391,6 +3393,7 @@ async function shareColoring() {
     const ud   = snap.exists ? snap.data() : {};
 
     await db.collection('colorings').add({
+      uid:      window._currentUser.uid,
       school:   school,
       class:    cls,
       grade:    window._grade || '',
@@ -3440,10 +3443,12 @@ async function loadFriendsWorks() {
     grid.innerHTML = '';
     docs.forEach(doc => {
       const d = doc.data();
+      const isOwn = d.uid && d.uid === window._currentUser?.uid;
       const card = document.createElement('div');
       card.className = 'cf-card';
       card.innerHTML = `
         <img src="${d.image||''}" alt="${d.artName||''}" loading="lazy" onerror="this.style.background='#1a0a2e'">
+        ${isOwn ? `<button class="cf-delete-btn" title="삭제" onclick="deleteColoringCard('${doc.id}',this.closest('.cf-card'))">🗑️</button>` : ''}
         <div class="cf-card-info">
           <div class="cf-card-title">${d.artName||'작품'}</div>
           <div class="cf-card-nick">✏️ ${d.nickname||'(닉네임 없음)'}</div>
@@ -3454,6 +3459,17 @@ async function loadFriendsWorks() {
   } catch(e) {
     console.error('친구 작품 로드 실패:', e);
     grid.innerHTML = '<p style="color:#ef4444;font-size:.88rem;text-align:center;padding:30px 0;">불러오기 실패. 잠시 후 다시 시도하세요.</p>';
+  }
+}
+
+async function deleteColoringCard(docId, cardEl) {
+  if (!confirm('내 작품을 삭제할까요?')) return;
+  try {
+    await db.collection('colorings').doc(docId).delete();
+    cardEl.remove();
+  } catch(e) {
+    console.error('삭제 실패:', e);
+    alert('삭제 중 오류가 발생했습니다.');
   }
 }
 
