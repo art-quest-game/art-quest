@@ -107,6 +107,25 @@ canvas { display:block; image-rendering:pixelated; margin:0 auto; }
 #quiz-retry-btn { background:linear-gradient(90deg,#ffd700,#ff9900); color:#1a0a2e; border:none; border-radius:8px; padding:11px 26px; font-size:.95rem; font-weight:700; cursor:pointer; margin-right:8px; }
 #quiz-exit-btn { background:linear-gradient(90deg,#6b21a8,#9333ea); color:#fff; border:none; border-radius:8px; padding:11px 22px; font-size:.95rem; cursor:pointer; }
 
+/* Quiz type selector */
+#quiz-type-select { display:none; flex-direction:column; align-items:center; gap:24px; padding:36px 0; }
+.quiz-type-title { color:#ffd700; font-size:1.15rem; font-weight:700; text-align:center; }
+.quiz-type-btns { display:flex; gap:14px; flex-wrap:wrap; justify-content:center; width:100%; }
+.quiz-type-btn { background:#1a0a2e; border:2px solid #6b21a8; border-radius:16px; padding:22px 18px; color:#e2c4ff; cursor:pointer; text-align:center; transition:all .2s; flex:1; min-width:130px; max-width:200px; }
+.quiz-type-btn:hover { border-color:#ffd700; background:#2d1b69; transform:translateY(-2px); box-shadow:0 4px 20px #ffd70020; }
+.qtb-icon { font-size:2.2rem; margin-bottom:10px; }
+.qtb-name { color:#ffd700; font-size:.98rem; font-weight:700; margin-bottom:6px; }
+.qtb-desc { color:#a78bfa; font-size:.76rem; line-height:1.5; }
+/* Quiz: image inside question box */
+#quiz-question-img { width:100%; max-height:200px; object-fit:contain; border-radius:10px; margin-bottom:14px; }
+/* Quiz: image choices (그림 맞추기) */
+.quiz-img-choices { display:grid; grid-template-columns:1fr 1fr; gap:8px; margin-bottom:14px; }
+.quiz-img-choice { border:3px solid #6b21a8; border-radius:10px; overflow:hidden; cursor:pointer; padding:0; background:none; transition:border-color .2s; aspect-ratio:4/3; display:block; width:100%; }
+.quiz-img-choice img { width:100%; height:100%; object-fit:cover; display:block; pointer-events:none; }
+.quiz-img-choice:hover:not(:disabled) { border-color:#ffd700; }
+.quiz-img-choice.correct { border-color:#22c55e; box-shadow:0 0 12px #22c55e60; }
+.quiz-img-choice.wrong   { border-color:#ef4444; opacity:.55; }
+.quiz-img-choice:disabled { cursor:default; }
 /* Memory card */
 #memory-inner { width:100%; max-width:700px; padding:14px 18px 36px; }
 #memory-info-row { display:flex; justify-content:space-between; align-items:center; margin-bottom:14px; flex-wrap:wrap; gap:8px; }
@@ -1454,7 +1473,27 @@ async function openTeacherDashboard() {
     <button class="close-mini" onclick="closeMiniGame('quiz')">✕ 나가기</button>
   </div>
   <div id="quiz-inner">
-    <div id="quiz-game-area">
+    <div id="quiz-type-select">
+      <div class="quiz-type-title">🎯 퀴즈 유형을 선택하세요!</div>
+      <div class="quiz-type-btns">
+        <button class="quiz-type-btn" onclick="startQuiz('artist')">
+          <div class="qtb-icon">🎨</div>
+          <div class="qtb-name">작가 맞추기</div>
+          <div class="qtb-desc">그림을 보고<br>작가 이름을 맞춰요</div>
+        </button>
+        <button class="quiz-type-btn" onclick="startQuiz('title')">
+          <div class="qtb-icon">🖼️</div>
+          <div class="qtb-name">제목 맞추기</div>
+          <div class="qtb-desc">그림을 보고<br>제목을 맞춰요</div>
+        </button>
+        <button class="quiz-type-btn" onclick="startQuiz('image')">
+          <div class="qtb-icon">🔍</div>
+          <div class="qtb-name">그림 맞추기</div>
+          <div class="qtb-desc">설명을 보고<br>그림을 찾아요</div>
+        </button>
+      </div>
+    </div>
+    <div id="quiz-game-area" style="display:none">
       <div id="quiz-progress-bar"><div id="quiz-progress-fill" style="width:0%"></div></div>
       <div id="quiz-score-row"><span id="quiz-q-num">1 / 10</span><span>🪙 <span id="quiz-score">0</span></span></div>
       <div id="quiz-question-box"></div>
@@ -1469,7 +1508,7 @@ async function openTeacherDashboard() {
         <div class="qr-stat"><div class="qr-label">획득 코인</div><div class="qr-value" id="qr-coins">0 🪙</div></div>
         <div class="qr-stat"><div class="qr-label">정확도</div><div class="qr-value" id="qr-acc">0%</div></div>
       </div>
-      <button id="quiz-retry-btn" onclick="startQuiz()">다시 도전</button>
+      <button id="quiz-retry-btn" onclick="showQuizTypeSelect()">다시 도전</button>
       <button id="quiz-exit-btn" onclick="closeMiniGame('quiz')">나가기</button>
     </div>
   </div>
@@ -3075,81 +3114,96 @@ document.getElementById('art-detail-overlay').addEventListener('click', e => {
 // ─────────────────────────────────────────────
 // ARTWORKS에서 퀴즈 자동 생성
 // 작품명 / 작가명 / 제작연도 / 나라 — 4종 × 작품 수 문제 풀
-function buildQuizFromArtworks() {
-  const all = Object.values(ARTWORKS).flat();
-  const pick3 = (pool, exclude) => {
-    const filtered = [...new Set(pool.filter(v => v !== exclude))];
-    for (let i = filtered.length - 1; i > 0; i--) {
-      const j = Math.floor(Math.random() * (i + 1));
-      [filtered[i], filtered[j]] = [filtered[j], filtered[i]];
-    }
-    return filtered.slice(0, 3);
-  };
-  const makeQ = (q, correct, wrongs, exp) => {
-    if (wrongs.length < 3) return null;
-    const choices = [correct, ...wrongs].sort(() => Math.random() - .5);
-    return { q, choices, answer: choices.indexOf(correct), exp };
-  };
-
-  const qs = [];
-  for (const art of all) {
-    const others = all.filter(x => x.id !== art.id);
-    qs.push(makeQ(
-      `"${art.title}"을(를) 그린 화가는 누구인가요?`,
-      art.artist,
-      pick3(others.map(x => x.artist), art.artist),
-      art.desc
-    ));
-    qs.push(makeQ(
-      `다음 중 "${art.artist}"의 작품은 무엇인가요?`,
-      art.title,
-      pick3(others.map(x => x.title), art.title),
-      art.desc
-    ));
-    qs.push(makeQ(
-      `"${art.title}"이(가) 탄생한 나라는 어디인가요?`,
-      art.country,
-      pick3(others.map(x => x.country), art.country),
-      art.desc
-    ));
-  }
-  return qs.filter(Boolean);
-}
-
 let quizState = { questions:[], idx:0, score:0, correctCount:0, answered:false };
+let _quizType = 'artist';
+
+const _quizShuffle = arr => {
+  const a = [...arr];
+  for (let i = a.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; }
+  return a;
+};
+const _pick3 = (pool, exclude) => _quizShuffle([...new Set(pool.filter(v => v !== exclude))]).slice(0, 3);
+
+function buildQuizByType(type) {
+  const all = Object.values(ARTWORKS).flat().filter(a => a.url);
+  const qs = [];
+
+  if (type === 'artist') {
+    for (const art of all) {
+      const wrongs = _pick3(all.filter(x => x.id !== art.id).map(x => x.artist), art.artist);
+      if (wrongs.length < 3) continue;
+      const choices = _quizShuffle([art.artist, ...wrongs]);
+      qs.push({ img: art.url, q: '이 그림을 그린 화가는 누구일까요?', choices, answer: choices.indexOf(art.artist), exp: `"${art.title}" — ${art.artist}\n${art.desc}`, mode:'text' });
+    }
+  } else if (type === 'title') {
+    for (const art of all) {
+      const wrongs = _pick3(all.filter(x => x.id !== art.id).map(x => x.title), art.title);
+      if (wrongs.length < 3) continue;
+      const choices = _quizShuffle([art.title, ...wrongs]);
+      qs.push({ img: art.url, q: '이 그림의 제목은 무엇일까요?', choices, answer: choices.indexOf(art.title), exp: `"${art.title}" — ${art.artist}\n${art.desc}`, mode:'text' });
+    }
+  } else {
+    for (const art of all) {
+      const others = _quizShuffle(all.filter(x => x.id !== art.id));
+      if (others.length < 3) continue;
+      const wrongs = others.slice(0, 3);
+      const pool = _quizShuffle([art, ...wrongs]);
+      qs.push({ q: `${art.artist}의 작품을 찾아보세요!`, qSub: art.desc.slice(0, 70) + '…', choices: pool.map(x => x.url), answer: pool.findIndex(x => x.id === art.id), exp: `"${art.title}" — ${art.artist}`, mode:'image' });
+    }
+  }
+  return qs;
+}
 
 function openQuiz() {
   document.getElementById('quiz-screen').classList.add('active');
   disablePhaserInput();
-  startQuiz();
+  showQuizTypeSelect();
 }
-function startQuiz() {
-  const shuffled = buildQuizFromArtworks().sort(() => Math.random() - .5).slice(0, 10);
-  quizState = { questions:shuffled, idx:0, score:0, correctCount:0, answered:false };
-  document.getElementById('quiz-result-box').style.display = 'none';
-  document.getElementById('quiz-game-area').style.display  = 'block';
+function showQuizTypeSelect() {
+  document.getElementById('quiz-type-select').style.display  = 'flex';
+  document.getElementById('quiz-game-area').style.display    = 'none';
+  document.getElementById('quiz-result-box').style.display   = 'none';
+}
+function startQuiz(type) {
+  if (type) _quizType = type;
+  const shuffled = buildQuizByType(_quizType).sort(() => Math.random() - .5).slice(0, 10);
+  quizState = { questions: shuffled, idx: 0, score: 0, correctCount: 0, answered: false };
+  document.getElementById('quiz-type-select').style.display  = 'none';
+  document.getElementById('quiz-result-box').style.display   = 'none';
+  document.getElementById('quiz-game-area').style.display    = 'block';
   renderQuizQuestion();
 }
 function renderQuizQuestion() {
   const { questions, idx } = quizState;
   const q = questions[idx];
   const total = questions.length;
-  document.getElementById('quiz-q-num').textContent    = `${idx + 1} / ${total}`;
-  document.getElementById('quiz-score').textContent    = quizState.score;
+  document.getElementById('quiz-q-num').textContent = `${idx + 1} / ${total}`;
+  document.getElementById('quiz-score').textContent = quizState.score;
   document.getElementById('quiz-progress-fill').style.width = `${(idx / total) * 100}%`;
-  document.getElementById('quiz-question-box').textContent  = q.q;
   document.getElementById('quiz-explanation').style.display = 'none';
   document.getElementById('quiz-next-btn').style.display    = 'none';
   quizState.answered = false;
-  document.getElementById('quiz-choices').innerHTML = q.choices.map((c, i) => `
-    <button class="quiz-choice" onclick="answerQuiz(${i})">${i === 0 ? '①' : i === 1 ? '②' : i === 2 ? '③' : '④'} ${c}</button>
-  `).join('');
+
+  const qBox = document.getElementById('quiz-question-box');
+  if (q.mode === 'image') {
+    qBox.innerHTML = `<div style="font-size:1.05rem;margin-bottom:8px;">${q.q}</div><div style="color:#a78bfa;font-size:.82rem;line-height:1.6;">${q.qSub}</div>`;
+    document.getElementById('quiz-choices').className = 'quiz-img-choices';
+    document.getElementById('quiz-choices').innerHTML = q.choices.map((url, i) =>
+      `<button class="quiz-img-choice" onclick="answerQuiz(${i})"><img src="${url}" alt="보기${i+1}"></button>`
+    ).join('');
+  } else {
+    qBox.innerHTML = `<img id="quiz-question-img" src="${q.img}" alt="">${q.q}`;
+    document.getElementById('quiz-choices').className = 'quiz-choices';
+    document.getElementById('quiz-choices').innerHTML = q.choices.map((c, i) =>
+      `<button class="quiz-choice" onclick="answerQuiz(${i})">${['①','②','③','④'][i]} ${c}</button>`
+    ).join('');
+  }
 }
 function answerQuiz(idx) {
   if (quizState.answered) return;
   quizState.answered = true;
   const q    = quizState.questions[quizState.idx];
-  const btns = document.querySelectorAll('.quiz-choice');
+  const btns = document.getElementById('quiz-choices').querySelectorAll('button');
   btns.forEach(b => b.disabled = true);
   btns[q.answer].classList.add('correct');
   if (idx === q.answer) {
@@ -3157,10 +3211,11 @@ function answerQuiz(idx) {
     state.coins += 10; state.totalCoins += 10; updateHUD(); showCoinToast(10);
   } else {
     btns[idx].classList.add('wrong');
-    const exp = document.getElementById('quiz-explanation');
-    exp.textContent = '💡 ' + q.exp;
-    exp.style.display = 'block';
   }
+  const exp = document.getElementById('quiz-explanation');
+  exp.style.whiteSpace = 'pre-line';
+  exp.textContent = '💡 ' + q.exp;
+  exp.style.display = 'block';
   document.getElementById('quiz-score').textContent = quizState.score;
   document.getElementById('quiz-next-btn').style.display = 'block';
 }
