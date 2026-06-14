@@ -2323,9 +2323,9 @@ window.updatePlayerSprite = function() {
   const suffix  = costume.replace('c_', '');
   const gKey    = 'char_' + gender + '_' + suffix;
   const boyKey  = 'char_boy_' + suffix;
-  if (gameScene.textures.exists(gKey)) gameScene.player.setTexture(gKey);
-  else if (gameScene.textures.exists(boyKey)) gameScene.player.setTexture(boyKey);
-  else gameScene.player.setTexture('char1');
+  if (gameScene.textures.exists(gKey)) gameScene.player.setTexture(gKey).setDisplaySize(192,224).setOrigin(0.5,0);
+  else if (gameScene.textures.exists(boyKey)) gameScene.player.setTexture(boyKey).setDisplaySize(192,224).setOrigin(0.5,0);
+  else gameScene.player.setTexture('char1').setDisplaySize(192,224).setOrigin(0.5,0);
 };
 
 function disablePhaserInput() {
@@ -4139,7 +4139,7 @@ class GameScene extends Phaser.Scene {
       const k = 'char_' + window._gender + '_' + s;
       return (this.textures.exists(k)) ? k : 'char1';
     })() : 'char1';
-    this.player = this.add.sprite(23*TILE+TILE/2, 13*TILE+TILE/2, _initTex).setDisplaySize(192,224).setOrigin(0.5,1).setDepth(1100);
+    this.player = this.add.sprite(23*TILE+TILE/2, 13*TILE+TILE/2, _initTex).setDisplaySize(192,224).setOrigin(0.5,0).setDepth(1100);
     this.playerLabel = this.add.text(0,0,'견습생',{fontSize:'16px',color:'#ffd700',stroke:'#000',strokeThickness:3}).setOrigin(.5,0).setDepth(11);
     // 아이템 오버레이: 작은 뱃지(16~20px)로 캐릭터 주변 배치
     this.itemOverlays = {};
@@ -4293,7 +4293,7 @@ class GameScene extends Phaser.Scene {
     const hh=this.player.displayHeight/2;
     const hw=this.player.displayWidth/2;
     // 레이블 + 아이템 오버레이 위치 갱신 (항상)
-    this.playerLabel.setPosition(this.player.x, this.player.y + 10);
+    this.playerLabel.setPosition(this.player.x, this.player.y + this.player.displayHeight + 10);
     if (this.itemOverlays) {
       Object.values(this.itemOverlays).forEach(ov => {
         ov.obj.setPosition(this.player.x + ov.dx, this.player.y + ov.dy);
@@ -4375,18 +4375,18 @@ class GameScene extends Phaser.Scene {
     if (_moving) {
       if (!this._walking) {
         this._walking = true;
-        this.player.setOrigin(0.5, 1);
+        this.player.setOrigin(0.5, 0);
         this.player.play('char_boy_basic_walk', true);
-        this.player.setDisplaySize(192, 224).setOrigin(0.5, 1);
+        this.player.setDisplaySize(192, 224).setOrigin(0.5, 0);
         if (!this._walkFrameListener) {
-          this._walkFrameListener = () => this.player.setDisplaySize(192, 224).setOrigin(0.5, 1);
+          this._walkFrameListener = () => this.player.setDisplaySize(192, 224).setOrigin(0.5, 0);
           this.player.on('animationupdate', this._walkFrameListener);
         }
       }
     } else if (this._walking) {
       this._walking = false;
       this.player.anims.stop();
-      this.player.setTexture('char_boy_basic').setDisplaySize(192, 224).setOrigin(0.5, 1);
+      this.player.setTexture('char_boy_basic').setDisplaySize(192, 224).setOrigin(0.5, 0);
     }
     // 플레이어 depth를 y좌표 기반으로 업데이트 (건물보다 항상 위)
     const pd = Math.floor(this.player.y/TILE)*10+5;
