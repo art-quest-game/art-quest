@@ -4368,16 +4368,20 @@ class GameScene extends Phaser.Scene {
     if(dx&&dy){ dx*=.707; dy*=.707; }
     this.player.x=Phaser.Math.Clamp(this.player.x+dx,hw,W-hw);
     this.player.y=Phaser.Math.Clamp(this.player.y+dy,hh,H-hh);
-    if(dx||dy){ this._wt+=delta; if(this._wt>120){ this._wf=1-this._wf; this._wt=0; this.player.y+=this._wf?1:-1; } }
-    // char1 걷기 애니메이션
+    // 걷기 애니메이션
     const _moving = !!(dx || dy || this._dragging);
     const _tk = this.player.texture?.key;
-    if (_moving && (_tk === 'char1' || _tk === 'char1_walk')) {
-      if (!this._char1Walking) { this._char1Walking = true; this.player.play('char1_walk', true); }
-    } else if (!_moving && this._char1Walking) {
-      this._char1Walking = false;
-      this.player.anims.stop();
-      this.player.setTexture('char1');
+    const _isChar1 = (_tk === 'char1' || _tk === 'char1_walk');
+    if (_moving) {
+      if (_isChar1) {
+        if (!this._char1Walking) { this._char1Walking = true; this.player.play('char1_walk', true); }
+      } else {
+        this._wt = (this._wt || 0) + delta;
+        if (this._wt > 100) { this._wt = 0; this._wf = 1 - (this._wf || 0); this.player.y += this._wf ? 4 : -4; }
+      }
+    } else {
+      if (this._char1Walking) { this._char1Walking = false; this.player.anims.stop(); this.player.setTexture('char1'); }
+      this._wt = 0;
     }
     // 플레이어 depth를 y좌표 기반으로 업데이트 (건물보다 항상 위)
     const pd = Math.floor(this.player.y/TILE)*10+5;
