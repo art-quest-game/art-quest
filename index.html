@@ -4550,7 +4550,7 @@ function openQuestScreen(artId) {
   disablePhaserInput();
   qState = { artId, type: def.type, def };
   document.getElementById('quest-art-title').textContent = currentArtwork.title;
-  const labels = { review:'✍️ 감상문 쓰기', hidden:'🔍 숨은 요소 찾기', coloring:'🧩 명화 퍼즐', ox:'⭕❌ OX 퀴즈' };
+  const labels = { review:'✍️ 감상문 쓰기', hidden:'🔍 숨은 요소 찾기', coloring:'🧩 명화 퍼즐', ox:'⭕❌' };
   document.getElementById('quest-type-label').textContent = labels[def.type] || '';
   document.getElementById('quest-instruction').textContent = def.instruction || '';
   ['quest-review','quest-hidden','quest-coloring','quest-ox'].forEach(id => document.getElementById(id).style.display = 'none');
