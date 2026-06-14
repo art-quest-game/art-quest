@@ -3844,7 +3844,7 @@ class GameScene extends Phaser.Scene {
       // if(b.id==='gallery') spr.setBlendMode(Phaser.BlendModes.MULTIPLY);
       this.buildingSprites[b.id]=spr;
       this.add.text(b.tx*TILE+b.width*TILE/2,(b.ty+b.height)*TILE+8,b.icon+' '+b.name,
-        {fontSize:'20px',color:'#ffffff',stroke:'#000000',strokeThickness:5,fontStyle:'bold'}).setOrigin(.5,0).setDepth((b.ty+b.height)*10+1);
+        {fontSize:'20px',color:'#FFD700',stroke:'#000000',strokeThickness:5,fontStyle:'bold'}).setOrigin(.5,0).setDepth((b.ty+b.height)*10+1);
     });
     this._plantTrees();
     this._addPixelDetails();
@@ -3941,7 +3941,7 @@ class GameScene extends Phaser.Scene {
       return (this.textures.exists(k)) ? k : 'char1';
     })() : 'char1';
     this.player = this.add.image(23*TILE+TILE/2, 13*TILE+TILE/2, _initTex).setDisplaySize(192,224).setDepth(1100);
-    this.playerLabel = this.add.text(0,0,'견습생',{fontSize:'12px',color:'#ffd700',stroke:'#000',strokeThickness:3}).setOrigin(.5,1).setDepth(11);
+    this.playerLabel = this.add.text(0,0,'견습생',{fontSize:'16px',color:'#ffd700',stroke:'#000',strokeThickness:3}).setOrigin(.5,1).setDepth(11);
     // 아이템 오버레이: 작은 뱃지(16~20px)로 캐릭터 주변 배치
     this.itemOverlays = {};
     ALL_ITEMS.forEach(item => {
