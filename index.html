@@ -4368,25 +4368,21 @@ class GameScene extends Phaser.Scene {
     if(dx&&dy){ dx*=.707; dy*=.707; }
     this.player.x=Phaser.Math.Clamp(this.player.x+dx,hw,W-hw);
     this.player.y=Phaser.Math.Clamp(this.player.y+dy,hh,H-hh);
-    // 걷기 애니메이션 (char1 전용)
+    // 걷기 애니메이션
     const _moving = !!(dx || dy || this._dragging);
     const _tk = this.player.texture?.key;
-    const _isChar1 = (_tk === 'char1' || _tk === 'char1_walk');
-    if (_moving && !this._dbgLogged) {
-      this._dbgLogged = true;
-      console.log('[walk] texture key:', _tk, '| isChar1:', _isChar1, '| anim exists:', this.anims.exists('char1_walk'));
-    }
-    if (_moving && _isChar1) {
+    if (_moving) {
       if (!this._char1Walking) {
         this._char1Walking = true;
-        console.log('[walk] play char1_walk');
+        this._walkRestoreKey = (_tk === 'char1_walk') ? (this._walkRestoreKey || 'char1') : _tk;
         this.player.play('char1_walk', true);
       }
     } else if (!_moving && this._char1Walking) {
       this._char1Walking = false;
       this.player.anims.stop();
-      this.player.setFrame(0);
-      console.log('[walk] stop → frame 0');
+      const rk = this._walkRestoreKey;
+      if (rk && this.textures.exists(rk)) this.player.setTexture(rk).setDisplaySize(192, 224);
+      else this.player.setFrame(0);
     }
     // 플레이어 depth를 y좌표 기반으로 업데이트 (건물보다 항상 위)
     const pd = Math.floor(this.player.y/TILE)*10+5;
