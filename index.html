@@ -1845,6 +1845,7 @@ function openShop() {
   document.getElementById('shop-screen').classList.add('active');
   disablePhaserInput();
   costumePreviewId = window._currentCostume || 'c_basic';
+  shopActiveTab = window._gender || 'boy';
   renderShopBanner();
   renderCostumeShop();
 }
@@ -1898,7 +1899,7 @@ function getCurrentRankIdx() { return RANKS.indexOf(getCurrentRank()); }
 function renderCostumeShop() {
   const rankIdx = getCurrentRankIdx();
 
-  const girlLocked = !window._hasGirlCharacter;
+  const girlLocked = window._gender !== 'girl' && !window._hasGirlCharacter;
 
   // girlJustUnlocked 플래그로 해금 애니메이션 한 번만 재생
   const justUnlocked = window._girlJustUnlocked;
