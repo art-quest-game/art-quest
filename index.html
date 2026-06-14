@@ -3794,7 +3794,7 @@ const TYPING_SENTENCES = [
   '올랭피아는 마네의 대표 누드화.',
   '잠자는 집시는 루소의 작품.',
   '이삭 줍는 여인들은 밀레 작품.',
-  '진주 귀걸이 소녀는 명화이다.',
+  '진주 귀걸이를 한 소녀는 명화.',
   '홍백매화도는 고린의 작품이다.',
   '히로시게는 우키요에 명인이다.',
   '기녀는 우타마로의 미인화이다.',
@@ -3887,12 +3887,16 @@ function advanceSentence() {
 
 // ── 디스플레이 렌더링 ─────────────────────────
 function findArtworkForSentence(sentence) {
+  const s = sentence.replace(/[.!?。]$/, '');
+  let best = null, bestLen = 0;
   for (const cat of Object.values(ARTWORKS)) {
     for (const art of cat) {
-      if (art.desc && art.desc.includes(sentence.replace(/[.!?。]$/, ''))) return art;
+      if (art.title && art.title.length >= 2 && s.includes(art.title) && art.title.length > bestLen) {
+        best = art; bestLen = art.title.length;
+      }
     }
   }
-  return null;
+  return best;
 }
 
 let _lastTypingIdx = -1;
