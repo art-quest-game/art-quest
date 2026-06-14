@@ -217,6 +217,16 @@ canvas { display:block; image-rendering:pixelated; margin:0 auto; }
 #typing-input { width:100%; background:#1a0a2e; border:2px solid #ffd700; border-radius:10px; color:#ffffff; font-size:1.25rem; padding:14px 18px; outline:none; margin-top:4px; box-shadow:0 0 10px #ffd70030; font-family:inherit; }
 #typing-input:focus { border-color:#ffd700; box-shadow:0 0 16px #ffd70055; }
 #typing-progress { margin-top:8px; color:#6b7280; font-size:.85rem; text-align:center; }
+#typing-artwork-preview { flex-direction:column; align-items:center; gap:10px; margin-top:14px; padding:14px 16px; background:#0f0720; border:1px solid #6b21a850; border-radius:14px; }
+#typing-artwork-img { width:200px; height:200px; object-fit:cover; border-radius:12px; border:2px solid #6b21a8; }
+#typing-artwork-title { color:#ffd700; font-size:.95rem; font-weight:700; text-align:center; }
+#typing-artwork-artist { color:#a78bfa; font-size:.82rem; margin-top:4px; text-align:center; }
+@media (max-width:600px) and (orientation:portrait) {
+  #typing-artwork-img { width:100px; height:100px; border-radius:8px; }
+  #typing-artwork-preview { padding:10px 12px; gap:7px; margin-top:10px; }
+  #typing-artwork-title { font-size:.82rem; }
+  #typing-artwork-artist { font-size:.72rem; }
+}
 #typing-result-box { background:linear-gradient(135deg,#2d1b69,#1a0a2e 60%,#3d1060); border:3px solid #ffd700; border-radius:16px; padding:28px 32px; text-align:center; box-shadow:0 0 50px #ffd70040; margin-top:20px; }
 #typing-result-box h3 { color:#ffd700; font-size:1.5rem; margin-bottom:20px; }
 .t-result-stats { display:flex; justify-content:center; gap:16px; flex-wrap:wrap; margin-bottom:20px; }
@@ -1640,11 +1650,11 @@ async function openTeacherDashboard() {
       <div id="typing-sentence-box"></div>
       <input id="typing-input" type="text" placeholder="여기에 타이핑하세요..."
              autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false">
-      <div id="typing-artwork-preview" style="display:none;flex-direction:column;align-items:center;gap:10px;margin-top:14px;padding:14px 16px;background:#0f0720;border:1px solid #6b21a850;border-radius:14px;">
-        <img id="typing-artwork-img" src="" alt="" style="width:200px;height:200px;object-fit:cover;border-radius:12px;border:2px solid #6b21a8;">
-        <div style="text-align:center;">
-          <div id="typing-artwork-title" style="color:#ffd700;font-size:.95rem;font-weight:700;"></div>
-          <div id="typing-artwork-artist" style="color:#a78bfa;font-size:.82rem;margin-top:4px;"></div>
+      <div id="typing-artwork-preview" style="display:none;">
+        <img id="typing-artwork-img" src="" alt="">
+        <div>
+          <div id="typing-artwork-title"></div>
+          <div id="typing-artwork-artist"></div>
         </div>
       </div>
       <div id="typing-progress"></div>
