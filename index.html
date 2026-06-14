@@ -4483,20 +4483,31 @@ class GameScene extends Phaser.Scene {
       });
     }
     // 등급 후광 링 (매 프레임 재드로우)
+    // player.origin=(0.5,0) → player.y는 머리 꼭대기, 캐릭터 중심은 player.y+hh
+    const _cx = this.player.x;
+    const _cy = this.player.y + hh;
     if (this.rankGlow) {
       this.rankGlow.clear();
-      if (this._curRankIdx >= 4) {
-        const color = this._curRankIdx >= 5 ? 0xff99ff : 0xffd700;
-        const alpha = this._curRankIdx >= 5 ? 0.78 : 0.58;
-        this.rankGlow.lineStyle(4, color, alpha);
-        this.rankGlow.strokeCircle(this.player.x, this.player.y, hw * 1.35);
-        if (this._curRankIdx >= 5) {
-          this.rankGlow.lineStyle(2, 0xffffff, 0.28);
-          this.rankGlow.strokeCircle(this.player.x, this.player.y, hw * 1.75);
+      const _rank = this._curRankIdx;
+      const _rings = [
+        { lw:1, color:0x93c5fd, alpha:0.28, r:1.10 }, // 0 견습생: 연파랑
+        { lw:2, color:0x38bdf8, alpha:0.42, r:1.20 }, // 1 화가지망생: 하늘색
+        { lw:2, color:0x4ade80, alpha:0.50, r:1.30 }, // 2 화가: 초록
+        { lw:3, color:0xfb923c, alpha:0.58, r:1.40 }, // 3 숙련화가: 주황
+        { lw:4, color:0xffd700, alpha:0.65, r:1.50 }, // 4 거장: 금
+        { lw:4, color:0xff99ff, alpha:0.82, r:1.50 }, // 5 마에스트로: 핑크
+      ];
+      if (_rank >= 0 && _rank < _rings.length) {
+        const cfg = _rings[_rank];
+        this.rankGlow.lineStyle(cfg.lw, cfg.color, cfg.alpha);
+        this.rankGlow.strokeCircle(_cx, _cy, hw * cfg.r);
+        if (_rank >= 5) {
+          this.rankGlow.lineStyle(2, 0xffffff, 0.32);
+          this.rankGlow.strokeCircle(_cx, _cy, hw * 1.90);
         }
       }
     }
-    if (this.sparkleEmitter) this.sparkleEmitter.setPosition(this.player.x, this.player.y);
+    if (this.sparkleEmitter) this.sparkleEmitter.setPosition(_cx, _cy);
     // 큐레이터 말풍선 근접 감지 + 위치 업데이트
     if (this.curator) {
       const cdx = this.player.x - this.curator.x;
