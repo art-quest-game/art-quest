@@ -4139,7 +4139,7 @@ class GameScene extends Phaser.Scene {
       const k = 'char_' + window._gender + '_' + s;
       return (this.textures.exists(k)) ? k : 'char1';
     })() : 'char1';
-    this.player = this.add.sprite(23*TILE+TILE/2, 13*TILE+TILE/2, _initTex).setDisplaySize(192,224).setDepth(1100);
+    this.player = this.add.sprite(23*TILE+TILE/2, 13*TILE+TILE/2, _initTex).setDisplaySize(192,224).setOrigin(0.5,1).setDepth(1100);
     this.playerLabel = this.add.text(0,0,'견습생',{fontSize:'16px',color:'#ffd700',stroke:'#000',strokeThickness:3}).setOrigin(.5,1).setDepth(11);
     // 아이템 오버레이: 작은 뱃지(16~20px)로 캐릭터 주변 배치
     this.itemOverlays = {};
@@ -4376,6 +4376,7 @@ class GameScene extends Phaser.Scene {
         this._char1Walking = true;
         this._walkRestoreKey = (_tk === 'char1_walk') ? (this._walkRestoreKey || 'char1') : _tk;
         this.player.play('char1_walk', true);
+        this.player.setDisplaySize(192, 224).setOrigin(0.5, 1);
       }
     } else if (!_moving && this._char1Walking) {
       this._char1Walking = false;
