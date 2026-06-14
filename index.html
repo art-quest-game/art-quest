@@ -3967,7 +3967,6 @@ class GameScene extends Phaser.Scene {
       this.load.image(item.id + '_ov', item.img);
     });
     this.load.image('char1', BASE+'char1.png');
-    this.load.spritesheet('char_boy_basic_walk', BASE+'char_boy_basic_walk.png', { frameWidth: 768, frameHeight: 1024 });
     this.load.image('char2', BASE+'char2.png');
     this.load.image('char3', BASE+'char3.png');
     this.load.image('char4', BASE+'char4.png');
@@ -4002,7 +4001,6 @@ class GameScene extends Phaser.Scene {
   }
   create() {
     gameScene = this;
-    this.anims.create({ key: 'char_boy_basic_walk', frames: this.anims.generateFrameNumbers('char_boy_basic_walk', { start: 0, end: 1 }), frameRate: 4, repeat: -1 });
     this._createTextures();
     this._buildMap();
     this._createPlayer();
@@ -4370,24 +4368,6 @@ class GameScene extends Phaser.Scene {
     if(dx&&dy){ dx*=.707; dy*=.707; }
     this.player.x=Phaser.Math.Clamp(this.player.x+dx,hw,W-hw);
     this.player.y=Phaser.Math.Clamp(this.player.y+dy,hh,H-hh);
-    // 걷기 애니메이션
-    const _moving = !!(dx || dy || this._dragging);
-    if (_moving) {
-      if (!this._walking) {
-        this._walking = true;
-        this.player.setOrigin(0.5, 0);
-        this.player.play('char_boy_basic_walk', true);
-        this.player.setDisplaySize(192, 224).setOrigin(0.5, 0);
-        if (!this._walkFrameListener) {
-          this._walkFrameListener = () => this.player.setDisplaySize(192, 224).setOrigin(0.5, 0);
-          this.player.on('animationupdate', this._walkFrameListener);
-        }
-      }
-    } else if (this._walking) {
-      this._walking = false;
-      this.player.anims.stop();
-      this.player.setTexture('char_boy_basic').setDisplaySize(192, 224).setOrigin(0.5, 0);
-    }
     // 플레이어 depth를 y좌표 기반으로 업데이트 (건물보다 항상 위)
     const pd = Math.floor(this.player.y/TILE)*10+5;
     this.player.setDepth(pd+1000);
