@@ -1542,6 +1542,22 @@ async function openTeacherDashboard() {
         <span style="color:#a78bfa;font-size:.85rem;">같은 반 친구들의 작품 (최신순 최대 20개)</span>
         <button class="c-tool-btn" onclick="loadFriendsWorks()" style="font-size:.78rem;">🔄 새로고침</button>
       </div>
+      <div id="teacher-class-selector" style="display:none;gap:8px;align-items:center;flex-wrap:wrap;margin-bottom:10px;">
+        <span style="color:#c084fc;font-size:.83rem;font-weight:600;">반 선택:</span>
+        <select id="teacher-view-grade" style="padding:4px 8px;border-radius:8px;border:1px solid #6b21a8;background:#1a0a2e;color:#e9d5ff;font-size:.82rem;" onchange="loadFriendsWorks()">
+          <option value="">전체 학년</option>
+          <option value="1">1학년</option>
+          <option value="2">2학년</option>
+          <option value="3">3학년</option>
+        </select>
+        <select id="teacher-view-class" style="padding:4px 8px;border-radius:8px;border:1px solid #6b21a8;background:#1a0a2e;color:#e9d5ff;font-size:.82rem;" onchange="loadFriendsWorks()">
+          <option value="">반 선택</option>
+          <option value="1">1반</option><option value="2">2반</option><option value="3">3반</option>
+          <option value="4">4반</option><option value="5">5반</option><option value="6">6반</option>
+          <option value="7">7반</option><option value="8">8반</option><option value="9">9반</option>
+          <option value="10">10반</option><option value="11">11반</option><option value="12">12반</option>
+        </select>
+      </div>
       <div id="coloring-friends-grid"><p style="color:#6b7280;font-size:.88rem;text-align:center;padding:30px 0;">작품을 불러오는 중...</p></div>
     </div>
   </div>
@@ -3365,6 +3381,8 @@ function switchColoringTab(tab) {
   document.getElementById('coloring-friends-panel').style.display = isPaint ? 'none' : '';
   document.getElementById('tab-paint').classList.toggle('active', isPaint);
   document.getElementById('tab-friends').classList.toggle('active', !isPaint);
+  const tcSel = document.getElementById('teacher-class-selector');
+  if (tcSel) tcSel.style.display = (!isPaint && window._isTeacher) ? 'flex' : 'none';
   if (!isPaint) loadFriendsWorks();
 }
 
@@ -3421,11 +3439,21 @@ async function loadFriendsWorks() {
     return;
   }
   const school = window._school || '';
-  const grade  = window._grade  || '';
-  const cls    = window._class  || '';
-  if (!school || !cls) {
-    grid.innerHTML = '<p style="color:#6b7280;font-size:.88rem;text-align:center;padding:30px 0;">학교/반 정보가 없습니다.</p>';
-    return;
+  let grade, cls;
+  if (window._isTeacher) {
+    grade = document.getElementById('teacher-view-grade')?.value || '';
+    cls   = document.getElementById('teacher-view-class')?.value || '';
+    if (!school || !cls) {
+      grid.innerHTML = '<p style="color:#6b7280;font-size:.88rem;text-align:center;padding:30px 0;">반을 선택하면 해당 반 학생들의 작품을 볼 수 있습니다.</p>';
+      return;
+    }
+  } else {
+    grade = window._grade  || '';
+    cls   = window._class  || '';
+    if (!school || !cls) {
+      grid.innerHTML = '<p style="color:#6b7280;font-size:.88rem;text-align:center;padding:30px 0;">학교/반 정보가 없습니다.</p>';
+      return;
+    }
   }
   grid.innerHTML = '<p style="color:#6b7280;font-size:.88rem;text-align:center;padding:30px 0;">불러오는 중...</p>';
   try {
