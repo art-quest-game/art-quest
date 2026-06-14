@@ -4368,6 +4368,8 @@ class GameScene extends Phaser.Scene {
     if(dx&&dy){ dx*=.707; dy*=.707; }
     this.player.x=Phaser.Math.Clamp(this.player.x+dx,hw,W-hw);
     this.player.y=Phaser.Math.Clamp(this.player.y+dy,hh,H-hh);
+    if(dx < 0) this.player.setFlipX(true);
+    else if(dx > 0) this.player.setFlipX(false);
     // 플레이어 depth를 y좌표 기반으로 업데이트 (건물보다 항상 위)
     const pd = Math.floor(this.player.y/TILE)*10+5;
     this.player.setDepth(pd+1000);
