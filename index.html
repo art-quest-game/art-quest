@@ -1586,6 +1586,13 @@ async function openTeacherDashboard() {
       <div id="typing-sentence-box"></div>
       <input id="typing-input" type="text" placeholder="여기에 타이핑하세요..."
              autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false">
+      <div id="typing-artwork-preview" style="display:none;align-items:center;gap:12px;margin-top:10px;padding:8px 12px;background:#0f0720;border:1px solid #6b21a850;border-radius:10px;">
+        <img id="typing-artwork-img" src="" alt="" style="width:64px;height:64px;object-fit:cover;border-radius:8px;border:1px solid #6b21a8;flex-shrink:0;">
+        <div>
+          <div id="typing-artwork-title" style="color:#ffd700;font-size:.8rem;font-weight:700;"></div>
+          <div id="typing-artwork-artist" style="color:#a78bfa;font-size:.72rem;margin-top:2px;"></div>
+        </div>
+      </div>
       <div id="typing-progress"></div>
     </div>
     <div id="typing-result-box" style="display:none">
@@ -3761,7 +3768,7 @@ function startTyping() {
 
   typingInput.value = '';
   typingInput.placeholder = '여기에 타이핑하세요...';
-  _prevLen = 0;
+  _prevLen = 0; _lastTypingIdx = -1;
   renderTypingDisplay('');
   updateTypingStats();
   typingInput.focus();
@@ -3797,6 +3804,32 @@ function advanceSentence() {
 }
 
 // ── 디스플레이 렌더링 ─────────────────────────
+function findArtworkForSentence(sentence) {
+  for (const cat of Object.values(ARTWORKS)) {
+    for (const art of cat) {
+      if (art.desc && art.desc.includes(sentence.replace(/[.!?。]$/, ''))) return art;
+    }
+  }
+  return null;
+}
+
+let _lastTypingIdx = -1;
+function updateTypingArtworkPreview() {
+  if (ts.idx === _lastTypingIdx) return;
+  _lastTypingIdx = ts.idx;
+  const sentence = ts.sentences[ts.idx] || '';
+  const art = findArtworkForSentence(sentence);
+  const preview = document.getElementById('typing-artwork-preview');
+  if (art) {
+    document.getElementById('typing-artwork-img').src = art.url || '';
+    document.getElementById('typing-artwork-title').textContent = art.title || '';
+    document.getElementById('typing-artwork-artist').textContent = art.artist || '';
+    preview.style.display = 'flex';
+  } else {
+    preview.style.display = 'none';
+  }
+}
+
 function renderTypingDisplay(val, composingNow) {
   const sentence = ts.sentences[ts.idx] || '';
   const compareUpTo = (composingNow && val.length > 0) ? val.length - 1 : val.length;
@@ -3815,6 +3848,7 @@ function renderTypingDisplay(val, composingNow) {
   }
   document.getElementById('typing-sentence-box').innerHTML = html || `<span class="c-dim">문장을 로딩 중...</span>`;
   document.getElementById('typing-progress').textContent = `문장 ${ts.idx + 1} / ${ts.sentences.length}`;
+  updateTypingArtworkPreview();
 }
 
 // ── 실시간 통계 갱신 ──────────────────────────
