@@ -456,6 +456,13 @@ body.is-mobile #joystick-zone { display:block; }
   #coloring-workspace { flex-direction:column; align-items:center; }
   #coloring-palette { grid-template-columns:repeat(6,1fr); }
 }
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  25% { transform: rotate(-90deg); }
+  50% { transform: rotate(-90deg); }
+  75% { transform: rotate(0deg); }
+  100% { transform: rotate(0deg); }
+}
 </style>
 <!-- Firebase SDK (compat 버전 - 전역 함수 지원) -->
 <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
@@ -1159,6 +1166,23 @@ async function openTeacherDashboard() {
 </script>
 </head>
 <body>
+<div id="rotate-overlay" style="
+  display: none;
+  position: fixed;
+  top: 0; left: 0;
+  width: 100%; height: 100%;
+  background: rgba(0,0,0,0.92);
+  z-index: 9999;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  text-align: center;
+  font-family: 'Noto Sans KR', sans-serif;
+">
+  <div style="font-size: 80px; animation: spin 2s linear infinite;">📱</div>
+  <p style="color: #FFD700; font-size: 24px; font-weight: bold; margin: 20px 0 10px;">화면을 가로로 돌려주세요!</p>
+  <p style="color: #ffffff; font-size: 16px;">명화퀘스트는 가로 모드에서 즐길 수 있어요 🎨</p>
+</div>
 <div id="game-container"></div>
 
 <div id="hud">
@@ -4463,6 +4487,19 @@ function answerOX(userAns) {
 }
 
 updateHUD();
+
+function checkOrientation() {
+  const overlay = document.getElementById('rotate-overlay');
+  if (!overlay) return;
+  if (window.innerWidth < window.innerHeight) {
+    overlay.style.display = 'flex';
+  } else {
+    overlay.style.display = 'none';
+  }
+}
+window.addEventListener('resize', checkOrientation);
+window.addEventListener('orientationchange', checkOrientation);
+checkOrientation();
 </script>
 </body>
 </html>
