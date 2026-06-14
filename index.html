@@ -725,7 +725,9 @@ window.doLogout = doLogout;
   box-shadow: 6px 6px 0 #0a1a04, inset 0 0 0 2px #7dde3a;
   border-radius: 4px;
   padding: 0;
-  overflow: hidden;
+  overflow-x: hidden;
+  overflow-y: auto;
+  max-height: 90vh;
 }
 .px-title-bar {
   background: linear-gradient(180deg, #8bc34a 0%, #558b2f 40%, #33691e 100%);
@@ -783,6 +785,14 @@ window.doLogout = doLogout;
 }
 .px-btn-ghost:hover { background:#1a2a10; border-color:#5aad2a; }
 .px-select { appearance:none; cursor:pointer; }
+@media (max-height: 500px) {
+  .px-title-bar { padding: 6px 16px 5px; }
+  .px-form-area { padding: 10px 16px 10px; }
+  .px-input { padding: 6px 10px; font-size: .8rem; margin-bottom: 5px; }
+  .px-tab { padding: 5px 4px; font-size: .78rem; }
+  .px-btn-main { padding: 8px; font-size: .88rem; margin-bottom: 6px; }
+  .px-btn-ghost { padding: 5px; font-size: .76rem; }
+}
 </style>
 
 <div id="login-overlay" style="display:none;position:fixed;top:0;left:0;width:100%;height:100%;z-index:9999;justify-content:center;align-items:center;background:rgba(0,0,0,.65);">
