@@ -24,15 +24,19 @@ canvas { display:block; image-rendering:pixelated; margin:0 auto; }
 #curator-bubble-name { color:#ffd700; font-size:.72rem; font-weight:700; margin-bottom:5px; }
 
 /* Building popup */
-#popup-overlay { display:none; position:fixed; inset:0; background:rgba(0,0,0,.72); z-index:100; justify-content:center; align-items:center; }
+#popup-overlay { display:none; position:fixed; inset:0; background:rgba(0,0,0,.75); z-index:1000; justify-content:center; align-items:center; }
 #popup-overlay.active { display:flex; }
-#popup-box { background:linear-gradient(135deg,#2d1b69,#1a0a2e 60%,#3d1060); border:3px solid #ffd700; border-radius:16px; padding:34px 42px; max-width:460px; width:90%; text-align:center; box-shadow:0 0 40px #a855f780,0 0 80px #ffd70040; }
+#popup-box { background:linear-gradient(135deg,#2d1b69,#1a0a2e 60%,#3d1060); border:3px solid #ffd700; border-radius:16px; padding:34px 42px; max-width:400px; width:90%; text-align:center; box-shadow:0 0 40px #a855f780,0 0 80px #ffd70040; position:relative; }
 #popup-box h2 { font-size:1.7rem; color:#ffd700; text-shadow:0 0 12px #ffd700aa; margin-bottom:10px; }
 .popup-icon { font-size:3.2rem; margin-bottom:12px; }
-#popup-box p { color:#e2c4ff; font-size:.97rem; line-height:1.6; margin-bottom:22px; }
+#popup-box p { color:#ffffff; font-size:.97rem; line-height:1.6; margin-bottom:22px; }
 .popup-btn { background:linear-gradient(90deg,#ffd700,#ff9900); color:#1a0a2e; border:none; border-radius:8px; padding:11px 30px; font-size:.97rem; font-weight:700; cursor:pointer; margin:4px 6px; transition:transform .1s; box-shadow:0 4px 14px #ffd70055; }
 .popup-btn:hover { transform:translateY(-2px); }
-.popup-btn.close-btn { background:linear-gradient(90deg,#6b21a8,#9333ea); color:#fff; }
+#popup-enter { background:linear-gradient(90deg,#22c55e,#16a34a); color:#fff; box-shadow:0 4px 14px #22c55e55; }
+#popup-enter:hover { transform:translateY(-2px); }
+#popup-close { position:absolute; top:12px; right:14px; background:none; border:none; color:#a78bfa; font-size:1.3rem; cursor:pointer; padding:4px 8px; line-height:1; border-radius:6px; transition:color .15s,background .15s; }
+#popup-close:hover { color:#fff; background:rgba(255,255,255,.1); }
+@media(max-width:767px){ #popup-box { width:80%; padding:24px 20px; } }
 
 /* Coin toast */
 #coin-toast { position:fixed; top:68px; left:50%; transform:translateX(-50%); background:linear-gradient(90deg,#ffd700,#ff9900); color:#1a0a2e; font-weight:700; font-size:1.05rem; padding:9px 26px; border-radius:24px; z-index:500; opacity:0; transition:opacity .3s; pointer-events:none; box-shadow:0 4px 20px #ffd70066; }
@@ -1228,13 +1232,11 @@ async function openTeacherDashboard() {
 <!-- Building popup -->
 <div id="popup-overlay">
   <div id="popup-box">
+    <button id="popup-close">✕</button>
     <div class="popup-icon" id="popup-icon">🏛️</div>
     <h2 id="popup-title">건물 이름</h2>
     <p id="popup-desc">설명 텍스트</p>
-    <div>
-      <button class="popup-btn" id="popup-enter">입장하기</button>
-      <button class="popup-btn close-btn" id="popup-close">닫기</button>
-    </div>
+    <button class="popup-btn" id="popup-enter">🚪 입장하기</button>
   </div>
 </div>
 
@@ -4226,18 +4228,7 @@ class GameScene extends Phaser.Scene {
     for(const z of this.zones){ if(px>=z.x1&&px<=z.x2&&py>=z.y1&&py<=z.y2){ found=z.building; break; } }
     if(found!==this.nearBuilding){
       this.nearBuilding=found;
-      const hint=document.getElementById('hint');
-      const mobileBtn=document.getElementById('mobile-enter-btn');
-      if(found){
-        const enterHint = isMobile ? '아래 버튼으로 입장' : 'Space / Enter 키로 입장';
-        hint.textContent=`${found.icon} ${found.name} — ${enterHint}`;
-        hint.classList.add('visible');
-        if(isMobile) mobileBtn.classList.add('visible');
-        if(this.buildingSprites[found.id]) { /* 효과 없음 */ }
-      } else {
-        hint.classList.remove('visible');
-        mobileBtn.classList.remove('visible');
-      }
+      if(found && !miniGameActive){ showPopup(found); }
     }
   }
 }
