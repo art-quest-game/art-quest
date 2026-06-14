@@ -4260,6 +4260,8 @@ class GameScene extends Phaser.Scene {
       .setDisplaySize(200, 250).setOrigin(0.5, 0.5).setDepth(cDepth).setFlipX(true);
     this.tweens.add({ targets:this.curator, y:cy-4, duration:2000, yoyo:true, repeat:-1, ease:'Sine.easeInOut' });
     // 💬 아이콘 (머리 위에서 위아래 bounce)
+    this.add.text(cx, cy - 130, '큐레이터', { fontSize:'14px', color:'#ffd700', stroke:'#000', strokeThickness:3, fontStyle:'bold' })
+      .setOrigin(0.5, 1).setDepth(cDepth + 1);
     this.curatorIcon = this.add.text(cx, cy - 140, '💬', {fontSize:'22px'})
       .setOrigin(0.5, 1).setDepth(cDepth + 1);
     this.tweens.add({ targets:this.curatorIcon, y:cy-152, duration:700, yoyo:true, repeat:-1, ease:'Sine.easeInOut' });
