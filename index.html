@@ -4261,7 +4261,7 @@ class GameScene extends Phaser.Scene {
       .setDisplaySize(200, 250).setOrigin(0.5, 0.5).setDepth(cDepth).setFlipX(true);
     this.tweens.add({ targets:this.curator, y:cy-4, duration:2000, yoyo:true, repeat:-1, ease:'Sine.easeInOut' });
     // 💬 아이콘 (머리 위에서 위아래 bounce)
-    this.add.text(cx, cy - 125, '큐레이터', { fontSize:'14px', color:'#ffd700', stroke:'#000', strokeThickness:3, fontStyle:'bold' })
+    this.add.text(cx, cy - 135, '큐레이터', { fontSize:'14px', color:'#ffd700', stroke:'#000', strokeThickness:3, fontStyle:'bold' })
       .setOrigin(0.5, 1).setDepth(cDepth + 1);
     this.curatorIcon = this.add.text(cx, cy - 140, '💬', {fontSize:'22px'})
       .setOrigin(0.5, 1).setDepth(cDepth + 1);
@@ -4293,7 +4293,7 @@ class GameScene extends Phaser.Scene {
     const hh=this.player.displayHeight/2;
     const hw=this.player.displayWidth/2;
     // 레이블 + 아이템 오버레이 위치 갱신 (항상)
-    this.playerLabel.setPosition(this.player.x, this.player.y + 8);
+    this.playerLabel.setPosition(this.player.x, this.player.y + 10);
     if (this.itemOverlays) {
       Object.values(this.itemOverlays).forEach(ov => {
         ov.obj.setPosition(this.player.x + ov.dx, this.player.y + ov.dy);
@@ -4375,8 +4375,13 @@ class GameScene extends Phaser.Scene {
     if (_moving) {
       if (!this._walking) {
         this._walking = true;
+        this.player.setOrigin(0.5, 1);
         this.player.play('char_boy_basic_walk', true);
         this.player.setDisplaySize(192, 224).setOrigin(0.5, 1);
+        if (!this._walkFrameListener) {
+          this._walkFrameListener = () => this.player.setDisplaySize(192, 224).setOrigin(0.5, 1);
+          this.player.on('animationupdate', this._walkFrameListener);
+        }
       }
     } else if (this._walking) {
       this._walking = false;
