@@ -4003,6 +4003,23 @@ class GameScene extends Phaser.Scene {
   create() {
     gameScene = this;
     this.anims.create({ key: 'char1_walk', frames: this.anims.generateFrameNumbers('char1_walk', { start: 0, end: 1 }), frameRate: 4, repeat: -1 });
+    // 코스튬 걷기 스프라이트시트 동적 생성 (frame0: 원본, frame1: 6px 위 이동)
+    COSTUME_DATA.forEach(c => {
+      const suffix = c.id.replace('c_', '');
+      ['boy', 'girl'].forEach(gender => {
+        const baseKey = `char_${gender}_${suffix}`;
+        const walkKey = `${baseKey}_walk`;
+        if (!this.textures.exists(baseKey) || this.textures.exists(walkKey)) return;
+        const src = this.textures.get(baseKey).getSourceImage();
+        const cv = document.createElement('canvas');
+        cv.width = src.width * 2; cv.height = src.height;
+        const ctx = cv.getContext('2d');
+        ctx.drawImage(src, 0, 0);
+        ctx.drawImage(src, src.width, -6);
+        this.textures.addSpriteSheet(walkKey, cv, { frameWidth: src.width, frameHeight: src.height });
+        this.anims.create({ key: walkKey, frames: this.anims.generateFrameNumbers(walkKey, { start: 0, end: 1 }), frameRate: 4, repeat: -1 });
+      });
+    });
     this._createTextures();
     this._buildMap();
     this._createPlayer();
@@ -4371,17 +4388,24 @@ class GameScene extends Phaser.Scene {
     // 걷기 애니메이션
     const _moving = !!(dx || dy || this._dragging);
     const _tk = this.player.texture?.key;
-    const _isChar1 = (_tk === 'char1' || _tk === 'char1_walk');
     if (_moving) {
-      if (_isChar1) {
-        if (!this._char1Walking) { this._char1Walking = true; this.player.play('char1_walk', true); }
-      } else {
-        this._wt = (this._wt || 0) + delta;
-        if (this._wt > 100) { this._wt = 0; this._wf = 1 - (this._wf || 0); this.player.y += this._wf ? 4 : -4; }
+      if (!this._char1Walking) {
+        this._char1Walking = true;
+        const baseKey = _tk.endsWith('_walk') ? _tk.slice(0, -5) : _tk;
+        const walkKey = baseKey === 'char1' ? 'char1_walk' : baseKey + '_walk';
+        if (this.anims.exists(walkKey)) {
+          this._walkBaseKey = baseKey;
+          this.player.play(walkKey, true);
+        }
       }
     } else {
-      if (this._char1Walking) { this._char1Walking = false; this.player.anims.stop(); this.player.setTexture('char1'); }
-      this._wt = 0;
+      if (this._char1Walking) {
+        this._char1Walking = false;
+        this.player.anims.stop();
+        const restoreKey = this._walkBaseKey || 'char1';
+        if (this.textures.exists(restoreKey)) this.player.setTexture(restoreKey).setDisplaySize(192, 224);
+        this._walkBaseKey = null;
+      }
     }
     // 플레이어 depth를 y좌표 기반으로 업데이트 (건물보다 항상 위)
     const pd = Math.floor(this.player.y/TILE)*10+5;
