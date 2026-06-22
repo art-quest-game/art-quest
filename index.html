@@ -4137,8 +4137,13 @@ const _keysDown = new Set();
 const _MOV_KEYS = new Set(['ArrowLeft','ArrowRight','ArrowUp','ArrowDown','KeyA','KeyD','KeyW','KeyS']);
 function _onMovKeyDown(e) {
   if (!_MOV_KEYS.has(e.code)) return;
+  // 로그인/회원가입 팝업이 열려있거나 미니게임 중이면 이동 처리도, preventDefault도 하지 않음
+  if (miniGameActive || window._loginOverlayOpen) return;
+  // 입력창(아이디/비밀번호/검색 등)에 포커스가 있으면 글자 입력을 막지 않음
+  const _focused = document.activeElement;
+  if (_focused && (_focused.tagName === 'INPUT' || _focused.tagName === 'TEXTAREA' || _focused.tagName === 'SELECT')) return;
   e.preventDefault();
-  if (!miniGameActive && !window._loginOverlayOpen) _keysDown.add(e.code);
+  _keysDown.add(e.code);
 }
 // keyup은 capture phase(window)에 등록 → 어떤 핸들러보다 먼저 실행되어 stuck 방지
 function _onMovKeyUp(e) { _keysDown.delete(e.code); }
