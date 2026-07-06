@@ -1132,9 +1132,9 @@ async function openClassRanking() {
     // school + role 2개 조건만 → 인덱스 불필요, class/grade는 JS 필터
     const snap = await db.collection('users').where('school','==',school).where('role','==','student').get();
     if (snap.empty) { document.getElementById('cr-body').innerHTML = '<p style="color:#7dd3fc;">아직 반 친구가 없습니다.</p>'; return; }
-    const ranks = ['견습생','화가지망생','화가','거장','마에스트로'];
-    const rankIcons = ['🌱','🎨','🖼️','⭐','🏆'];
-    function getRank(c) { if(c>=500)return 4;if(c>=200)return 3;if(c>=80)return 2;if(c>=30)return 1;return 0; }
+    const ranks = ['견습생','화가지망생','화가','숙련화가','거장','마에스트로'];
+    const rankIcons = ['🌱','🎨','🖼️','🎭','⭐','🏆'];
+    function getRank(c) { if(c>=500)return 5;if(c>=350)return 4;if(c>=250)return 3;if(c>=150)return 2;if(c>=50)return 1;return 0; }
     const students = [];
     snap.forEach(doc => { const d=doc.data(); if(d.class===cls && (!grade||d.grade===grade)) students.push(d); });
     if (!students.length) { document.getElementById('cr-body').innerHTML = '<p style="color:#7dd3fc;">아직 반 친구가 없습니다.</p>'; return; }
@@ -1195,9 +1195,9 @@ async function openTeacherDashboard() {
   }
   document.getElementById('td-school-name').textContent = '🏫 ' + school;
 
-  const ranks = ['견습생','화가지망생','화가','거장','마에스트로'];
-  const rankIcons = ['🌱','🎨','🖼️','⭐','🏆'];
-  function getRank(c) { if(c>=500)return 4;if(c>=200)return 3;if(c>=80)return 2;if(c>=30)return 1;return 0; }
+  const ranks = ['견습생','화가지망생','화가','숙련화가','거장','마에스트로'];
+  const rankIcons = ['🌱','🎨','🖼️','🎭','⭐','🏆'];
+  function getRank(c) { if(c>=500)return 5;if(c>=350)return 4;if(c>=250)return 3;if(c>=150)return 2;if(c>=50)return 1;return 0; }
 
   function renderStudentTable(students) {
     if (!students.length) { document.getElementById('td-body').innerHTML = '<p style="color:#a78bfa;">해당 반에 학생이 없습니다.</p>'; return; }
