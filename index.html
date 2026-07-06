@@ -1104,6 +1104,8 @@ function switchTab(tab) {
 function toggleGradeClass() {
   const role = document.getElementById('login-role')?.value;
   document.getElementById('grade-class-fields').style.display = role === 'student' ? 'flex' : 'none';
+  const numEl = document.getElementById('login-number');
+  if (numEl) numEl.style.display = role === 'student' ? '' : 'none';
 }
 async function openClassRanking() {
   const school = window._school || '';
@@ -1211,6 +1213,7 @@ async function openTeacherDashboard() {
       rows += `<tr style="border-bottom:1px solid #ffffff20;">
         <td style="padding:8px 6px;color:#ffd700;font-weight:700;text-align:center;">${d.number||'-'}</td>
         <td style="padding:8px 6px;">${d.name||'-'}</td>
+        <td style="padding:8px 6px;color:#7dd3fc;font-size:.82rem;">${d.userId||'-'}</td>
         <td style="padding:8px 6px;">${rankIcons[r]} ${ranks[r]}</td>
         <td style="padding:8px 6px;color:#ffd700;">🪙 ${d.coins||0}</td>
         <td style="padding:8px 6px;color:#a78bfa;">누적 ${d.totalCoins||0}</td>
@@ -1227,7 +1230,7 @@ async function openTeacherDashboard() {
     document.getElementById('td-body').innerHTML = `
       <table style="width:100%;border-collapse:collapse;">
         <thead><tr style="color:#ffd700;font-size:.8rem;border-bottom:2px solid #ffd70050;">
-          <th style="padding:6px;text-align:center;">번호</th><th style="padding:6px;text-align:left;">이름</th>
+          <th style="padding:6px;text-align:center;">번호</th><th style="padding:6px;text-align:left;">이름</th><th style="padding:6px;text-align:left;">아이디</th>
           <th style="padding:6px;text-align:left;">등급</th><th style="padding:6px;text-align:left;">코인</th>
           <th style="padding:6px;text-align:left;">누적코인</th><th style="padding:6px;text-align:left;">감상</th>
           <th style="padding:6px;text-align:left;">소감문</th><th style="padding:6px;text-align:left;">관리</th>
@@ -3585,6 +3588,25 @@ async function shareColoring() {
   }
 }
 
+async function toggleColoringLike(docId, btn) {
+  if (!window._currentUser) { alert('로그인 후 이용하세요.'); return; }
+  const uid = window._currentUser.uid;
+  const liked = btn.dataset.liked === '1';
+  btn.disabled = true;
+  try {
+    await db.collection('colorings').doc(docId).update({
+      likedBy: liked ? firebase.firestore.FieldValue.arrayRemove(uid)
+                     : firebase.firestore.FieldValue.arrayUnion(uid)
+    });
+    const span = btn.querySelector('span');
+    const n = parseInt(span.textContent || '0', 10);
+    const newN = liked ? Math.max(0, n - 1) : n + 1;
+    btn.dataset.liked = liked ? '0' : '1';
+    btn.innerHTML = (liked ? '🤍' : '❤️') + ' <span>' + newN + '</span>';
+  } catch(e) { console.error('좋아요 실패:', e); }
+  btn.disabled = false;
+}
+
 async function loadFriendsWorks() {
   const grid = document.getElementById('coloring-friends-grid');
   if (!grid) return;
@@ -3626,6 +3648,9 @@ async function loadFriendsWorks() {
     docs.forEach(doc => {
       const d = doc.data();
       const isOwn = window._isTeacher || (d.uid && d.uid === window._currentUser?.uid);
+      const likedBy = d.likedBy || [];
+      const myLiked = likedBy.includes(window._currentUser?.uid);
+      const likeCount = likedBy.length;
       const card = document.createElement('div');
       card.className = 'cf-card';
       card.innerHTML = `
@@ -3635,6 +3660,7 @@ async function loadFriendsWorks() {
           <div class="cf-card-title">${d.artName||'작품'}</div>
           <div class="cf-card-nick">✏️ ${d.nickname||'(닉네임 없음)'}</div>
           <div class="cf-card-meta">${cls}반 ${d.number ? d.number+'번' : ''}</div>
+          <button class="cf-like-btn" data-liked="${myLiked?'1':'0'}" onclick="toggleColoringLike('${doc.id}', this)" style="margin-top:6px;padding:4px 12px;border-radius:14px;border:1px solid #f472b6;background:#2a0a1e;color:#f9a8d4;font-size:.8rem;cursor:pointer;font-weight:700;">${myLiked?'❤️':'🤍'} <span>${likeCount}</span></button>
         </div>`;
       grid.appendChild(card);
     });
