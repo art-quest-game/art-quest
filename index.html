@@ -694,6 +694,9 @@ function openInfoEdit() {
   document.getElementById('ie-school').value  = window._school || '';
   document.getElementById('ie-grade').value   = window._grade  || '';
   document.getElementById('ie-class').value   = window._class  || '';
+  // 교사는 학년·반·번호 칸 숨김
+  document.getElementById('ie-grade').parentElement.style.display = window._isTeacher ? 'none' : 'flex';
+  document.getElementById('ie-number').style.display = window._isTeacher ? 'none' : '';
   // 번호는 Firestore에서 다시 읽어옴
   if (window._currentUser) {
     db.collection('users').doc(window._currentUser.uid).get().then(s => {
@@ -718,10 +721,11 @@ async function saveInfoEdit() {
   const msg     = document.getElementById('info-edit-msg');
   const btn     = document.getElementById('ie-save-btn');
   if (!school)       { msg.style.color='#ef4444'; msg.textContent='학교 이름을 입력해주세요.'; return; }
-  if (!grade||!cls)  { msg.style.color='#ef4444'; msg.textContent='학년과 반을 선택해주세요.';  return; }
+  if (!window._isTeacher && (!grade||!cls))  { msg.style.color='#ef4444'; msg.textContent='학년과 반을 선택해주세요.';  return; }
   btn.disabled = true; btn.textContent = '저장 중...';
   try {
-    await db.collection('users').doc(window._currentUser.uid).update({ school, grade, class: cls, number });
+    const payload = window._isTeacher ? { school } : { school, grade, class: cls, number };
+    await db.collection('users').doc(window._currentUser.uid).update(payload);
     window._school = school; window._grade = grade; window._class = cls;
     msg.style.color='#22c55e'; msg.textContent='저장되었습니다!';
     setTimeout(() => closeInfoEdit(), 1200);
@@ -1025,7 +1029,7 @@ window.doLogout = doLogout;
     <button class="settings-btn" onclick="toggleSettings(event)">⚙️ 설정</button>
     <div class="settings-dropdown" id="settings-dropdown">
       <button id="pw-change-menu-btn" onclick="openPwChange()" style="display:none;">🔑 비밀번호 변경</button>
-      <button id="info-edit-menu-btn" onclick="openInfoEdit()" style="display:none;">📝 학교/학년/반 수정</button>
+      <button id="info-edit-menu-btn" onclick="openInfoEdit()" style="display:none;">📝 내 정보 수정</button>
       <hr>
       <button onclick="doLogout()" style="color:#f87171;">🚪 로그아웃</button>
     </div>
