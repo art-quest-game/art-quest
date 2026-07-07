@@ -736,8 +736,8 @@ function _pwValidate() {
   const cf  = document.getElementById('pw-confirm').value;
   const msg = document.getElementById('pw-change-msg');
   const btn = document.getElementById('pw-submit-btn');
-  if (nw.length > 0 && nw.length < 4) {
-    msg.textContent = '새 비밀번호는 4자 이상이어야 합니다.'; msg.className = 'pw-change-msg-err';
+  if (nw.length > 0 && nw.length < 6) {
+    msg.textContent = '새 비밀번호는 6자 이상이어야 합니다.'; msg.className = 'pw-change-msg-err';
     btn.disabled = true; return;
   }
   if (cf.length > 0 && nw !== cf) {
@@ -745,7 +745,7 @@ function _pwValidate() {
     btn.disabled = true; return;
   }
   msg.textContent = ''; msg.className = '';
-  btn.disabled = !(cur && nw.length >= 4 && nw === cf);
+  btn.disabled = !(cur && nw.length >= 6 && nw === cf);
 }
 async function doChangePassword() {
   const user = window._currentUser;
@@ -1038,7 +1038,7 @@ window.doLogout = doLogout;
     <div id="pw-forced-notice" style="display:none;background:#450a0a;border:1px solid #ef4444;border-radius:8px;padding:9px 12px;color:#fca5a5;font-size:.78rem;line-height:1.5;">⚠️ 선생님이 비밀번호 변경을 요청했습니다.<br>새 비밀번호를 설정해야 게임을 이용할 수 있습니다.</div>
     <h3>🔑 비밀번호 변경</h3>
     <input class="pw-input" id="pw-current" type="password" placeholder="현재 비밀번호">
-    <input class="pw-input" id="pw-new" type="password" placeholder="새 비밀번호 (4자 이상)">
+    <input class="pw-input" id="pw-new" type="password" placeholder="새 비밀번호 (6자 이상)">
     <input class="pw-input" id="pw-confirm" type="password" placeholder="새 비밀번호 확인">
     <div id="pw-change-msg"></div>
     <button id="pw-submit-btn" onclick="doChangePassword()" disabled>변경하기</button>
@@ -1222,7 +1222,6 @@ async function openTeacherDashboard() {
           <button onclick="tdViewReviews('${uid}','${safeName}')" style="padding:3px 8px;border-radius:6px;border:1px solid #a78bfa;background:#1a0a2e;color:${reviewCount>0?'#e879f9':'#c084fc'};cursor:pointer;font-size:.75rem;">✍️ 소감문 (${reviewCount})</button>
         </td>
         <td style="padding:8px 6px;white-space:nowrap;">
-          <button onclick="tdResetPassword('${uid}','${safeName}')" style="padding:3px 8px;border-radius:6px;border:1px solid #fbbf24;background:#1a0a2e;color:#fbbf24;cursor:pointer;font-size:.75rem;margin-bottom:3px;display:block;">🔑 비번초기화</button>
           <button onclick="tdDeleteStudent('${uid}','${safeName}',${d.number||0})" style="padding:3px 8px;border-radius:6px;border:1px solid #ef4444;background:#1a0a2e;color:#f87171;cursor:pointer;font-size:.75rem;display:block;">🗑️ 삭제</button>
         </td>
       </tr>`;
