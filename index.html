@@ -2898,7 +2898,7 @@ const QUEST_DATA = {
   // ── 숨은 요소 찾기 (hidden) ──
   'goguryeo-hunt': { type:'hidden', instruction:'그림 속 숨겨진 요소 2가지를 모두 찾아보세요!', spots:[
     {x:20, y:22, label:'🦌 사슴'},
-    {x:72, y:18, label:'🏹 활 쏘는 사냥꾼'},
+    {x:72, y:15, label:'🏹 말 위에서 뒤돌아 활 쏘는 사냥꾼'},
   ]},
   'goguryeo-ssireum': { type:'hidden', instruction:'그림 속 숨겨진 요소 2가지를 모두 찾아보세요!', spots:[
     {x:42, y:35, label:'🌳 나무'},
@@ -4793,20 +4793,44 @@ function initHidden() {
   if (src) { imgEl.src = src; imgEl.style.display = 'block'; } else imgEl.style.display = 'none';
   const spotsDiv = document.getElementById('quest-hidden-spots');
   spotsDiv.innerHTML = '';
+  const spotEls = [];
   qState.def.spots.forEach((spot, i) => {
     const el = document.createElement('div');
     el.className = 'quest-spot';
     el.style.left = `${spot.x}%`; el.style.top = `${spot.y}%`;
-    el.onclick = () => {
-      if (qState.spotsFound.has(i)) return;
-      qState.spotsFound.add(i);
-      el.classList.add('found'); el.textContent = spot.label;
-      document.getElementById('quest-hidden-status').textContent = `발견: ${qState.spotsFound.size} / ${qState.def.spots.length}`;
-      if (qState.spotsFound.size >= qState.def.spots.length) setTimeout(finishQuest, 700);
-    };
+    el.style.opacity = '0'; el.style.pointerEvents = 'none'; // 찾기 전에는 보이지 않음
     spotsDiv.appendChild(el);
+    spotEls.push(el);
   });
-  document.getElementById('quest-hidden-status').textContent = `발견: 0 / ${qState.def.spots.length}`;
+  const status = document.getElementById('quest-hidden-status');
+  const renderStatus = (msg) => {
+    const list = qState.def.spots.map((s, i) =>
+      qState.spotsFound.has(i) ? `<span style="color:#4ade80;">☑ ${s.label}</span>` : `<span>☐ ${s.label}</span>`
+    ).join('&nbsp;&nbsp;');
+    status.innerHTML = `찾아보세요: ${list} &nbsp;(${qState.spotsFound.size}/${qState.def.spots.length})` + (msg ? ` &nbsp;<span style="color:#f87171;">${msg}</span>` : '');
+  };
+  renderStatus();
+  spotsDiv.onclick = (e) => {
+    const rect = imgEl.getBoundingClientRect();
+    const cx = ((e.clientX - rect.left) / rect.width) * 100;
+    const cy = ((e.clientY - rect.top) / rect.height) * 100;
+    let hit = false;
+    qState.def.spots.forEach((spot, i) => {
+      if (hit || qState.spotsFound.has(i)) return;
+      if (Math.hypot(cx - spot.x, cy - spot.y) <= 9) {
+        hit = true;
+        qState.spotsFound.add(i);
+        const el = spotEls[i];
+        el.classList.add('found'); el.textContent = spot.label; el.style.opacity = '1';
+        renderStatus();
+        if (qState.spotsFound.size >= qState.def.spots.length) setTimeout(finishQuest, 700);
+      }
+    });
+    if (!hit) {
+      renderStatus('그곳엔 없어요! 더 자세히 관찰해 보세요 👀');
+      setTimeout(() => { renderStatus(); }, 1200);
+    }
+  };
 }
 
 // ── 퀘스트 퍼즐 (구 색칠하기) ──
