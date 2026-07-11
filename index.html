@@ -4792,6 +4792,7 @@ function initReview() {
 function initHidden() {
   document.getElementById('quest-hidden').style.display = 'block';
   qState.spotsFound = new Set();
+  qState.nextSpot = 0;
   const imgEl = document.getElementById('quest-hidden-img');
   const src = currentArtwork.url || '';
   if (src) { imgEl.src = src; imgEl.style.display = 'block'; } else imgEl.style.display = 'none';
@@ -4801,40 +4802,40 @@ function initHidden() {
   qState.def.spots.forEach((spot, i) => {
     const el = document.createElement('div');
     el.className = 'quest-spot';
-    el.style.left = `${spot.x}%`; el.style.top = `${spot.y}%`;
-    el.style.opacity = '0'; el.style.pointerEvents = 'none'; // 찾기 전에는 보이지 않음
+    el.style.left = spot.x + '%'; el.style.top = spot.y + '%';
+    el.textContent = (i + 1);
+    el.dataset.idx = i;
     spotsDiv.appendChild(el);
     spotEls.push(el);
   });
   const status = document.getElementById('quest-hidden-status');
   const renderStatus = (msg) => {
-    const list = qState.def.spots.map((s, i) =>
-      qState.spotsFound.has(i) ? `<span style="color:#4ade80;">☑ ${s.label}</span>` : `<span>☐ ${s.label}</span>`
-    ).join('&nbsp;&nbsp;');
-    status.innerHTML = `찾아보세요: ${list} &nbsp;(${qState.spotsFound.size}/${qState.def.spots.length})` + (msg ? ` &nbsp;<span style="color:#f87171;">${msg}</span>` : '');
+    const list = qState.def.spots.map((s, i) => {
+      if (qState.spotsFound.has(i)) return '<span style="color:#4ade80;">☑ ' + s.label + '</span>';
+      if (i === qState.nextSpot) return '<span style="color:#ffd700;font-weight:bold;">▶ ' + s.label + '</span>';
+      return '<span style="color:#9ca3af;">☐ ' + s.label + '</span>';
+    }).join('&nbsp;&nbsp;');
+    status.innerHTML = '순서대로 찾아보세요: ' + list + ' &nbsp;(' + qState.spotsFound.size + '/' + qState.def.spots.length + ')' + (msg ? ' &nbsp;<span style="color:#f87171;">' + msg + '</span>' : '');
   };
   renderStatus();
-  spotsDiv.onclick = (e) => {
-    const rect = imgEl.getBoundingClientRect();
-    const cx = ((e.clientX - rect.left) / rect.width) * 100;
-    const cy = ((e.clientY - rect.top) / rect.height) * 100;
-    let hit = false;
-    qState.def.spots.forEach((spot, i) => {
-      if (hit || qState.spotsFound.has(i)) return;
-      if (Math.hypot(cx - spot.x, cy - spot.y) <= 9) {
-        hit = true;
-        qState.spotsFound.add(i);
-        const el = spotEls[i];
-        el.classList.add('found'); el.textContent = spot.label; el.style.opacity = '1';
-        renderStatus();
-        if (qState.spotsFound.size >= qState.def.spots.length) setTimeout(finishQuest, 700);
+  spotEls.forEach((el) => {
+    el.onclick = () => {
+      const i = Number(el.dataset.idx);
+      if (qState.spotsFound.has(i)) return;
+      if (i !== qState.nextSpot) {
+        const need = qState.def.spots[qState.nextSpot].label;
+        renderStatus('지금은 "' + need + '"을(를) 찾을 차례예요!');
+        setTimeout(() => { renderStatus(); }, 1400);
+        return;
       }
-    });
-    if (!hit) {
-      renderStatus('그곳엔 없어요! 더 자세히 관찰해 보세요 👀');
-      setTimeout(() => { renderStatus(); }, 1200);
-    }
-  };
+      qState.spotsFound.add(i);
+      qState.nextSpot++;
+      el.classList.add('found');
+      el.textContent = qState.def.spots[i].label;
+      renderStatus();
+      if (qState.spotsFound.size >= qState.def.spots.length) setTimeout(finishQuest, 700);
+    };
+  });
 }
 
 // ── 퀘스트 퍼즐 (구 색칠하기) ──
