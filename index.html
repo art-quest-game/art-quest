@@ -4665,24 +4665,6 @@ class GameScene extends Phaser.Scene {
     const _cy = this.player.y + hh;
     if (this.rankGlow) {
       this.rankGlow.clear();
-      const _rank = this._curRankIdx;
-      const _rings = [
-        { lw:1, color:0x93c5fd, alpha:0.28, r:1.10 }, // 0 견습생: 연파랑
-        { lw:2, color:0x38bdf8, alpha:0.42, r:1.20 }, // 1 화가지망생: 하늘색
-        { lw:2, color:0x4ade80, alpha:0.50, r:1.30 }, // 2 화가: 초록
-        { lw:3, color:0xfb923c, alpha:0.58, r:1.40 }, // 3 숙련화가: 주황
-        { lw:4, color:0xffd700, alpha:0.65, r:1.50 }, // 4 거장: 금
-        { lw:4, color:0xff99ff, alpha:0.82, r:1.50 }, // 5 마에스트로: 핑크
-      ];
-      if (_rank >= 0 && _rank < _rings.length) {
-        const cfg = _rings[_rank];
-        this.rankGlow.lineStyle(cfg.lw, cfg.color, cfg.alpha);
-        this.rankGlow.strokeCircle(_cx, _cy, hw * cfg.r);
-        if (_rank >= 5) {
-          this.rankGlow.lineStyle(2, 0xffffff, 0.32);
-          this.rankGlow.strokeCircle(_cx, _cy, hw * 1.90);
-        }
-      }
     }
     if (this.sparkleEmitter) this.sparkleEmitter.setPosition(_cx, _cy);
     // 큐레이터 말풍선 근접 감지 + 위치 업데이트
