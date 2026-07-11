@@ -58,7 +58,7 @@ canvas { display:block; image-rendering:pixelated; margin:0 auto; }
 .art-card { background:linear-gradient(135deg,#2d1b69,#1a0a2e); border:2px solid #ffd70030; border-radius:12px; overflow:hidden; cursor:pointer; position:relative; transition:transform .2s,border-color .2s,box-shadow .2s; min-width:150px; min-height:200px; }
 .art-card:hover { transform:translateY(-4px); border-color:#ffd700; box-shadow:0 8px 24px #ffd70040; }
 .art-card-img-wrap { width:100%; height:150px; overflow:hidden; background:#0f0720; position:relative; }
-.art-card-img { width:100%; height:100%; object-fit:cover; display:block; }
+.art-card-img { width:100%; height:100%; object-fit:contain; display:block; }
 .art-loading { width:100%; height:150px; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:6px; color:#6b7280; font-size:.78rem; }
 .art-fallback { width:100%; height:150px; background:linear-gradient(135deg,#1a0820,#0f0720); display:flex; flex-direction:column; align-items:center; justify-content:center; gap:5px; padding:8px; }
 .art-fallback span { color:#e2c4ff; font-size:.78rem; text-align:center; font-weight:600; }
