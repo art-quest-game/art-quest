@@ -525,6 +525,9 @@ body.is-mobile #joystick-zone { display:block; }
 /* 숨은그림찾기 정답 글씨 확대 */
 .quest-spot.found{font-size:17px !important; font-weight:bold; white-space:nowrap;}
 #quest-hidden-status{font-size:16px !important;}
+
+#mem-mode-select { display:none; flex-direction:column; align-items:center; gap:24px; padding:36px 0; }
+.mem-meaning-text { display:flex; align-items:center; justify-content:center; width:100%; height:100%; padding:8px; font-size:.78rem; line-height:1.45; font-weight:bold; color:#1a0a2e; background:#ffd700; border-radius:8px; text-align:center; word-break:keep-all; }
 </style>
 <!-- Firebase SDK (compat 버전 - 전역 함수 지원) -->
 <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
@@ -1550,12 +1553,29 @@ async function openTeacherDashboard() {
     <button class="close-mini" onclick="closeMiniGame('memory')">✕ 나가기</button>
   </div>
   <div id="memory-inner">
+    <div id="mem-mode-select">
+      <div class="quiz-type-title">🃏 카드 모드를 선택하세요!</div>
+      <div class="quiz-type-btns">
+        <button class="quiz-type-btn" onclick="startMemory('image')">
+          <div class="qtb-icon">🖼️</div>
+          <div class="qtb-name">그림 맞추기</div>
+          <div class="qtb-desc">같은 그림 두 장을<br>찾아요 (+5 코인)</div>
+        </button>
+        <button class="quiz-type-btn" onclick="startMemory('meaning')">
+          <div class="qtb-icon">💭</div>
+          <div class="qtb-name">의미 맞추기</div>
+          <div class="qtb-desc">그림과 어울리는<br>의미를 찾아요 (+8 코인)</div>
+        </button>
+      </div>
+    </div>
+    <div id="memory-play-area" style="display:none">
     <div id="memory-info-row">
       <div class="mem-info-chip">🃏 남은 짝: <span id="mem-pairs-left">8</span></div>
       <div class="mem-info-chip">🪙 획득: <span id="mem-coins-earned">0</span></div>
       <div class="mem-info-chip">🔄 시도: <span id="mem-attempts">0</span></div>
     </div>
     <div id="memory-grid"></div>
+    </div>
     <div id="memory-complete-box" style="display:none">
       <h3>🎉 모두 완성!</h3>
       <p style="color:#e2c4ff;margin:10px 0 18px">보너스 +20 코인 획득!</p>
@@ -3333,34 +3353,81 @@ function showQuizResult() {
 const MEM_ARTS = Object.values(ARTWORKS).flat().filter(a => a.url);
 const MEM_PAIR_COUNT = 8;
 
+// ── 그림-의미 연결 카드 데이터 (해석 단계) ──
+const MEANING_PAIRS = [
+  { id:'sehando',        meaning:'변함없는 절개와 의리' },
+  { id:'ssireum',        meaning:'씨름판에 모인 사람들의 활기찬 모습' },
+  { id:'pajukdo',        meaning:'고양이 한 마리가 일으킨 한바탕 소동' },
+  { id:'miindo',         meaning:'조선 여인의 단아하고 우아한 자태' },
+  { id:'inwangjesaekdo', meaning:'비 갠 뒤 우뚝 선 바위산의 웅장함' },
+  { id:'chochungdo',     meaning:'풀과 벌레를 섬세하게 그린 자연의 모습' },
+  { id:'dano',           meaning:'단옷날 여인들의 풍속과 일상' },
+  { id:'geumgang',       meaning:'금강산의 아름다운 풍경을 생생하게 담은 작품' },
+  { id:'starrynight',    meaning:'소용돌이치는 밤하늘의 강렬한 붓질' },
+  { id:'scream',         meaning:'인간의 불안과 절망을 표현한 작품' },
+  { id:'gleaners',       meaning:'들판에서 이삭을 줍는 농민들의 모습' },
+  { id:'lastsupper',     meaning:'예수와 열두 제자가 함께한 마지막 식사' },
+  { id:'greatwave',      meaning:'거대한 자연 앞에 선 작은 인간' },
+  { id:'pearlgirl',      meaning:'빛나는 진주와 신비로운 눈빛' },
+  { id:'sunflowers',     meaning:'생명력과 희망을 담은 해바라기' },
+  { id:'waterlilies',    meaning:'물 위에 비친 빛과 색의 아름다움' },
+];
+let _memMode = 'image';
+
+
 function openMemory() {
   document.getElementById('memory-screen').classList.add('active');
   disablePhaserInput();
-  startMemory();
+  showMemModeSelect();
 }
-function startMemory() {
+function startMemory(mode) {
+  if (mode) _memMode = mode;
   document.getElementById('memory-complete-box').style.display = 'none';
+  document.getElementById('mem-mode-select').style.display = 'none';
+  document.getElementById('memory-play-area').style.display = 'block';
   memState = { cards:[], flipped:[], matched:new Set(), lock:false, coinsEarned:0, attempts:0 };
-  // 전체 명화에서 랜덤으로 8개 선택
-  const shuffled = [...MEM_ARTS].sort(() => Math.random() - .5);
-  const selected = shuffled.slice(0, MEM_PAIR_COUNT);
-  const pairs = [...selected, ...selected].sort(() => Math.random() - .5);
+  let pairs;
+  if (_memMode === 'meaning') {
+    const pool = MEANING_PAIRS
+      .map(m => ({ ...m, art: MEM_ARTS.find(a => a.id === m.id) }))
+      .filter(m => m.art)
+      .sort(() => Math.random() - .5)
+      .slice(0, MEM_PAIR_COUNT);
+    const cards = [];
+    pool.forEach(m => {
+      cards.push({ pairId: m.id, kind:'art',     art: m.art });
+      cards.push({ pairId: m.id, kind:'meaning', text: m.meaning, art: m.art });
+    });
+    pairs = cards.sort(() => Math.random() - .5);
+  } else {
+    const selected = [...MEM_ARTS].sort(() => Math.random() - .5).slice(0, MEM_PAIR_COUNT);
+    pairs = [...selected, ...selected]
+      .map(a => ({ pairId: a.id, kind:'art', art: a }))
+      .sort(() => Math.random() - .5);
+  }
   memState.cards = pairs;
   document.getElementById('mem-pairs-left').textContent   = MEM_PAIR_COUNT;
   document.getElementById('mem-coins-earned').textContent = 0;
   document.getElementById('mem-attempts').textContent     = 0;
   const grid = document.getElementById('memory-grid');
-  grid.innerHTML = pairs.map((art, i) => `
+  grid.innerHTML = pairs.map((c, i) => {
+    const back = (c.kind === 'meaning')
+      ? `<div class="mem-meaning-text">${c.text}</div>`
+      : `<img src="${c.art.url}" alt="${c.art.title}" crossorigin="anonymous" referrerpolicy="no-referrer" onerror="this.style.display='none'">
+         <div class="mem-back-title">${c.art.title}</div>`;
+    return `
     <div class="mem-card" id="mc-${i}" onclick="flipCard(${i})">
       <div class="mem-card-inner">
         <div class="mem-face"><img src="images/card-back.jpg" alt="card back" onerror="this.style.display='none'"></div>
-        <div class="mem-back">
-          <img src="${art.url}" alt="${art.title}" crossorigin="anonymous" referrerpolicy="no-referrer" onerror="this.style.display='none'">
-          <div class="mem-back-title">${art.title}</div>
-        </div>
+        <div class="mem-back">${back}</div>
       </div>
-    </div>
-  `).join('');
+    </div>`;
+  }).join('');
+}
+function showMemModeSelect() {
+  document.getElementById('mem-mode-select').style.display = 'flex';
+  document.getElementById('memory-play-area').style.display = 'none';
+  document.getElementById('memory-complete-box').style.display = 'none';
 }
 function flipCard(i) {
   if (memState.lock) return;
@@ -3374,11 +3441,12 @@ function flipCard(i) {
     memState.attempts++;
     document.getElementById('mem-attempts').textContent = memState.attempts;
     const [a, b] = memState.flipped;
-    if (memState.cards[a].id === memState.cards[b].id) {
+    if (memState.cards[a].pairId === memState.cards[b].pairId && a !== b) {
       memState.matched.add(a); memState.matched.add(b);
       document.getElementById('mc-' + a).classList.add('matched');
       document.getElementById('mc-' + b).classList.add('matched');
-      memState.coinsEarned += 5; state.coins += 5; state.totalCoins += 5; updateHUD(); showCoinToast(5);
+      const gain = (_memMode === 'meaning') ? 8 : 5;
+      memState.coinsEarned += gain; state.coins += gain; state.totalCoins += gain; updateHUD(); showCoinToast(gain);
       document.getElementById('mem-coins-earned').textContent = memState.coinsEarned;
       document.getElementById('mem-pairs-left').textContent = MEM_PAIR_COUNT - memState.matched.size / 2;
       memState.flipped = []; memState.lock = false;
