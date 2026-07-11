@@ -1515,6 +1515,11 @@ async function openTeacherDashboard() {
           <div class="qtb-name">그림 맞추기</div>
           <div class="qtb-desc">설명을 보고<br>그림을 찾아요</div>
         </button>
+        <button class="quiz-type-btn" onclick="startQuiz('analysis')">
+          <div class="qtb-icon">🖌️</div>
+          <div class="qtb-name">작품 분석</div>
+          <div class="qtb-desc">구도·색채·기법을<br>분석해요</div>
+        </button>
       </div>
     </div>
     <div id="quiz-game-area" style="display:none">
@@ -3147,9 +3152,74 @@ const _quizShuffle = arr => {
 };
 const _pick3 = (pool, exclude) => _quizShuffle([...new Set(pool.filter(v => v !== exclude))]).slice(0, 3);
 
+
+// ── 작품 분석 퀴즈 문항 (조형 요소: 구도·색채·기법) ──
+const ANALYSIS_QUIZ = [
+  { id:'ssireum', q:'씨름도에서 구경꾼들이 씨름꾼을 둘러싼 배치는 어떤 구도인가요?',
+    choices:['수평 구도','원형 구도','삼각형 구도','수직 구도'], correct:'원형 구도',
+    exp:'구경꾼들이 원을 그리며 둘러싸 자연스럽게 시선이 가운데 씨름꾼에게 모입니다.' },
+  { id:'sehando', q:'세한도에서 넓은 여백이 만들어 내는 느낌은?',
+    choices:['화려하고 풍성함','쓸쓸하고 고요함','어수선하고 복잡함','밝고 경쾌함'], correct:'쓸쓸하고 고요함',
+    exp:'여백을 크게 남겨 추운 겨울의 고독과 지조를 표현했습니다.' },
+  { id:'geumgang', q:'금강전도에서 산봉우리를 표현한 붓의 특징은?',
+    choices:['부드러운 곡선','날카롭고 뾰족한 직선','둥근 점','넓은 색면'], correct:'날카롭고 뾰족한 직선',
+    exp:'겸재 정선은 금강산 암봉을 날카로운 수직 필선으로 표현했습니다.' },
+  { id:'plumblossom', q:'묵매도에서 사용한 색채의 특징은?',
+    choices:['화려한 원색','부드러운 파스텔','먹의 농담만 사용','강렬한 보색 대비'], correct:'먹의 농담만 사용',
+    exp:'먹의 짙고 옅음만으로 매화를 표현한 수묵화입니다.' },
+  { id:'pajukdo', q:'파적도에서 인물들의 자세가 만드는 느낌은?',
+    choices:['고요하고 정적임','급하고 역동적임','근엄하고 엄숙함','나른하고 여유로움'], correct:'급하고 역동적임',
+    exp:'고양이를 쫓는 순간의 급박한 움직임을 기울어진 자세로 담았습니다.' },
+  { id:'miindo', q:'미인도에서 인물을 돋보이게 하는 배경의 특징은?',
+    choices:['화려한 정원','웅장한 건물','아무것도 없는 여백','붐비는 시장'], correct:'아무것도 없는 여백',
+    exp:'배경을 비워 인물의 자태에 시선이 집중되도록 했습니다.' },
+  { id:'inwangjesaekdo', q:'인왕제색도에서 바위산을 표현한 방법은?',
+    choices:['가는 선으로 윤곽만 그림','짙은 먹을 넓게 칠함','밝은 색을 점점이 찍음','흰색으로 남겨둠'], correct:'짙은 먹을 넓게 칠함',
+    exp:'비 온 뒤 젖은 바위를 짙은 먹으로 대담하게 표현했습니다.' },
+  { id:'chochungdo', q:'초충도에서 풀과 벌레를 그린 방식의 특징은?',
+    choices:['크고 과장되게','작고 섬세하게','흐릿하고 몽롱하게','거칠고 강하게'], correct:'작고 섬세하게',
+    exp:'작은 생명을 세밀한 필치로 정성껏 관찰해 그렸습니다.' },
+  { id:'lastsupper', q:'최후의 만찬에서 원근선이 모이는 곳은?',
+    choices:['식탁의 빵','예수의 얼굴','창문','유다의 손'], correct:'예수의 얼굴',
+    exp:'원근법의 소실점을 예수에게 두어 시선이 집중됩니다.' },
+  { id:'starrynight', q:'별이 빛나는 밤의 붓질에서 가장 두드러진 특징은?',
+    choices:['직선적인 터치','소용돌이치는 곡선','점을 찍는 기법','평평한 색면'], correct:'소용돌이치는 곡선',
+    exp:'휘몰아치는 곡선의 붓질이 밤하늘의 움직임을 만듭니다.' },
+  { id:'sunflowers', q:'해바라기에서 고흐가 주로 사용한 색은?',
+    choices:['차가운 파란색 계열','따뜻한 노란색 계열','무채색','초록색 계열'], correct:'따뜻한 노란색 계열',
+    exp:'노랑의 다양한 변화만으로 화면을 채웠습니다.' },
+  { id:'grandejatte', q:'그랑자트 섬의 일요일 오후를 그린 기법은?',
+    choices:['넓은 붓으로 칠하기','작은 점을 찍어 표현','물감을 두껍게 바르기','선으로 윤곽 그리기'], correct:'작은 점을 찍어 표현',
+    exp:'작은 색점을 찍어 멀리서 보면 색이 섞여 보이는 점묘법입니다.' },
+  { id:'scream', q:'절규에서 불안한 느낌을 만드는 요소는?',
+    choices:['안정된 수평선','일렁이는 곡선','규칙적인 격자','정확한 원'], correct:'일렁이는 곡선',
+    exp:'하늘과 배경이 물결치듯 일렁여 불안과 공포를 드러냅니다.' },
+  { id:'greatwave', q:'큰 파도에서 파도와 후지산의 크기 관계는?',
+    choices:['후지산이 훨씬 크다','파도가 훨씬 크다','크기가 같다','후지산이 안 보인다'], correct:'파도가 훨씬 크다',
+    exp:'거대한 파도를 앞에 배치하고 후지산을 작게 그려 대비를 만듭니다.' },
+  { id:'danceclass', q:'무용 교실에서 인물들을 배치한 방식의 특징은?',
+    choices:['화면 가운데 모아 놓음','한쪽으로 치우쳐 배치','좌우 대칭으로 놓음','일렬로 세움'], correct:'한쪽으로 치우쳐 배치',
+    exp:'인물을 한쪽에 몰아 순간을 포착한 사진 같은 느낌을 줍니다.' },
+  { id:'athens', q:'아테네 학당의 구도에서 두드러진 특징은?',
+    choices:['불규칙하고 자유로움','좌우 대칭의 안정감','대각선의 역동성','화면이 비어 있음'], correct:'좌우 대칭의 안정감',
+    exp:'좌우 대칭 구조와 아치가 균형과 질서를 만듭니다.' },
+];
+
 function buildQuizByType(type) {
   const all = Object.values(ARTWORKS).flat().filter(a => a.url);
   const qs = [];
+
+  if (type === 'analysis') {
+    for (const item of ANALYSIS_QUIZ) {
+      const art = all.find(a => a.id === item.id);
+      if (!art) continue;
+      const choices = _quizShuffle([...item.choices]);
+      qs.push({ img: art.url, q: item.q, choices,
+                answer: choices.indexOf(item.correct),
+                exp: `"${art.title}" — ${item.exp}`, mode:'text' });
+    }
+    return qs;
+  }
 
   if (type === 'artist') {
     for (const art of all) {
