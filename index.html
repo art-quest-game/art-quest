@@ -441,7 +441,7 @@ canvas { display:block; image-rendering:pixelated; margin:0 auto; }
 #quest-review-submit { background:linear-gradient(90deg,#a855f7,#7c3aed); color:#fff; border:none; border-radius:8px; padding:10px 28px; font-weight:700; cursor:pointer; font-size:.9rem; transition:opacity .2s; }
 #quest-review-submit:disabled { opacity:.35; cursor:default; }
 #quest-hidden-area { position:relative; width:100%; border-radius:10px; background:#0f0720; margin-bottom:10px; }
-#quest-hidden-img { width:100%; height:auto; display:block; border-radius:10px; object-fit:contain; }
+#quest-hidden-img { width:100%; height:auto; max-height:52vh; display:block; margin:0 auto; border-radius:10px; object-fit:contain; }
 #quest-hidden-spots { position:absolute; inset:0; }
 .quest-spot { position:absolute; width:32px; height:32px; transform:translate(-50%,-50%); background:#ffd70066; border:2px solid #ffd700; border-radius:50%; cursor:pointer; display:flex; align-items:center; justify-content:center; font-size:.6rem; transition:all .2s; }
 .quest-spot:hover { background:#ffd700aa; }
@@ -2936,7 +2936,7 @@ const QUEST_DATA = {
   'miindo':     { type:'coloring', instruction:'미인도를 원하는 색으로 칠해보세요!',         regions:['👗 저고리','🎀 댕기','🌸 배경','💄 입술'] },
   // ── OX 퀴즈 (ox) ──
   'geumgang': { type:'ox', instruction:'금강전도에 대한 OX 퀴즈를 풀어보세요! (3문제 중 2개 이상 정답)', questions:[
-    {q:'금강전도는 실제 금강산을 보고 그린 실경산수화이다.', a:true,  explain:'겸재 정선은 금강산을 직접 유람한 후 금강전도를 그렸습니다.'},
+    {q:'금강전도는 실제 금강산을 보고 그린 진경산수화이다.', a:true,  explain:'겸재 정선은 금강산을 직접 유람한 후, 실제 경치를 화가의 눈으로 재해석한 진경산수화로 금강전도를 그렸습니다.'},
     {q:'금강전도의 작가 정선의 호는 단원이다.',              a:false, explain:'정선의 호는 겸재입니다. 단원은 김홍도의 호입니다.'},
     {q:'금강전도는 1734년(조선 영조 10년)에 그려졌다.',     a:true,  explain:'금강전도는 1734년에 제작된 조선 후기 대표 산수화입니다.'},
   ]},
@@ -4802,12 +4802,28 @@ function initHidden() {
   qState.def.spots.forEach((spot, i) => {
     const el = document.createElement('div');
     el.className = 'quest-spot';
-    el.style.left = spot.x + '%'; el.style.top = spot.y + '%';
     el.textContent = '?';
     el.dataset.idx = i;
     spotsDiv.appendChild(el);
     spotEls.push(el);
   });
+  // 이미지 실제 표시 영역에 맞춰 동그라미 위치 보정 (좌우/상하 여백 반영)
+  const placeSpots = () => {
+    const area = document.getElementById('quest-hidden-area');
+    if (!imgEl.naturalWidth || !area) return;
+    const ar = area.getBoundingClientRect();
+    const ir = imgEl.getBoundingClientRect();
+    const offL = ir.left - ar.left, offT = ir.top - ar.top;
+    qState.def.spots.forEach((spot, i) => {
+      const el = spotEls[i];
+      el.style.left = (offL + ir.width  * spot.x / 100) + 'px';
+      el.style.top  = (offT + ir.height * spot.y / 100) + 'px';
+    });
+  };
+  imgEl.onload = placeSpots;
+  if (imgEl.complete) placeSpots();
+  window.addEventListener('resize', placeSpots);
+  setTimeout(placeSpots, 100);
   const status = document.getElementById('quest-hidden-status');
   const renderStatus = (msg) => {
     const list = qState.def.spots.map((s, i) => {
