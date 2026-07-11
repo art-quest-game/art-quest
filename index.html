@@ -4502,8 +4502,6 @@ class GameScene extends Phaser.Scene {
       const cb = document.getElementById('curator-bubble');
       if (cb) {
         document.getElementById('curator-bubble-text').innerHTML = getCuratorDialogue().replace(/\n/g,'<br>');
-        cb.style.left = '50%';
-        cb.style.top  = '70px';
         cb.style.display = 'block';
       }
       this._curatorAutoTimer = setTimeout(() => {
@@ -4573,16 +4571,15 @@ class GameScene extends Phaser.Scene {
       const shouldShow = (nearCurator || this._curatorAutoVisible) && !this._curatorDismissed;
       if (shouldShow && cb) {
         cb.style.display = 'block';
-        if (nearCurator) {
-          // 근접 감지 시: 큐레이터 월드 좌표 기준 위치
-          const rect = game.canvas.getBoundingClientRect();
-          const cam  = this.cameras.main;
-          const sx = rect.left + (this.curator.x - cam.scrollX) * (rect.width  / _gameW);
-          const sy = rect.top  + (this.curator.y - this.curator.displayHeight * 0.5 - 8 - cam.scrollY) * (rect.height / _gameH);
-          cb.style.left = sx + 'px';
-          cb.style.top  = (sy - (cb.offsetHeight || 80)) + 'px';
-        }
-        // 자동 표시 시: setTimeout에서 설정한 화면 중앙 위치 유지
+        // 근접이든 자동 표시든 항상 큐레이터 머리 위에 배치
+        const rect = game.canvas.getBoundingClientRect();
+        const cam  = this.cameras.main;
+        let sx = rect.left + (this.curator.x - cam.scrollX) * (rect.width  / _gameW);
+        const sy = rect.top  + (this.curator.y - this.curator.displayHeight * 0.5 - 8 - cam.scrollY) * (rect.height / _gameH);
+        const halfW = (cb.offsetWidth || 290) / 2;
+        sx = Math.max(halfW + 8, Math.min(sx, window.innerWidth - halfW - 8));
+        cb.style.left = sx + 'px';
+        cb.style.top  = Math.max(8, sy - (cb.offsetHeight || 80)) + 'px';
       } else if (!shouldShow && cb) {
         cb.style.display = 'none';
       }
