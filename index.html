@@ -4593,7 +4593,7 @@ class GameScene extends Phaser.Scene {
       // if(b.id==='gallery') spr.setBlendMode(Phaser.BlendModes.MULTIPLY);
       this.buildingSprites[b.id]=spr;
       this.add.text(b.tx*TILE+b.width*TILE/2,(b.ty+b.height)*TILE+8,b.icon+' '+b.name,
-        {fontSize:'30px',color:'#FFD700',stroke:'#000000',strokeThickness:7,fontStyle:'bold'}).setOrigin(.5,0).setDepth((b.ty+b.height)*10+1);
+        {fontSize:'26px',color:'#FFD700',stroke:'#000000',strokeThickness:6,fontStyle:'bold'}).setOrigin(.5,0).setDepth((b.ty+b.height)*10+1);
     });
     this._plantTrees();
     this._addPixelDetails();
