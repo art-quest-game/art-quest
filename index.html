@@ -81,7 +81,7 @@ canvas { display:block; image-rendering:pixelated; margin:0 auto; }
 .art-card-info { padding:9px 12px; }
 .art-card-title { color:#ffd700; font-weight:700; font-size:.86rem; }
 .art-card-artist { color:#a78bfa; font-size:.76rem; margin-top:2px; }
-.art-card-viewed { position:absolute; top:7px; right:7px; background:#22c55e; color:#fff; border-radius:50%; width:23px; height:23px; display:flex; align-items:center; justify-content:center; font-size:.8rem; }
+.art-card-viewed { position:absolute; top:7px; right:7px; background:#22c55e; color:#fff; border:2px solid #16a34a; border-radius:50%; width:24px; height:24px; display:flex; align-items:center; justify-content:center; font-size:.85rem; font-weight:900; line-height:1; z-index:2; box-shadow:0 1px 5px rgba(0,0,0,.35); }
 
 /* Art detail */
 #art-detail-overlay { display:none; position:fixed; inset:0; background:rgba(0,0,0,.82); z-index:300; justify-content:center; align-items:center; padding:18px; }
@@ -436,9 +436,9 @@ canvas { display:block; image-rendering:pixelated; margin:0 auto; }
 /* Quest */
 #art-quest-btn { background:linear-gradient(90deg,#a855f7,#7c3aed); color:#fff; border:none; border-radius:8px; padding:9px 20px; font-size:.9rem; font-weight:700; cursor:pointer; transition:transform .1s; white-space:nowrap; }
 #art-quest-btn:hover { transform:scale(1.04); }
-.art-quest-badge { position:absolute; top:7px; left:7px; background:#a855f7; color:#fff; border-radius:50%; width:22px; height:22px; display:flex; align-items:center; justify-content:center; font-size:.72rem; font-weight:900; font-style:italic; z-index:2; }
-.art-quest-badge.done { background:#22c55e; font-style:normal; }
-.art-quest-badge.todo { background:transparent; border:2px solid #a855f7; color:#a855f7; }
+.art-quest-badge { position:absolute; top:7px; left:7px; border-radius:50%; width:24px; height:24px; display:flex; align-items:center; justify-content:center; font-size:.85rem; font-weight:900; line-height:1; z-index:2; box-shadow:0 1px 5px rgba(0,0,0,.35); }
+.art-quest-badge.done { background:#22c55e; border:2px solid #16a34a; color:#fff; }
+.art-quest-badge.todo { background:rgba(26,10,46,.75); border:2px solid #a855f7; color:#a855f7; }
 #quest-overlay { display:none; position:fixed; inset:0; background:rgba(0,0,0,.88); z-index:400; justify-content:center; align-items:center; overflow-y:auto; padding:12px; }
 #quest-overlay.active { display:flex; }
 #quest-box { background:linear-gradient(135deg,#2d1b69,#1a0a2e 60%,#3d1060); border:3px solid #a855f7; border-radius:18px; padding:28px 32px; max-width:560px; width:100%; margin:auto; max-height:calc(100dvh - 24px); overflow-y:auto; box-sizing:border-box; }
@@ -3001,7 +3001,7 @@ function renderGalleryTab(tab) {
       </div>
       ${myPicks[art.id] ? '<div class="art-pick-star">⭐</div>' : ''}
       ${viewedArtworks.has(art.id) ? '<div class="art-card-viewed">✓</div>' : ''}
-      ${QUEST_DATA[art.id] ? (questCoinPaid(art.id, QUEST_DATA[art.id].type) ? '<div class="art-quest-badge done">✅</div>' : '<div class="art-quest-badge todo">○</div>') : ''}
+      ${QUEST_DATA[art.id] ? (questCoinPaid(art.id, QUEST_DATA[art.id].type) ? '<div class="art-quest-badge done">Q</div>' : '<div class="art-quest-badge todo">Q</div>') : ''}
     </div>
   `).join('');
 }
