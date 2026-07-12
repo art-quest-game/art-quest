@@ -3414,7 +3414,7 @@ function buildQuizByType(type) {
       if (others.length < 3) continue;
       const wrongs = others.slice(0, 3);
       const pool = _quizShuffle([art, ...wrongs]);
-      qs.push({ q: `${art.artist}의 작품을 찾아보세요!`, qSub: art.desc.slice(0, 70) + '…', choices: pool.map(x => x.url), answer: pool.findIndex(x => x.id === art.id), exp: `"${art.title}" — ${art.artist}`, mode:'image' });
+      qs.push({ q: `${art.artist}의 작품을 찾아보세요!`, qSub: art.desc, choices: pool.map(x => x.url), answer: pool.findIndex(x => x.id === art.id), exp: `"${art.title}" — ${art.artist}`, mode:'image' });
     }
   }
   return qs;
