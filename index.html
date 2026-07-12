@@ -16,7 +16,7 @@ canvas { display:block; image-rendering:pixelated; margin:0 auto; }
 .hud-chip { background:linear-gradient(135deg,#2d1b69cc,#1a0a2ecc); border:2px solid #ffd700; border-radius:24px; padding:6px 18px; color:#ffd700; font-size:.93rem; font-weight:700; text-shadow:0 0 8px #ffd700aa; }
 
 /* Hint */
-#hint { position:fixed; bottom:26px; left:50%; transform:translateX(-50%); background:rgba(45,27,105,.95); border:3px solid #ffd700; border-radius:26px; padding:13px 32px; color:#ffd700; font-size:1.25rem; font-weight:800; letter-spacing:.5px; z-index:50; opacity:0; transition:opacity .3s; pointer-events:none; box-shadow:0 0 22px #ffd70066; animation:hintPulse 1.6s ease-in-out infinite; }
+#hint { position:fixed; bottom:26px; left:50%; transform:translateX(-50%); background:rgba(45,27,105,.95); border:3px solid #ffd700; border-radius:26px; padding:10px 26px; color:#ffd700; font-size:1.05rem; font-weight:800; letter-spacing:.5px; z-index:50; opacity:0; transition:opacity .3s; pointer-events:none; box-shadow:0 0 22px #ffd70066; animation:hintPulse 1.6s ease-in-out infinite; }
 @keyframes hintPulse { 0%,100% { box-shadow:0 0 18px #ffd70055; } 50% { box-shadow:0 0 30px #ffd700aa; } }
 #hint.visible { opacity:1; }
 /* 큐레이터 말풍선 */
