@@ -136,9 +136,9 @@ canvas { display:block; image-rendering:pixelated; margin:0 auto; }
 /* Quiz: image inside question box */
 #quiz-question-img { width:100%; max-height:200px; object-fit:contain; border-radius:10px; margin-bottom:14px; }
 /* Quiz: image choices (그림 맞추기) */
-.quiz-img-choices { display:grid; grid-template-columns:1fr 1fr; gap:8px; margin-bottom:14px; }
-.quiz-img-choice { border:3px solid #6b21a8; border-radius:10px; overflow:hidden; cursor:pointer; padding:0; background:none; transition:border-color .2s; aspect-ratio:4/3; display:block; width:100%; }
-.quiz-img-choice img { width:100%; height:100%; object-fit:cover; display:block; pointer-events:none; }
+.quiz-img-choices { display:grid; grid-template-columns:repeat(4,1fr); gap:8px; margin-bottom:14px; }
+.quiz-img-choice { border:3px solid #6b21a8; border-radius:10px; overflow:hidden; cursor:pointer; padding:0; background:#0f0720; transition:border-color .2s; aspect-ratio:3/4; display:block; width:100%; }
+.quiz-img-choice img { width:100%; height:100%; object-fit:contain; display:block; pointer-events:none; }
 .quiz-img-choice:hover:not(:disabled) { border-color:#ffd700; }
 .quiz-img-choice.correct { border-color:#22c55e; box-shadow:0 0 12px #22c55e60; }
 .quiz-img-choice.wrong   { border-color:#ef4444; opacity:.55; }
