@@ -542,6 +542,19 @@ body.is-mobile #joystick-zone { display:block; }
 #share-btn:hover:not(:disabled) { filter:brightness(1.12); transform:translateY(-1px); }
 #share-btn:disabled { opacity:.6; cursor:default; }
 .cf-card-note { margin-top:6px; font-size:.75rem; color:#c4b5fd; line-height:1.45; text-align:left; word-break:keep-all; background:#1a0a2e; padding:6px 8px; border-radius:8px; }
+
+#art-pick-btn { background:linear-gradient(90deg,#f59e0b,#f97316); color:#fff; border:none; }
+#art-pick-btn:disabled { opacity:.45; cursor:default; }
+#art-pick-form { margin:10px 16px 16px; padding:12px; background:#1a0a2e; border:2px solid #f59e0b; border-radius:12px; }
+.apf-title { color:#ffd700; font-size:.88rem; font-weight:700; margin-bottom:7px; }
+.apf-title span { color:#a78bfa; font-weight:400; font-size:.8rem; }
+#art-pick-reason { width:100%; padding:8px 10px; border-radius:9px; border:1px solid #6b21a8; background:#0f0720; color:#e2c4ff; font-size:.85rem; resize:vertical; min-height:52px; font-family:inherit; box-sizing:border-box; }
+#art-pick-reason::placeholder { color:#6b5a8c; }
+.apf-btns { display:flex; gap:7px; margin-top:8px; }
+#apf-save { flex:1; padding:8px; border:none; border-radius:9px; background:linear-gradient(90deg,#f59e0b,#f97316); color:#fff; font-weight:700; cursor:pointer; }
+#apf-cancel { padding:8px 16px; border:1px solid #6b21a8; border-radius:9px; background:#241041; color:#a78bfa; cursor:pointer; }
+.art-pick-star { position:absolute; top:7px; left:7px; font-size:1.15rem; filter:drop-shadow(0 0 4px #f59e0b); }
+.art-pick-reason { margin-top:5px; font-size:.74rem; color:#c4b5fd; line-height:1.4; word-break:keep-all; }
 </style>
 <!-- Firebase SDK (compat 버전 - 전역 함수 지원) -->
 <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
@@ -570,6 +583,7 @@ auth.onAuthStateChanged(async (user) => {
     if (data) {
       if (typeof data.coins === 'number') state.coins = data.coins;
       if (typeof data.totalCoins === 'number') state.totalCoins = data.totalCoins;
+      if (data.myPicks && typeof data.myPicks === 'object') myPicks = data.myPicks;
       if (typeof data.artworks === 'number') state.artworks = data.artworks;
       if (data.equipped) data.equipped.forEach(id => shopEquipped.add(id));
       if (data.owned) data.owned.forEach(id => shopOwned.add(id));
@@ -827,6 +841,7 @@ async function saveUserData() {
   try {
     await db.collection('users').doc(window._currentUser.uid).update({
       coins: state.coins, totalCoins: state.totalCoins, artworks: state.artworks,
+      myPicks: myPicks,
       equipped: [...shopEquipped],
       currentCostume: window._currentCostume || 'c_basic',
       ownedCostumes: [...purchasedCostumes],
@@ -1426,6 +1441,7 @@ async function openTeacherDashboard() {
   <div id="gallery-tabs">
     <button class="tab-btn active" data-tab="korea">🇰🇷 한국명화</button>
     <button class="tab-btn" data-tab="world">🌍 세계명화</button>
+    <button class="tab-btn" data-tab="mypick">⭐ 내가 고른 작품</button>
   </div>
   <div style="text-align:center;margin:6px 0 2px;">
     <a href="images/art_guide.pdf" download style="display:inline-block;margin:0 4px;padding:5px 14px;border-radius:14px;border:1px solid #fbbf24;background:#1a0a2e;color:#fbbf24;font-size:.82rem;text-decoration:none;font-weight:700;">📖 감상 자료집 (PDF)</a>
@@ -1446,7 +1462,16 @@ async function openTeacherDashboard() {
       <div class="art-detail-btns">
         <button id="art-appreciate-btn">✅ 감상 완료 (+5 코인)</button>
         <button id="art-quest-btn" style="display:none">🎯 퀘스트 도전하기</button>
+        <button id="art-pick-btn" onclick="openPickForm()">⭐ 내 인생 작품으로 고르기 (+15 코인)</button>
         <button id="art-close-btn">닫기</button>
+      </div>
+      <div id="art-pick-form" style="display:none">
+        <div class="apf-title">⭐ 이 작품을 고른 이유를 적어주세요 <span>(10자 이상)</span></div>
+        <textarea id="art-pick-reason" maxlength="100" placeholder="예) 밤하늘의 소용돌이가 살아 움직이는 것 같아서 오래 보게 되었다."></textarea>
+        <div class="apf-btns">
+          <button id="apf-save" onclick="savePick()">저장하기</button>
+          <button id="apf-cancel" onclick="closePickForm()">취소</button>
+        </div>
       </div>
     </div>
   </div>
@@ -2892,6 +2917,9 @@ const ARTWORKS = {
 //  갤러리
 // ─────────────────────────────────────────────
 const viewedArtworks = new Set();
+// ── 내 인생 작품 3선 (판단 단계) ──
+const MY_PICK_MAX = 3;
+let myPicks = {};
 let currentArtwork   = null;
 let curGalleryTab    = 'korea';
 
@@ -2912,23 +2940,55 @@ function openGallery() {
   renderGalleryTab(curGalleryTab);
 }
 
+function findArtById(id) {
+  for (const k of Object.keys(ARTWORKS)) {
+    const f = (ARTWORKS[k] || []).find(a => a.id === id);
+    if (f) return { art: f, tab: k };
+  }
+  return null;
+}
 function renderGalleryTab(tab) {
   curGalleryTab = tab;
   document.querySelectorAll('#gallery-tabs .tab-btn').forEach(b => b.classList.toggle('active', b.dataset.tab === tab));
+  const grid = document.getElementById('gallery-grid');
+
+  if (tab === 'mypick') {
+    const ids = Object.keys(myPicks);
+    if (!ids.length) {
+      grid.innerHTML = '<p style="grid-column:1/-1;color:#a78bfa;text-align:center;padding:40px 10px;line-height:1.7;">아직 고른 작품이 없어요.<br>마음에 드는 작품을 열고 <b style="color:#ffd700;">⭐ 내 인생 작품으로 고르기</b>를 눌러보세요! (최대 3점)</p>';
+      return;
+    }
+    grid.innerHTML = ids.map(id => {
+      const f = findArtById(id);
+      if (!f) return '';
+      const art = f.art;
+      return `
+      <div class="art-card" onclick="openArtDetail('${art.id}','${f.tab}')">
+        <div class="art-card-img-wrap" id="img-${art.id}">${artCardImgHtml(art)}</div>
+        <div class="art-card-info">
+          <div class="art-card-title">${art.title}</div>
+          <div class="art-card-artist">${art.artist} · ${art.year}</div>
+          <div class="art-pick-reason">💬 ${escapeHtml(myPicks[id])}</div>
+        </div>
+        <div class="art-pick-star">⭐</div>
+      </div>`;
+    }).join('');
+    return;
+  }
+
   const list = ARTWORKS[tab] || [];
-  const esc  = s => s.replace(/'/g, '&#39;');
-  document.getElementById('gallery-grid').innerHTML = list.map(art => `
+  grid.innerHTML = list.map(art => `
     <div class="art-card" onclick="openArtDetail('${art.id}','${tab}')">
       <div class="art-card-img-wrap" id="img-${art.id}">${artCardImgHtml(art)}</div>
       <div class="art-card-info">
         <div class="art-card-title">${art.title}</div>
         <div class="art-card-artist">${art.artist} · ${art.year}</div>
       </div>
+      ${myPicks[art.id] ? '<div class="art-pick-star">⭐</div>' : ''}
       ${viewedArtworks.has(art.id) ? '<div class="art-card-viewed">✓</div>' : ''}
       ${QUEST_DATA[art.id] ? (questCoinPaid(art.id, QUEST_DATA[art.id].type) ? '<div class="art-quest-badge done">✅</div>' : '<div class="art-quest-badge todo">○</div>') : ''}
     </div>
   `).join('');
-
 }
 
 // ─────────────────────────────────────────────
@@ -3121,6 +3181,62 @@ const QUEST_DATA = {
 };
 let qState = {};
 
+
+// ── 내 인생 작품 3선 (판단 단계) ──
+function refreshPickBtn() {
+  const btn = document.getElementById('art-pick-btn');
+  if (!btn || !currentArtwork) return;
+  const picked = !!myPicks[currentArtwork.id];
+  const full   = Object.keys(myPicks).length >= MY_PICK_MAX;
+  if (picked) {
+    btn.textContent = '⭐ 고른 작품 (다시 누르면 취소)';
+    btn.disabled = false;
+    btn.onclick = () => removePick();
+  } else if (full) {
+    btn.textContent = `⭐ 인생 작품은 ${MY_PICK_MAX}개까지 (가득 참)`;
+    btn.disabled = true;
+    btn.onclick = null;
+  } else {
+    btn.textContent = '⭐ 내 인생 작품으로 고르기 (+15 코인)';
+    btn.disabled = false;
+    btn.onclick = () => openPickForm();
+  }
+}
+function openPickForm() {
+  if (!window._currentUser) { alert('로그인 후 이용할 수 있습니다.'); return; }
+  document.getElementById('art-pick-form').style.display = 'block';
+  document.getElementById('art-pick-reason').value = '';
+  setTimeout(() => document.getElementById('art-pick-reason').focus(), 60);
+}
+function closePickForm() {
+  const f = document.getElementById('art-pick-form');
+  if (f) f.style.display = 'none';
+}
+async function savePick() {
+  if (!currentArtwork) return;
+  const el = document.getElementById('art-pick-reason');
+  const reason = (el.value || '').trim();
+  if (reason.length < 10) { alert('이 작품을 고른 이유를 10자 이상 적어주세요 ⭐'); el.focus(); return; }
+  const vr = validateReview(reason);
+  if (!vr.ok) { alert(vr.reason); el.focus(); return; }
+  if (Object.keys(myPicks).length >= MY_PICK_MAX) { alert(`인생 작품은 ${MY_PICK_MAX}개까지 고를 수 있어요.`); return; }
+  myPicks[currentArtwork.id] = reason;
+  state.coins += 15; state.totalCoins += 15; updateHUD(); showCoinToast(15);
+  await saveUserData();
+  closePickForm();
+  refreshPickBtn();
+  renderGalleryTab(curGalleryTab);
+  alert('⭐ 인생 작품으로 등록되었어요!');
+}
+async function removePick() {
+  if (!currentArtwork) return;
+  if (!confirm('이 작품을 인생 작품에서 뺄까요? (코인은 회수되지 않아요)')) return;
+  delete myPicks[currentArtwork.id];
+  await saveUserData();
+  refreshPickBtn();
+  renderGalleryTab(curGalleryTab);
+}
+
 function openArtDetail(artId, tab) {
   const art = (ARTWORKS[tab] || []).find(a => a.id === artId);
   if (!art) return;
@@ -3134,6 +3250,7 @@ function openArtDetail(artId, tab) {
   const btn = document.getElementById('art-appreciate-btn');
   btn.disabled = viewedArtworks.has(art.id);
   btn.textContent = viewedArtworks.has(art.id) ? '✅ 이미 감상한 작품' : '✅ 감상 완료 (+5 코인)';
+  closePickForm(); refreshPickBtn();
   const qBtn = document.getElementById('art-quest-btn');
   const qDef = QUEST_DATA[art.id];
   if (qDef) {
