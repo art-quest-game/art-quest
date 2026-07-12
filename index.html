@@ -81,7 +81,9 @@ canvas { display:block; image-rendering:pixelated; margin:0 auto; }
 .art-card-info { padding:9px 12px; }
 .art-card-title { color:#ffd700; font-weight:700; font-size:.86rem; }
 .art-card-artist { color:#a78bfa; font-size:.76rem; margin-top:2px; }
-.art-card-viewed { position:absolute; top:7px; left:7px; background:#22c55e; color:#fff; border:2px solid #16a34a; border-radius:50%; width:24px; height:24px; display:flex; align-items:center; justify-content:center; font-size:.85rem; font-weight:900; line-height:1; z-index:2; box-shadow:0 1px 5px rgba(0,0,0,.35); }
+.art-card-viewed { position:absolute; top:7px; left:7px; border-radius:50%; width:24px; height:24px; display:flex; align-items:center; justify-content:center; font-size:.85rem; font-weight:900; line-height:1; z-index:2; box-shadow:0 1px 5px rgba(0,0,0,.35); }
+.art-card-viewed.done { background:#22c55e; border:2px solid #16a34a; color:#fff; }
+.art-card-viewed.todo { background:rgba(26,10,46,.75); border:2px solid #4ade8099; color:#4ade8099; }
 
 /* Art detail */
 #art-detail-overlay { display:none; position:fixed; inset:0; background:rgba(0,0,0,.82); z-index:300; justify-content:center; align-items:center; padding:18px; }
@@ -3000,7 +3002,7 @@ function renderGalleryTab(tab) {
         <div class="art-card-artist">${art.artist} · ${art.year}</div>
       </div>
       ${myPicks[art.id] ? '<div class="art-pick-star">⭐</div>' : ''}
-      ${viewedArtworks.has(art.id) ? '<div class="art-card-viewed">✓</div>' : ''}
+      ${viewedArtworks.has(art.id) ? '<div class="art-card-viewed done">✓</div>' : '<div class="art-card-viewed todo">✓</div>'}
       ${QUEST_DATA[art.id] ? (questCoinPaid(art.id, QUEST_DATA[art.id].type) ? '<div class="art-quest-badge done">Q</div>' : '<div class="art-quest-badge todo">Q</div>') : ''}
     </div>
   `).join('');
