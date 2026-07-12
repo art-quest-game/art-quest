@@ -4593,7 +4593,7 @@ class GameScene extends Phaser.Scene {
       // if(b.id==='gallery') spr.setBlendMode(Phaser.BlendModes.MULTIPLY);
       this.buildingSprites[b.id]=spr;
       this.add.text(b.tx*TILE+b.width*TILE/2,(b.ty+b.height)*TILE+8,b.icon+' '+b.name,
-        {fontSize:'20px',color:'#FFD700',stroke:'#000000',strokeThickness:5,fontStyle:'bold'}).setOrigin(.5,0).setDepth((b.ty+b.height)*10+1);
+        {fontSize:'30px',color:'#FFD700',stroke:'#000000',strokeThickness:7,fontStyle:'bold'}).setOrigin(.5,0).setDepth((b.ty+b.height)*10+1);
     });
     this._plantTrees();
     this._addPixelDetails();
@@ -4811,7 +4811,7 @@ class GameScene extends Phaser.Scene {
       .setDisplaySize(200, 250).setOrigin(0.5, 0.5).setDepth(cDepth).setFlipX(true);
     this.tweens.add({ targets:this.curator, y:cy-4, duration:2000, yoyo:true, repeat:-1, ease:'Sine.easeInOut' });
     // 💬 아이콘 (머리 위에서 위아래 bounce)
-    this.add.text(cx, cy - 95, '큐레이터', { fontSize:'14px', color:'#ffd700', stroke:'#000', strokeThickness:3, fontStyle:'bold' })
+    this.add.text(cx, cy - 95, '큐레이터', { fontSize:'22px', color:'#ffd700', stroke:'#000', strokeThickness:5, fontStyle:'bold' })
       .setOrigin(0.5, 1).setDepth(cDepth + 1);
     this.curatorIcon = this.add.text(cx, cy - 140, '💬', {fontSize:'22px'})
       .setOrigin(0.5, 1).setDepth(cDepth + 1);
