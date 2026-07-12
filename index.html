@@ -528,6 +528,10 @@ body.is-mobile #joystick-zone { display:block; }
 
 #mem-mode-select { display:none; flex-direction:column; align-items:center; gap:24px; padding:36px 0; }
 .mem-meaning-text { display:flex; align-items:center; justify-content:center; width:100%; height:100%; padding:8px; font-size:.78rem; line-height:1.45; font-weight:bold; color:#1a0a2e; background:#ffd700; border-radius:8px; text-align:center; word-break:keep-all; }
+
+#coloring-note { width:100%; margin-top:8px; padding:8px 10px; border-radius:10px; border:1px solid #6b21a8; background:#1a0a2e; color:#e2c4ff; font-size:.85rem; resize:vertical; min-height:52px; font-family:inherit; }
+#coloring-note::placeholder { color:#7c6a9c; }
+.cf-card-note { margin-top:6px; font-size:.75rem; color:#c4b5fd; line-height:1.45; text-align:left; word-break:keep-all; background:#1a0a2e; padding:6px 8px; border-radius:8px; }
 </style>
 <!-- Firebase SDK (compat 버전 - 전역 함수 지원) -->
 <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
@@ -1602,6 +1606,7 @@ async function openTeacherDashboard() {
       <button class="c-tool-btn" onclick="clearColoringCanvas()">🗑️ 전체 지우기</button>
       <button class="c-tool-btn save-btn" onclick="saveColoringCanvas()">💾 저장</button>
       <button class="c-tool-btn" id="share-btn" onclick="shareColoring()" style="background:linear-gradient(90deg,#a855f7,#7c3aed);color:#fff;border-color:#a855f7;">🚀 공유하기</button>
+      <textarea id="coloring-note" maxlength="120" placeholder="내가 표현한 명화 재해석에 대해 설명해주세요. (10자 이상)"></textarea>
       <span style="color:#6b21a8;font-size:.8rem;margin-left:4px;">|</span>
       <button class="c-tool-btn" onclick="zoomColoring(1.3)" title="확대">🔍+</button>
       <button class="c-tool-btn" onclick="zoomColoring(0.77)" title="축소">🔍-</button>
@@ -3697,6 +3702,15 @@ async function shareColoring() {
   const cls    = window._class  || '';
   if (!school || !cls) { alert('학교/반 정보가 없습니다. 다시 로그인해주세요.'); return; }
 
+  const noteEl = document.getElementById('coloring-note');
+  const note = (noteEl?.value || '').trim();
+  if (note.length < 10) {
+    alert('내가 표현한 명화 재해석에 대해 10자 이상 설명해주세요 🎨');
+    noteEl?.focus(); return;
+  }
+  const vr = validateReview(note);
+  if (!vr.ok) { alert(vr.reason); noteEl?.focus(); return; }
+
   const btn = document.getElementById('share-btn');
   btn.disabled = true; btn.textContent = '저장 중...';
 
@@ -3724,10 +3738,12 @@ async function shareColoring() {
       nickname: ud.name   || '',
       artName:  cCurrentArtName,
       image:    imageData,
+      note:     note,
       savedAt:  firebase.firestore.FieldValue.serverTimestamp()
     });
 
     btn.textContent = '✅ 공유됨!';
+    if (noteEl) noteEl.value = '';
     setTimeout(() => { btn.disabled = false; btn.textContent = '🚀 공유하기'; }, 2500);
   } catch(e) {
     console.error('공유 실패:', e);
@@ -3736,6 +3752,10 @@ async function shareColoring() {
   }
 }
 
+
+function escapeHtml(t) {
+  return String(t).replace(/[&<>"']/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
+}
 async function toggleColoringLike(docId, btn) {
   if (!window._currentUser) { alert('로그인 후 이용하세요.'); return; }
   const uid = window._currentUser.uid;
@@ -3808,6 +3828,7 @@ async function loadFriendsWorks() {
           <div class="cf-card-title">${d.artName||'작품'}</div>
           <div class="cf-card-nick">✏️ ${d.nickname||'(닉네임 없음)'}</div>
           <div class="cf-card-meta">${cls}반 ${d.number ? d.number+'번' : ''}</div>
+          ${d.note ? `<div class="cf-card-note">💭 ${escapeHtml(d.note)}</div>` : ''}
           <button class="cf-like-btn" data-liked="${myLiked?'1':'0'}" onclick="toggleColoringLike('${doc.id}', this)" style="margin-top:6px;padding:4px 12px;border-radius:14px;border:1px solid #f472b6;background:#2a0a1e;color:#f9a8d4;font-size:.8rem;cursor:pointer;font-weight:700;">${myLiked?'❤️':'🤍'} <span>${likeCount}</span></button>
         </div>`;
       grid.appendChild(card);
