@@ -572,6 +572,22 @@ body.is-mobile #joystick-zone { display:block; }
 #apf-cancel { padding:8px 16px; border:1px solid #6b21a8; border-radius:9px; background:#241041; color:#a78bfa; cursor:pointer; }
 .art-pick-star { position:absolute; top:7px; left:7px; font-size:1.15rem; filter:drop-shadow(0 0 4px #f59e0b); }
 .art-pick-reason { margin-top:5px; font-size:.74rem; color:#c4b5fd; line-height:1.4; word-break:keep-all; }
+
+#art-mood-btn { background:linear-gradient(90deg,#38bdf8,#0ea5e9); color:#fff; border:none; border-radius:20px; padding:9px 16px; font-weight:700; cursor:pointer; }
+#art-mood-btn.done { background:linear-gradient(90deg,#22c55e,#16a34a); }
+#art-mood-form { margin:10px 16px 16px; padding:12px; background:#1a0a2e; border:2px solid #38bdf8; border-radius:12px; }
+.amf-title { color:#7dd3fc; font-size:.88rem; font-weight:700; margin-bottom:9px; }
+.amf-title span { color:#a78bfa; font-weight:400; font-size:.78rem; }
+#mood-chips { display:flex; flex-wrap:wrap; gap:6px; margin-bottom:9px; }
+.mood-chip { padding:7px 14px; border-radius:18px; border:2px solid #6b21a8; background:#241041; color:#c4b5fd; font-size:.85rem; font-weight:700; cursor:pointer; transition:all .15s; }
+.mood-chip:hover { border-color:#38bdf8; color:#7dd3fc; }
+.mood-chip.sel { background:linear-gradient(90deg,#38bdf8,#0ea5e9); border-color:#38bdf8; color:#fff; }
+#art-mood-reason { width:100%; padding:8px 10px; border-radius:9px; border:1px solid #6b21a8; background:#0f0720; color:#e2c4ff; font-size:.85rem; resize:vertical; min-height:52px; font-family:inherit; box-sizing:border-box; }
+#art-mood-reason::placeholder { color:#6b5a8c; }
+.amf-btns { display:flex; gap:7px; margin-top:8px; }
+#amf-save { flex:1; padding:8px; border:none; border-radius:9px; background:linear-gradient(90deg,#38bdf8,#0ea5e9); color:#fff; font-weight:700; cursor:pointer; }
+#amf-cancel { padding:8px 16px; border:1px solid #6b21a8; border-radius:9px; background:#241041; color:#a78bfa; cursor:pointer; }
+.art-mood-saved { margin:8px 16px 0; padding:8px 11px; background:#0f2a3a; border-left:3px solid #38bdf8; border-radius:7px; color:#7dd3fc; font-size:.83rem; line-height:1.5; text-align:left; }
 </style>
 <!-- Firebase SDK (compat 버전 - 전역 함수 지원) -->
 <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
@@ -601,6 +617,7 @@ auth.onAuthStateChanged(async (user) => {
       if (typeof data.coins === 'number') state.coins = data.coins;
       if (typeof data.totalCoins === 'number') state.totalCoins = data.totalCoins;
       if (data.myPicks && typeof data.myPicks === 'object') myPicks = data.myPicks;
+      if (data.myMoods && typeof data.myMoods === 'object') myMoods = data.myMoods;
       if (typeof data.artworks === 'number') state.artworks = data.artworks;
       if (data.equipped) data.equipped.forEach(id => shopEquipped.add(id));
       if (data.owned) data.owned.forEach(id => shopOwned.add(id));
@@ -859,6 +876,7 @@ async function saveUserData() {
     await db.collection('users').doc(window._currentUser.uid).update({
       coins: state.coins, totalCoins: state.totalCoins, artworks: state.artworks,
       myPicks: myPicks,
+      myMoods: myMoods,
       equipped: [...shopEquipped],
       currentCostume: window._currentCostume || 'c_basic',
       ownedCostumes: [...purchasedCostumes],
@@ -1479,8 +1497,18 @@ async function openTeacherDashboard() {
       <div class="art-detail-btns">
         <button id="art-appreciate-btn">✅ 감상 완료 (+5 코인)</button>
         <button id="art-quest-btn" style="display:none">🎯 퀘스트 도전하기</button>
+        <button id="art-mood-btn" onclick="openMoodForm()">💭 분위기 해석 (+10 코인)</button>
         <button id="art-pick-btn" onclick="openPickForm()">⭐ 내 인생 작품으로 고르기 (+15 코인)</button>
         <button id="art-close-btn">닫기</button>
+      </div>
+      <div id="art-mood-form" style="display:none">
+        <div class="amf-title">💭 이 작품에서 느껴지는 분위기는? <span>(하나를 고르고 이유를 10자 이상 적어주세요)</span></div>
+        <div id="mood-chips"></div>
+        <textarea id="art-mood-reason" maxlength="100" placeholder="예) 겨울 나무가 홀로 서 있어서 외롭고 쓸쓸하게 느껴졌다."></textarea>
+        <div class="amf-btns">
+          <button id="amf-save" onclick="saveMood()">저장하기</button>
+          <button id="amf-cancel" onclick="closeMoodForm()">취소</button>
+        </div>
       </div>
       <div id="art-pick-form" style="display:none">
         <div class="apf-title">⭐ 이 작품을 고른 이유를 적어주세요 <span>(10자 이상)</span></div>
@@ -2937,6 +2965,11 @@ const viewedArtworks = new Set();
 // ── 내 인생 작품 3선 (판단 단계) ──
 const MY_PICK_MAX = 3;
 let myPicks = {};
+// ── 작품 분위기 해석 (해석 단계) ──
+const MOOD_OPTIONS = ['고요함','역동적','쓸쓸함','즐거움','신비로움','웅장함','따뜻함','긴장감'];
+let myMoods = {};   // { artId: { mood: '쓸쓸함', reason: '이유' } }
+let _selMood = null;
+
 let currentArtwork   = null;
 let curGalleryTab    = 'korea';
 
@@ -3254,6 +3287,61 @@ async function removePick() {
   renderGalleryTab(curGalleryTab);
 }
 
+
+// ── 작품 분위기 해석 (해석 단계) ──
+function refreshMoodBtn() {
+  const btn = document.getElementById('art-mood-btn');
+  if (!btn || !currentArtwork) return;
+  const saved = myMoods[currentArtwork.id];
+  if (saved) {
+    btn.textContent = '💭 분위기 해석 완료 (수정하기)';
+    btn.classList.add('done');
+  } else {
+    btn.textContent = '💭 분위기 해석 (+10 코인)';
+    btn.classList.remove('done');
+  }
+}
+function renderMoodChips() {
+  const box = document.getElementById('mood-chips');
+  box.innerHTML = MOOD_OPTIONS.map(m =>
+    `<button class="mood-chip${_selMood===m?' sel':''}" onclick="pickMood('${m}')">${m}</button>`
+  ).join('');
+}
+function pickMood(m) {
+  _selMood = m;
+  renderMoodChips();
+}
+function openMoodForm() {
+  if (!window._currentUser) { alert('로그인 후 이용할 수 있습니다.'); return; }
+  const saved = myMoods[currentArtwork.id];
+  _selMood = saved ? saved.mood : null;
+  document.getElementById('art-mood-reason').value = saved ? saved.reason : '';
+  renderMoodChips();
+  document.getElementById('art-mood-form').style.display = 'block';
+  closePickForm();
+}
+function closeMoodForm() {
+  const f = document.getElementById('art-mood-form');
+  if (f) f.style.display = 'none';
+  _selMood = null;
+}
+async function saveMood() {
+  if (!currentArtwork) return;
+  if (!_selMood) { alert('먼저 분위기를 하나 골라주세요 💭'); return; }
+  const el = document.getElementById('art-mood-reason');
+  const reason = (el.value || '').trim();
+  if (reason.length < 10) { alert('그렇게 느낀 이유를 10자 이상 적어주세요 💭'); el.focus(); return; }
+  const vr = validateReview(reason);
+  if (!vr.ok) { alert(vr.reason); el.focus(); return; }
+  const isNew = !myMoods[currentArtwork.id];
+  myMoods[currentArtwork.id] = { mood: _selMood, reason: reason };
+  if (isNew) { state.coins += 10; state.totalCoins += 10; updateHUD(); showCoinToast(10); }
+  await saveUserData();
+  closeMoodForm();
+  refreshMoodBtn();
+  alert(isNew ? '💭 분위기 해석이 저장되었어요!' : '💭 수정되었어요!');
+}
+
 function openArtDetail(artId, tab) {
   const art = (ARTWORKS[tab] || []).find(a => a.id === artId);
   if (!art) return;
@@ -3268,6 +3356,7 @@ function openArtDetail(artId, tab) {
   btn.disabled = viewedArtworks.has(art.id);
   btn.textContent = viewedArtworks.has(art.id) ? '✅ 이미 감상한 작품' : '✅ 감상 완료 (+5 코인)';
   closePickForm(); refreshPickBtn();
+  closeMoodForm(); refreshMoodBtn();
   const qBtn = document.getElementById('art-quest-btn');
   const qDef = QUEST_DATA[art.id];
   if (qDef) {
