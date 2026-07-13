@@ -546,8 +546,6 @@ body.is-mobile #joystick-zone { display:block; }
 #mem-mode-select { display:none; flex-direction:column; align-items:center; gap:24px; padding:36px 0; }
 .mem-meaning-text { display:flex; align-items:center; justify-content:center; width:100%; height:100%; padding:8px; font-size:.78rem; line-height:1.45; font-weight:bold; color:#1a0a2e; background:#ffd700; border-radius:8px; text-align:center; word-break:keep-all; }
 
-#coloring-note { width:100%; margin-top:8px; padding:8px 10px; border-radius:10px; border:1px solid #6b21a8; background:#1a0a2e; color:#e2c4ff; font-size:.85rem; resize:vertical; min-height:52px; font-family:inherit; }
-#coloring-note::placeholder { color:#7c6a9c; }
 .cf-card-note { margin-top:6px; font-size:.75rem; color:#c4b5fd; line-height:1.45; text-align:left; word-break:keep-all; background:#1a0a2e; padding:6px 8px; border-radius:8px; }
 
 #coloring-share-box { max-width:760px; margin:16px auto 0; padding:14px 16px; background:#241041; border:2px solid #6b21a8; border-radius:14px; }
@@ -588,6 +586,10 @@ body.is-mobile #joystick-zone { display:block; }
 #amf-save { flex:1; padding:8px; border:none; border-radius:9px; background:linear-gradient(90deg,#38bdf8,#0ea5e9); color:#fff; font-weight:700; cursor:pointer; }
 #amf-cancel { padding:8px 16px; border:1px solid #6b21a8; border-radius:9px; background:#241041; color:#a78bfa; cursor:pointer; }
 .art-mood-saved { margin:8px 16px 0; padding:8px 11px; background:#0f2a3a; border-left:3px solid #38bdf8; border-radius:7px; color:#7dd3fc; font-size:.83rem; line-height:1.5; text-align:left; }
+
+.c-tool-btn.c-undo-redo { background:#1e3a5f; border-color:#38bdf8; color:#7dd3fc; font-weight:700; }
+.c-tool-btn.c-undo-redo:hover:not(:disabled) { background:linear-gradient(90deg,#38bdf8,#0ea5e9); color:#fff; border-color:#38bdf8; }
+.c-tool-btn.c-undo-redo:disabled { opacity:.35; cursor:default; background:#2d1b69; border-color:#6b21a8; color:#7c6a9c; }
 </style>
 <!-- Firebase SDK (compat 버전 - 전역 함수 지원) -->
 <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
@@ -1677,7 +1679,9 @@ async function openTeacherDashboard() {
   </div>
   <div id="coloring-inner">
     <div id="coloring-toolbar">
-      <button class="c-tool-btn" onclick="clearColoringCanvas(); document.getElementById('coloring-screen').classList.remove('active'); enablePhaserInput();">◀ 돌아가기</button>
+      <button class="c-tool-btn" onclick="clearColoringCanvas(); cResetUndo(); document.getElementById('coloring-screen').classList.remove('active'); enablePhaserInput();">✕ 나가기</button>
+      <button class="c-tool-btn c-undo-redo" id="c-undo-btn" onclick="cUndo()" disabled title="되돌리기">↶ 되돌리기</button>
+      <button class="c-tool-btn c-undo-redo" id="c-redo-btn" onclick="cRedo()" disabled title="다시하기">↷ 다시하기</button>
       <span style="color:#a78bfa;font-size:.8rem;">브러쉬 크기:</span>
       <button class="c-tool-btn brush-size-btn active" id="bsz-s" onclick="setBrushSize(6,this)">S</button>
       <button class="c-tool-btn brush-size-btn"        id="bsz-m" onclick="setBrushSize(14,this)">M</button>
@@ -1685,7 +1689,7 @@ async function openTeacherDashboard() {
       <button class="c-tool-btn" id="eraser-btn" onclick="toggleEraser()">지우개</button>
       <button class="c-tool-btn" onclick="clearColoringCanvas()">🗑️ 전체 지우기</button>
       <button class="c-tool-btn save-btn" onclick="saveColoringCanvas()">💾 저장</button>
-      <textarea id="coloring-note" maxlength="120" placeholder="내가 표현한 명화 재해석에 대해 설명해주세요. (10자 이상)"></textarea>
+
       <span style="color:#6b21a8;font-size:.8rem;margin-left:4px;">|</span>
       <button class="c-tool-btn" onclick="zoomColoring(1.3)" title="확대">🔍+</button>
       <button class="c-tool-btn" onclick="zoomColoring(0.77)" title="축소">🔍-</button>
@@ -3736,6 +3740,60 @@ let selectedColor = '#1d4ed8';
 let cBrushSize    = 6;
 let cEraser       = false;
 let cDrawing      = false;
+// ── 색칠 되돌리기/다시하기 ──
+let cUndoStack = [];
+let cRedoStack = [];
+const C_UNDO_MAX = 20;
+function cSnapshot() {
+  const cv = document.getElementById('coloring-draw-canvas');
+  if (!cv) return null;
+  try { return cv.toDataURL('image/png'); } catch(e) { return null; }
+}
+function cPushUndo() {
+  const snap = cSnapshot();
+  if (!snap) return;
+  cUndoStack.push(snap);
+  if (cUndoStack.length > C_UNDO_MAX) cUndoStack.shift();
+  cRedoStack = [];
+  cRefreshUndoBtns();
+}
+function cRestore(dataUrl) {
+  const cv = document.getElementById('coloring-draw-canvas');
+  const ctx = cv.getContext('2d');
+  const img = new Image();
+  img.onload = () => {
+    ctx.clearRect(0, 0, cv.width, cv.height);
+    ctx.drawImage(img, 0, 0);
+    if (typeof updateColoringProgress === 'function') updateColoringProgress();
+  };
+  img.src = dataUrl;
+}
+function cUndo() {
+  if (!cUndoStack.length) return;
+  const cur = cSnapshot();
+  const prev = cUndoStack.pop();
+  if (cur) cRedoStack.push(cur);
+  cRestore(prev);
+  cRefreshUndoBtns();
+}
+function cRedo() {
+  if (!cRedoStack.length) return;
+  const cur = cSnapshot();
+  const next = cRedoStack.pop();
+  if (cur) cUndoStack.push(cur);
+  cRestore(next);
+  cRefreshUndoBtns();
+}
+function cRefreshUndoBtns() {
+  const u = document.getElementById('c-undo-btn');
+  const r = document.getElementById('c-redo-btn');
+  if (u) u.disabled = cUndoStack.length === 0;
+  if (r) r.disabled = cRedoStack.length === 0;
+}
+function cResetUndo() {
+  cUndoStack = []; cRedoStack = [];
+  cRefreshUndoBtns();
+}
 let cLastX = 0, cLastY = 0;
 let cReward50  = false;
 let cReward100 = false;
@@ -3811,6 +3869,7 @@ function openColoring() {
       if (e.button !== 0) return;
       e.preventDefault();
       const p = getPos(e);
+      cPushUndo();
       cDrawing = true; cLastX = p.x; cLastY = p.y; doPaint(p.x, p.y);
     });
 
@@ -3833,6 +3892,7 @@ function openColoring() {
       if (e.touches.length !== 1) return;
       e.preventDefault();
       const p = getPos(e);
+      cPushUndo();
       cDrawing = true; cLastX = p.x; cLastY = p.y; doPaint(p.x, p.y);
     }, { passive: false });
 
