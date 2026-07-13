@@ -4531,6 +4531,8 @@ function resetZoomColoring() { cZoom=1; cPanX=0; cPanY=0; applyColoringZoom(); }
   if (!wrapper) return;
   let spaceDown=false;
   document.addEventListener('keydown', e => {
+    const _t = e.target;
+    if (_t && (_t.tagName === 'TEXTAREA' || _t.tagName === 'INPUT' || _t.isContentEditable)) return;
     if (e.code==='Space' && document.getElementById('coloring-screen').classList.contains('active')) { spaceDown=true; e.preventDefault(); wrapper.style.cursor='grab'; }
   });
   document.addEventListener('keyup', e => { if(e.code==='Space'){spaceDown=false;cPanning=false;wrapper.style.cursor='';} });
