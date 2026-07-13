@@ -3802,6 +3802,7 @@ let cCheckTimer = 0;
 let cCurrentArtName = '별이 빛나는 밤';
 
 function openColoring() {
+  cResetUndo();
   document.getElementById('coloring-screen').classList.add('active');
   disablePhaserInput();
   cReward50 = false; cReward100 = false;
@@ -4154,6 +4155,7 @@ function toggleEraser() {
 }
 
 function clearColoringCanvas() {
+  cPushUndo();
   const cv = document.getElementById('coloring-draw-canvas');
   if (cv && cCtx) {
     cCtx.clearRect(0, 0, cv.width, cv.height);
