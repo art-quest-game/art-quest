@@ -1287,6 +1287,9 @@ async function openTeacherDashboard() {
       const uid = d._uid || '';
       const safeName = (d.name||'-').replace(/'/g,"\\'");
       const reviewCount = d.reviews ? Object.keys(d.reviews).length : 0;
+      const moodsCount = d.myMoods ? Object.keys(d.myMoods).length : 0;
+      const picksCount = d.myPicks ? Object.keys(d.myPicks).length : 0;
+      const totalRecordCount = reviewCount + moodsCount + picksCount;
       rows += `<tr style="border-bottom:1px solid #ffffff20;">
         <td style="padding:8px 6px;color:#ffd700;font-weight:700;text-align:center;">${d.number||'-'}</td>
         <td style="padding:8px 6px;">${d.name||'-'}</td>
@@ -1296,7 +1299,7 @@ async function openTeacherDashboard() {
         <td style="padding:8px 6px;color:#a78bfa;">누적 ${d.totalCoins||0}</td>
         <td style="padding:8px 6px;">🖼️ ${d.artworks||0}</td>
         <td style="padding:8px 6px;">
-          <button onclick="tdViewReviews('${uid}','${safeName}')" style="padding:3px 8px;border-radius:6px;border:1px solid #a78bfa;background:#1a0a2e;color:${reviewCount>0?'#e879f9':'#c084fc'};cursor:pointer;font-size:.75rem;">✍️ 소감문 (${reviewCount})</button>
+          <button onclick="tdViewReviews('${uid}','${safeName}')" style="padding:3px 8px;border-radius:6px;border:1px solid #a78bfa;background:#1a0a2e;color:${totalRecordCount>0?'#e879f9':'#c084fc'};cursor:pointer;font-size:.75rem;">📖 감상 기록 (${totalRecordCount})</button>
         </td>
         <td style="padding:8px 6px;white-space:nowrap;">
           <button onclick="tdDeleteStudent('${uid}','${safeName}',${d.number||0})" style="padding:3px 8px;border-radius:6px;border:1px solid #ef4444;background:#1a0a2e;color:#f87171;cursor:pointer;font-size:.75rem;display:block;">🗑️ 삭제</button>
@@ -1309,7 +1312,7 @@ async function openTeacherDashboard() {
           <th style="padding:6px;text-align:center;">번호</th><th style="padding:6px;text-align:left;">이름</th><th style="padding:6px;text-align:left;">아이디</th>
           <th style="padding:6px;text-align:left;">등급</th><th style="padding:6px;text-align:left;">코인</th>
           <th style="padding:6px;text-align:left;">누적코인</th><th style="padding:6px;text-align:left;">감상</th>
-          <th style="padding:6px;text-align:left;">소감문</th><th style="padding:6px;text-align:left;">관리</th>
+          <th style="padding:6px;text-align:left;">감상 기록</th><th style="padding:6px;text-align:left;">관리</th>
         </tr></thead><tbody>${rows}</tbody>
       </table>`;
   }
@@ -1317,30 +1320,64 @@ async function openTeacherDashboard() {
   window.tdViewReviews = async function(uid, name) {
     try {
       const snap = await db.collection('users').doc(uid).get();
-      const reviews = snap.exists ? (snap.data().reviews || {}) : {};
-      const entries = Object.entries(reviews);
-      let content = '';
-      if (!entries.length) {
-        content = '<p style="color:#a78bfa;">아직 작성된 소감문이 없습니다.</p>';
-      } else {
-        content = entries.map(([artId, text]) =>
-          `<div style="margin-bottom:14px;background:#0f0720;border-radius:8px;padding:12px 14px;">
-            <div style="color:#ffd700;font-size:.8rem;margin-bottom:6px;">🖼️ ${artId}</div>
-            <div style="color:#e2c4ff;font-size:.88rem;line-height:1.6;white-space:pre-wrap;">${text.replace(/</g,'&lt;')}</div>
-          </div>`
-        ).join('');
-      }
+      const data = snap.exists ? snap.data() : {};
+      const picks = data.myPicks || {};
+      const moods = data.myMoods || {};
+      const reviews = data.reviews || {};
+
+      const picksEntries = Object.entries(picks);
+      const moodsEntries = Object.entries(moods);
+      const reviewEntries = Object.entries(reviews);
+      const totalCount = picksEntries.length + moodsEntries.length + reviewEntries.length;
+
+      const esc = s => String(s).replace(/</g,'&lt;');
+
+      const sectionTitle = (icon, label, count) =>
+        `<div style="margin:18px 0 8px;padding-bottom:6px;border-bottom:1px solid #a78bfa40;color:#ffd700;font-size:.95rem;font-weight:700;">${icon} ${label} <span style="color:#a78bfa;font-size:.8rem;font-weight:400;">(${count}건)</span></div>`;
+
+      const emptyMsg = '<p style="color:#a78bfa;font-size:.83rem;padding:6px 2px;">없음</p>';
+
+      const picksHtml = picksEntries.length
+        ? picksEntries.map(([artId, reason]) =>
+          `<div style="margin-bottom:10px;background:#0f0720;border-radius:8px;padding:10px 14px;">
+            <div style="color:#ffd700;font-size:.8rem;margin-bottom:4px;">🖼️ ${esc(artId)}</div>
+            <div style="color:#e2c4ff;font-size:.86rem;line-height:1.6;white-space:pre-wrap;">${esc(reason)}</div>
+          </div>`).join('')
+        : emptyMsg;
+
+      const moodsHtml = moodsEntries.length
+        ? moodsEntries.map(([artId, val]) =>
+          `<div style="margin-bottom:10px;background:#0f0720;border-radius:8px;padding:10px 14px;">
+            <div style="color:#ffd700;font-size:.8rem;margin-bottom:4px;">🖼️ ${esc(artId)}</div>
+            <div style="color:#c084fc;font-size:.84rem;margin-bottom:3px;">분위기: ${esc(val.mood||'')}</div>
+            <div style="color:#e2c4ff;font-size:.86rem;line-height:1.6;white-space:pre-wrap;">${esc(val.reason||'')}</div>
+          </div>`).join('')
+        : emptyMsg;
+
+      const reviewsHtml = reviewEntries.length
+        ? reviewEntries.map(([artId, text]) =>
+          `<div style="margin-bottom:10px;background:#0f0720;border-radius:8px;padding:10px 14px;">
+            <div style="color:#ffd700;font-size:.8rem;margin-bottom:4px;">🖼️ ${esc(artId)}</div>
+            <div style="color:#e2c4ff;font-size:.86rem;line-height:1.6;white-space:pre-wrap;">${esc(text)}</div>
+          </div>`).join('')
+        : emptyMsg;
+
       const modal = document.createElement('div');
       modal.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.88);z-index:10000;display:flex;justify-content:center;align-items:flex-start;overflow-y:auto;padding:20px;';
       modal.innerHTML = `
-        <div style="background:linear-gradient(135deg,#2d1b69,#1a0a2e);border:2px solid #a78bfa;border-radius:14px;width:min(560px,98vw);padding:24px 20px;position:relative;">
-          <h3 style="color:#ffd700;margin-bottom:4px;font-size:1.1rem;">✍️ ${name} 학생 소감문</h3>
-          <p style="color:#a78bfa;font-size:.8rem;margin-bottom:14px;">총 ${entries.length}편</p>
+        <div style="background:linear-gradient(135deg,#2d1b69,#1a0a2e);border:2px solid #a78bfa;border-radius:14px;width:min(580px,98vw);padding:24px 20px;position:relative;">
+          <h3 style="color:#ffd700;margin-bottom:4px;font-size:1.1rem;">📖 ${name} 학생 감상 기록</h3>
+          <p style="color:#a78bfa;font-size:.8rem;margin-bottom:14px;">총 ${totalCount}건</p>
           <button onclick="this.closest('[style*=fixed]').remove()" style="position:absolute;top:14px;right:14px;background:#6b21a8;color:#fff;border:none;border-radius:8px;padding:5px 12px;cursor:pointer;font-size:.82rem;">✕ 닫기</button>
-          ${content}
+          ${sectionTitle('⭐','내 인생 작품 3선', picksEntries.length)}
+          ${picksHtml}
+          ${sectionTitle('💭','분위기 해석', moodsEntries.length)}
+          ${moodsHtml}
+          ${sectionTitle('✍️','감상문', reviewEntries.length)}
+          ${reviewsHtml}
         </div>`;
       document.body.appendChild(modal);
-    } catch(e) { alert('소감문 불러오기 오류: ' + e.message); }
+    } catch(e) { alert('감상 기록 불러오기 오류: ' + e.message); }
   };
 
   try {
