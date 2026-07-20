@@ -613,6 +613,7 @@ auth.onAuthStateChanged(async (user) => {
     // 상태 초기화
     state.coins = 0; state.totalCoins = 0; state.artworks = 0;
     shopOwned.clear(); shopEquipped.clear();
+    myPicks = {}; myMoods = {};
     const snap = await db.collection('users').doc(user.uid).get();
     const data = snap.exists ? snap.data() : null;
     if (data) {
@@ -658,6 +659,7 @@ auth.onAuthStateChanged(async (user) => {
     // 로그아웃 시 상태 초기화
     state.coins = 0; state.totalCoins = 0; state.artworks = 0;
     shopOwned.clear(); shopEquipped.clear();
+    myPicks = {}; myMoods = {};
     window._gender = 'boy';
     window._currentCostume = 'c_basic';
     purchasedCostumes = new Set();
