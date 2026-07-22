@@ -5249,7 +5249,8 @@ function validateReview(text) {
   let reason = '';
   if (onlyJamo)              reason = '자음/모음만 입력하면 안 돼요.';
   else if (hasTriple || hasKeyboard || hasMeaninglessRepeat) reason = '의미있는 문장을 작성해주세요 😊';
-  else if (!hasEnoughWords && koreanChars >= 10)             reason = '더 다양한 단어로 작성해주세요.';
+  else if (koreanChars < 10) reason = '한글 10자 이상 자세히 써주세요 💭';
+  else if (!hasEnoughWords)  reason = '더 다양한 단어로 작성해주세요.';
 
   return { koreanChars, hasTriple, ok, reason };
 }
