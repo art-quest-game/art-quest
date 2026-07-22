@@ -874,6 +874,41 @@ function showToast(msg, bg, color) {
   }, 2500);
 }
 
+// 커스텀 확인 모달 (브라우저 confirm 대체) — Promise<boolean> 반환
+function showConfirm(msg, okText, cancelText) {
+  return new Promise(resolve => {
+    let ov = document.getElementById('app-confirm-overlay');
+    if (!ov) {
+      ov = document.createElement('div');
+      ov.id = 'app-confirm-overlay';
+      ov.style.cssText = 'position:fixed;inset:0;z-index:3000;display:none;align-items:center;justify-content:center;background:rgba(10,4,25,.72);padding:20px;';
+      ov.innerHTML =
+        '<div style="max-width:340px;width:100%;background:#1a0a2e;border:2px solid #a855f7;border-radius:16px;padding:20px 18px 16px;box-shadow:0 10px 40px #000a;">' +
+          '<div id="app-confirm-msg" style="color:#e2c4ff;font-size:.92rem;line-height:1.55;white-space:pre-line;margin-bottom:16px;"></div>' +
+          '<div style="display:flex;gap:8px;justify-content:flex-end;">' +
+            '<button id="app-confirm-cancel" style="padding:8px 16px;border-radius:10px;border:1px solid #6b21a8;background:#0f0720;color:#c4b5fd;font-size:.85rem;font-weight:600;cursor:pointer;">취소</button>' +
+            '<button id="app-confirm-ok" style="padding:8px 18px;border-radius:10px;border:none;background:linear-gradient(90deg,#7c3aed,#a855f7);color:#fff;font-size:.85rem;font-weight:700;cursor:pointer;">확인</button>' +
+          '</div>' +
+        '</div>';
+      document.body.appendChild(ov);
+    }
+    ov.querySelector('#app-confirm-msg').textContent = msg;
+    ov.querySelector('#app-confirm-ok').textContent = okText || '확인';
+    ov.querySelector('#app-confirm-cancel').textContent = cancelText || '취소';
+    ov.style.display = 'flex';
+    const okBtn = ov.querySelector('#app-confirm-ok');
+    const cancelBtn = ov.querySelector('#app-confirm-cancel');
+    function cleanup(result) {
+      ov.style.display = 'none';
+      okBtn.onclick = null; cancelBtn.onclick = null; ov.onclick = null;
+      resolve(result);
+    }
+    okBtn.onclick     = () => cleanup(true);
+    cancelBtn.onclick = () => cleanup(false);
+    ov.onclick = (e) => { if (e.target === ov) cleanup(false); };
+  });
+}
+
 async function saveUserData() {
   if (!window._currentUser) return;
   try {
@@ -1190,7 +1225,7 @@ async function openClassRanking() {
   const school = window._school || '';
   const cls    = window._class  || '';
   const grade  = window._grade  || '';
-  if (!school || !cls) { alert('학교/반 정보가 없습니다.'); return; }
+  if (!school || !cls) { showToast('학교/반 정보가 없습니다.', 'linear-gradient(90deg,#ef4444,#dc2626)', '#fff'); return; }
   let modal = document.getElementById('class-rank-modal');
   if (!modal) {
     modal = document.createElement('div');
@@ -1251,7 +1286,7 @@ async function openClassRanking() {
 async function openTeacherDashboard() {
   if (!window._currentUser || !window._isTeacher) return;
   const school = window._school || '';
-  if (!school) { alert('학교 정보가 없습니다. 다시 로그인해주세요.'); return; }
+  if (!school) { showToast('학교 정보가 없습니다. 다시 로그인해주세요.', 'linear-gradient(90deg,#ef4444,#dc2626)', '#fff'); return; }
 
   let modal = document.getElementById('teacher-modal');
   if (!modal) {
@@ -1379,7 +1414,7 @@ async function openTeacherDashboard() {
           ${reviewsHtml}
         </div>`;
       document.body.appendChild(modal);
-    } catch(e) { alert('감상 기록 불러오기 오류: ' + e.message); }
+    } catch(e) { showToast('감상 기록 불러오기 오류: ' + e.message, 'linear-gradient(90deg,#ef4444,#dc2626)', '#fff'); }
   };
 
   try {
@@ -1423,24 +1458,24 @@ async function openTeacherDashboard() {
     };
 
     window.tdResetPassword = async function(uid, name) {
-      if (!uid) { alert('학생 정보를 찾을 수 없습니다.'); return; }
-      if (!confirm(`${name} 학생의 비밀번호 초기화를 요청하시겠습니까?\n\n학생이 다음 로그인 시 비밀번호 변경 팝업이 자동으로 표시됩니다.\n학생에게 현재 비밀번호를 직접 알려주세요.`)) return;
+      if (!uid) { showToast('학생 정보를 찾을 수 없습니다.', 'linear-gradient(90deg,#ef4444,#dc2626)', '#fff'); return; }
+      if (!await showConfirm(`${name} 학생의 비밀번호 초기화를 요청하시겠습니까?\n\n학생이 다음 로그인 시 비밀번호 변경 팝업이 자동으로 표시됩니다.\n학생에게 현재 비밀번호를 직접 알려주세요.`, '요청')) return;
       try {
         await db.collection('users').doc(uid).update({ passwordReset: true });
         showToast(`✅ ${name} 학생 초기화 요청 완료`, 'linear-gradient(90deg,#7c3aed,#a855f7)', '#fff');
-      } catch(err) { alert('오류: ' + err.message); }
+      } catch(err) { showToast('오류: ' + err.message, 'linear-gradient(90deg,#ef4444,#dc2626)', '#fff'); }
     };
 
     window.tdDeleteStudent = async function(uid, name, number) {
-      if (!uid) { alert('학생 정보를 찾을 수 없습니다.'); return; }
-      if (!confirm(`정말로 ${name}(${number}번) 학생의 계정을 삭제하시겠습니까?\n이 작업은 되돌릴 수 없습니다.`)) return;
+      if (!uid) { showToast('학생 정보를 찾을 수 없습니다.', 'linear-gradient(90deg,#ef4444,#dc2626)', '#fff'); return; }
+      if (!await showConfirm(`정말로 ${name}(${number}번) 학생의 계정을 삭제하시겠습니까?\n이 작업은 되돌릴 수 없습니다.`, '삭제')) return;
       try {
         await db.collection('users').doc(uid).delete();
         const idx = window._tdStudents.findIndex(s => s._uid === uid);
         if (idx !== -1) window._tdStudents.splice(idx, 1);
         const filtered = window._tdStudents.filter(d => (!window._tdSelGrade||d.grade===window._tdSelGrade) && (!window._tdSelClass||d.class===window._tdSelClass));
         renderStudentTable(filtered);
-      } catch(err) { alert('삭제 오류: ' + err.message); }
+      } catch(err) { showToast('삭제 오류: ' + err.message, 'linear-gradient(90deg,#ef4444,#dc2626)', '#fff'); }
     };
 
     const gradeTabDiv = document.getElementById('td-grade-tabs');
@@ -1545,7 +1580,7 @@ async function openTeacherDashboard() {
       <div id="art-mood-form" style="display:none">
         <div class="amf-title">💭 이 작품에서 느껴지는 분위기는? <span>(하나를 고르고 이유를 10자 이상 적어주세요)</span></div>
         <div id="mood-chips"></div>
-        <textarea id="art-mood-reason" maxlength="100" placeholder="예) 겨울 나무가 홀로 서 있어서 외롭고 쓸쓸하게 느껴졌다."></textarea>
+        <textarea id="art-mood-reason" maxlength="100" onkeydown="event.stopPropagation()" placeholder="예) 겨울 나무가 홀로 서 있어서 외롭고 쓸쓸하게 느껴졌다."></textarea>
         <div class="amf-btns">
           <button id="amf-save" onclick="saveMood()">저장하기</button>
           <button id="amf-cancel" onclick="closeMoodForm()">취소</button>
@@ -1553,7 +1588,7 @@ async function openTeacherDashboard() {
       </div>
       <div id="art-pick-form" style="display:none">
         <div class="apf-title">⭐ 이 작품을 고른 이유를 적어주세요 <span>(10자 이상)</span></div>
-        <textarea id="art-pick-reason" maxlength="100" placeholder="예) 밤하늘의 소용돌이가 살아 움직이는 것 같아서 오래 보게 되었다."></textarea>
+        <textarea id="art-pick-reason" maxlength="100" onkeydown="event.stopPropagation()" placeholder="예) 밤하늘의 소용돌이가 살아 움직이는 것 같아서 오래 보게 되었다."></textarea>
         <div class="apf-btns">
           <button id="apf-save" onclick="savePick()">저장하기</button>
           <button id="apf-cancel" onclick="closePickForm()">취소</button>
@@ -1767,7 +1802,7 @@ async function openTeacherDashboard() {
     </div>
     <div id="coloring-share-box">
       <div class="csb-title">💭 내가 표현한 명화 재해석에 대해 설명해주세요 <span>(10자 이상)</span></div>
-      <textarea id="coloring-note" maxlength="120" placeholder="예) 밤하늘을 차가운 파란색 대신 따뜻한 보라색으로 칠해서 포근한 느낌을 주고 싶었다."></textarea>
+      <textarea id="coloring-note" maxlength="120" onkeydown="event.stopPropagation()" placeholder="예) 밤하늘을 차가운 파란색 대신 따뜻한 보라색으로 칠해서 포근한 느낌을 주고 싶었다."></textarea>
       <button id="share-btn" onclick="shareColoring()">🚀 설명 쓰고 공유하기 (+10 코인)</button>
     </div>
     </div><!-- /coloring-paint-area -->
@@ -3295,7 +3330,7 @@ function refreshPickBtn() {
   }
 }
 function openPickForm() {
-  if (!window._currentUser) { alert('로그인 후 이용할 수 있습니다.'); return; }
+  if (!window._currentUser) { showToast('로그인 후 이용할 수 있습니다.', 'linear-gradient(90deg,#ef4444,#dc2626)', '#fff'); return; }
   document.getElementById('art-pick-form').style.display = 'block';
   document.getElementById('art-pick-reason').value = '';
   setTimeout(() => document.getElementById('art-pick-reason').focus(), 60);
@@ -3308,21 +3343,21 @@ async function savePick() {
   if (!currentArtwork) return;
   const el = document.getElementById('art-pick-reason');
   const reason = (el.value || '').trim();
-  if (reason.length < 10) { alert('이 작품을 고른 이유를 10자 이상 적어주세요 ⭐'); el.focus(); return; }
+  if (reason.length < 10) { showToast('이 작품을 고른 이유를 10자 이상 적어주세요 ⭐', 'linear-gradient(90deg,#ef4444,#dc2626)', '#fff'); el.focus(); return; }
   const vr = validateReview(reason);
-  if (!vr.ok) { alert(vr.reason); el.focus(); return; }
-  if (Object.keys(myPicks).length >= MY_PICK_MAX) { alert(`인생 작품은 ${MY_PICK_MAX}개까지 고를 수 있어요.`); return; }
+  if (!vr.ok) { showToast(vr.reason, 'linear-gradient(90deg,#ef4444,#dc2626)', '#fff'); el.focus(); return; }
+  if (Object.keys(myPicks).length >= MY_PICK_MAX) { showToast(`인생 작품은 ${MY_PICK_MAX}개까지 고를 수 있어요.`, 'linear-gradient(90deg,#ef4444,#dc2626)', '#fff'); return; }
   myPicks[currentArtwork.id] = reason;
   state.coins += 15; state.totalCoins += 15; updateHUD(); showCoinToast(15);
   await saveUserData();
   closePickForm();
   refreshPickBtn();
   renderGalleryTab(curGalleryTab);
-  alert('⭐ 인생 작품으로 등록되었어요!');
+  showToast('⭐ 인생 작품으로 등록되었어요!');
 }
 async function removePick() {
   if (!currentArtwork) return;
-  if (!confirm('이 작품을 인생 작품에서 뺄까요? (코인은 회수되지 않아요)')) return;
+  if (!await showConfirm('이 작품을 인생 작품에서 뺄까요? (코인은 회수되지 않아요)', '빼기')) return;
   delete myPicks[currentArtwork.id];
   await saveUserData();
   refreshPickBtn();
@@ -3354,7 +3389,7 @@ function pickMood(m) {
   renderMoodChips();
 }
 function openMoodForm() {
-  if (!window._currentUser) { alert('로그인 후 이용할 수 있습니다.'); return; }
+  if (!window._currentUser) { showToast('로그인 후 이용할 수 있습니다.', 'linear-gradient(90deg,#ef4444,#dc2626)', '#fff'); return; }
   const saved = myMoods[currentArtwork.id];
   _selMood = saved ? saved.mood : null;
   document.getElementById('art-mood-reason').value = saved ? saved.reason : '';
@@ -3369,19 +3404,19 @@ function closeMoodForm() {
 }
 async function saveMood() {
   if (!currentArtwork) return;
-  if (!_selMood) { alert('먼저 분위기를 하나 골라주세요 💭'); return; }
+  if (!_selMood) { showToast('먼저 분위기를 하나 골라주세요 💭', 'linear-gradient(90deg,#ef4444,#dc2626)', '#fff'); return; }
   const el = document.getElementById('art-mood-reason');
   const reason = (el.value || '').trim();
-  if (reason.length < 10) { alert('그렇게 느낀 이유를 10자 이상 적어주세요 💭'); el.focus(); return; }
+  if (reason.length < 10) { showToast('그렇게 느낀 이유를 10자 이상 적어주세요 💭', 'linear-gradient(90deg,#ef4444,#dc2626)', '#fff'); el.focus(); return; }
   const vr = validateReview(reason);
-  if (!vr.ok) { alert(vr.reason); el.focus(); return; }
+  if (!vr.ok) { showToast(vr.reason, 'linear-gradient(90deg,#ef4444,#dc2626)', '#fff'); el.focus(); return; }
   const isNew = !myMoods[currentArtwork.id];
   myMoods[currentArtwork.id] = { mood: _selMood, reason: reason };
   if (isNew) { state.coins += 10; state.totalCoins += 10; updateHUD(); showCoinToast(10); }
   await saveUserData();
   closeMoodForm();
   refreshMoodBtn();
-  alert(isNew ? '💭 분위기 해석이 저장되었어요!' : '💭 수정되었어요!');
+  showToast(isNew ? '💭 분위기 해석이 저장되었어요!' : '💭 수정되었어요!');
 }
 
 function openArtDetail(artId, tab) {
@@ -4033,19 +4068,19 @@ function switchColoringTab(tab) {
 }
 
 async function shareColoring() {
-  if (!window._currentUser) { alert('로그인 후 공유할 수 있습니다.'); return; }
+  if (!window._currentUser) { showToast('로그인 후 공유할 수 있습니다.', 'linear-gradient(90deg,#ef4444,#dc2626)', '#fff'); return; }
   const school = window._school || '';
   const cls    = window._class  || '';
-  if (!school || !cls) { alert('학교/반 정보가 없습니다. 다시 로그인해주세요.'); return; }
+  if (!school || !cls) { showToast('학교/반 정보가 없습니다. 다시 로그인해주세요.', 'linear-gradient(90deg,#ef4444,#dc2626)', '#fff'); return; }
 
   const noteEl = document.getElementById('coloring-note');
   const note = (noteEl?.value || '').trim();
   if (note.length < 10) {
-    alert('내가 표현한 명화 재해석에 대해 10자 이상 설명해주세요 🎨');
+    showToast('내가 표현한 명화 재해석에 대해 10자 이상 설명해주세요 🎨', 'linear-gradient(90deg,#ef4444,#dc2626)', '#fff');
     noteEl?.focus(); return;
   }
   const vr = validateReview(note);
-  if (!vr.ok) { alert(vr.reason); noteEl?.focus(); return; }
+  if (!vr.ok) { showToast(vr.reason, 'linear-gradient(90deg,#ef4444,#dc2626)', '#fff'); noteEl?.focus(); return; }
 
   const btn = document.getElementById('share-btn');
   btn.disabled = true; btn.textContent = '저장 중...';
@@ -4083,7 +4118,7 @@ async function shareColoring() {
     setTimeout(() => { btn.disabled = false; btn.textContent = '🚀 공유하기'; }, 2500);
   } catch(e) {
     console.error('공유 실패:', e);
-    alert('공유 중 오류가 발생했습니다.');
+    showToast('공유 중 오류가 발생했습니다.', 'linear-gradient(90deg,#ef4444,#dc2626)', '#fff');
     btn.disabled = false; btn.textContent = '🚀 공유하기';
   }
 }
@@ -4093,7 +4128,7 @@ function escapeHtml(t) {
   return String(t).replace(/[&<>"']/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
 }
 async function toggleColoringLike(docId, btn) {
-  if (!window._currentUser) { alert('로그인 후 이용하세요.'); return; }
+  if (!window._currentUser) { showToast('로그인 후 이용하세요.', 'linear-gradient(90deg,#ef4444,#dc2626)', '#fff'); return; }
   const uid = window._currentUser.uid;
   const liked = btn.dataset.liked === '1';
   btn.disabled = true;
@@ -4176,13 +4211,13 @@ async function loadFriendsWorks() {
 }
 
 async function deleteColoringCard(docId, cardEl) {
-  if (!confirm(window._isTeacher ? '이 작품을 삭제할까요?' : '내 작품을 삭제할까요?')) return;
+  if (!await showConfirm(window._isTeacher ? '이 작품을 삭제할까요?' : '내 작품을 삭제할까요?', '삭제')) return;
   try {
     await db.collection('colorings').doc(docId).delete();
     cardEl.remove();
   } catch(e) {
     console.error('삭제 실패:', e);
-    alert('삭제 중 오류가 발생했습니다.');
+    showToast('삭제 중 오류가 발생했습니다.', 'linear-gradient(90deg,#ef4444,#dc2626)', '#fff');
   }
 }
 
