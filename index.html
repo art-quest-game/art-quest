@@ -613,7 +613,7 @@ auth.onAuthStateChanged(async (user) => {
     // 상태 초기화
     state.coins = 0; state.totalCoins = 0; state.artworks = 0;
     shopOwned.clear(); shopEquipped.clear();
-    myPicks = {}; myMoods = {};
+    myPicks = {}; myMoods = {}; viewedArtworks.clear();
     const snap = await db.collection('users').doc(user.uid).get();
     const data = snap.exists ? snap.data() : null;
     if (data) {
@@ -621,6 +621,8 @@ auth.onAuthStateChanged(async (user) => {
       if (typeof data.totalCoins === 'number') state.totalCoins = data.totalCoins;
       if (data.myPicks && typeof data.myPicks === 'object') myPicks = data.myPicks;
       if (data.myMoods && typeof data.myMoods === 'object') myMoods = data.myMoods;
+      viewedArtworks.clear();
+      if (Array.isArray(data.viewed)) data.viewed.forEach(id => viewedArtworks.add(id));
       if (typeof data.artworks === 'number') state.artworks = data.artworks;
       if (data.equipped) data.equipped.forEach(id => shopEquipped.add(id));
       if (data.owned) data.owned.forEach(id => shopOwned.add(id));
@@ -659,7 +661,7 @@ auth.onAuthStateChanged(async (user) => {
     // 로그아웃 시 상태 초기화
     state.coins = 0; state.totalCoins = 0; state.artworks = 0;
     shopOwned.clear(); shopEquipped.clear();
-    myPicks = {}; myMoods = {};
+    myPicks = {}; myMoods = {}; viewedArtworks.clear();
     window._gender = 'boy';
     window._currentCostume = 'c_basic';
     purchasedCostumes = new Set();
@@ -914,6 +916,7 @@ async function saveUserData() {
   try {
     await db.collection('users').doc(window._currentUser.uid).update({
       coins: state.coins, totalCoins: state.totalCoins, artworks: state.artworks,
+      viewed: [...viewedArtworks],
       myPicks: myPicks,
       myMoods: myMoods,
       equipped: [...shopEquipped],
@@ -3466,6 +3469,7 @@ document.getElementById('art-appreciate-btn').addEventListener('click', () => {
   state.coins += 5; state.totalCoins += 5; state.artworks++; updateHUD(); showCoinToast(5);
   document.getElementById('art-appreciate-btn').disabled = true;
   document.getElementById('art-appreciate-btn').textContent = '✅ 이미 감상한 작품';
+  saveUserData();
   renderGalleryTab(curGalleryTab);
 });
 document.getElementById('art-close-btn').addEventListener('click', () => {
