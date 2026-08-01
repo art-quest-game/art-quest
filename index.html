@@ -4751,10 +4751,6 @@ class GameScene extends Phaser.Scene {
       this.load.image(item.id + '_ov', item.img);
     });
     this.load.image('char1', BASE+'char1.png');
-    this.load.image('char2', BASE+'char2.png');
-    this.load.image('char3', BASE+'char3.png');
-    this.load.image('char4', BASE+'char4.png');
-    this.load.image('char5', BASE+'char5.png');
     // 코스튬 이미지 사전 로드 (boy/girl 모두)
     COSTUME_DATA.forEach(c => {
       const suffix = c.id.replace('c_', '');
