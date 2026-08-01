@@ -2671,7 +2671,6 @@ window.updatePlayerSprite = function() {
   const boyKey  = 'char_boy_' + suffix;
   if (gameScene.textures.exists(gKey)) gameScene.player.setTexture(gKey).setDisplaySize(192,224).setOrigin(0.5,0);
   else if (gameScene.textures.exists(boyKey)) gameScene.player.setTexture(boyKey).setDisplaySize(192,224).setOrigin(0.5,0);
-  else gameScene.player.setTexture('char1').setDisplaySize(192,224).setOrigin(0.5,0);
 };
 
 function disablePhaserInput() {
@@ -4750,7 +4749,6 @@ class GameScene extends Phaser.Scene {
     ALL_ITEMS.filter(i => i.img).forEach(item => {
       this.load.image(item.id + '_ov', item.img);
     });
-    this.load.image('char1', BASE+'char1.png');
     // 코스튬 이미지 사전 로드 (boy/girl 모두)
     COSTUME_DATA.forEach(c => {
       const suffix = c.id.replace('c_', '');
@@ -4912,11 +4910,8 @@ class GameScene extends Phaser.Scene {
         .setDisplaySize(TILE*1.1,TILE*1.1).setBlendMode(Phaser.BlendModes.MULTIPLY));
   }
   _createPlayer() {
-    const _initTex = window._gender ? (() => {
-      const s = (window._currentCostume||'c_basic').replace('c_','');
-      const k = 'char_' + window._gender + '_' + s;
-      return (this.textures.exists(k)) ? k : 'char1';
-    })() : 'char1';
+    const s = (window._currentCostume||'c_basic').replace('c_','');
+    const _initTex = 'char_' + (window._gender||'boy') + '_' + s;
     this.player = this.add.sprite(23*TILE+TILE/2, 13*TILE+TILE/2, _initTex).setDisplaySize(192,224).setOrigin(0.5,0).setDepth(1100);
     this.playerLabel = { setText:()=>{}, setPosition:()=>{}, setDepth:()=>{} };
     // 아이템 오버레이: 작은 뱃지(16~20px)로 캐릭터 주변 배치
