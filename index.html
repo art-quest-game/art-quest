@@ -2036,7 +2036,6 @@ function updateRank() {
   const idx  = RANKS.indexOf(rank);
   if (gameScene) {
     gameScene.playerLabel.setText(rank.name);
-    updateCharacterOverlays();
   }
   if (idx > _prevRankIdx) {
     _prevRankIdx = idx;
@@ -2050,15 +2049,15 @@ function updateRank() {
 
 const ALL_ITEMS = [
   { id:'tophat',     name:'영국 탑햇',         icon:'🎩',  price:30,  slot:'hat',       desc:'우아한 영국 신사의 탑햇' },
-  { id:'sombrero',   name:'멕시코 솜브레로',   img:'https://raw.githubusercontent.com/art-quest-game/art-quest/main/images/sombrero.png', price:40,  slot:'hat',       desc:'멕시코 전통 모자 솜브레로' },
-  { id:'nonla',      name:'베트남 논라',        img:'https://raw.githubusercontent.com/art-quest-game/art-quest/main/images/nonla.png',    price:50,  slot:'hat',       desc:'베트남 전통 원뿔형 모자 논라' },
-  { id:'turban',     name:'인도 터번',          img:'https://raw.githubusercontent.com/art-quest-game/art-quest/main/images/turban.png',   price:80,  slot:'hat',       desc:'인도 전통 머리 장식 터번' },
+  { id:'sombrero',   name:'멕시코 솜브레로',   icon:'🪅', price:40,  slot:'hat',       desc:'멕시코 전통 모자 솜브레로' },
+  { id:'nonla',      name:'베트남 논라',        icon:'🌾', price:50,  slot:'hat',       desc:'베트남 전통 원뿔형 모자 논라' },
+  { id:'turban',     name:'인도 터번',          icon:'🧣', price:80,  slot:'hat',       desc:'인도 전통 머리 장식 터번' },
   { id:'kimono',     name:'일본 기모노',        icon:'👘',  price:30,  slot:'outfit',    desc:'아름다운 일본 전통 의상 기모노' },
   { id:'sari',       name:'인도 사리',          icon:'🥻',  price:50,  slot:'outfit',    desc:'화려한 인도 전통 의상 사리' },
-  { id:'african',    name:'아프리카 캉가',      img:'https://raw.githubusercontent.com/art-quest-game/art-quest/main/images/african.png',  price:70,  slot:'outfit',    desc:'아프리카 전통 천 의상 캉가' },
-  { id:'dirndl',     name:'알프스 디른들',      img:'https://raw.githubusercontent.com/art-quest-game/art-quest/main/images/dirndl.png',   price:90,  slot:'outfit',    desc:'알프스 지역 전통 의상 디른들' },
-  { id:'poncho',     name:'페루 판초',          img:'https://raw.githubusercontent.com/art-quest-game/art-quest/main/images/poncho.png',   price:100, slot:'outfit',    desc:'페루 전통 망토 판초' },
-  { id:'hanbok',     name:'한국 한복',          img:'https://raw.githubusercontent.com/art-quest-game/art-quest/main/images/hanbok.png',   price:120, slot:'outfit',    desc:'아름다운 한국 전통 의상 한복' },
+  { id:'african',    name:'아프리카 캉가',      icon:'🪢', price:70,  slot:'outfit',    desc:'아프리카 전통 천 의상 캉가' },
+  { id:'dirndl',     name:'알프스 디른들',      icon:'🌸', price:90,  slot:'outfit',    desc:'알프스 지역 전통 의상 디른들' },
+  { id:'poncho',     name:'페루 판초',          icon:'🦙', price:100, slot:'outfit',    desc:'페루 전통 망토 판초' },
+  { id:'hanbok',     name:'한국 한복',          icon:'👗', price:120, slot:'outfit',    desc:'아름다운 한국 전통 의상 한복' },
   { id:'brush',      name:'이탈리아 거장의 붓', icon:'🖌️', price:30,  slot:'accessory', desc:'이탈리아 거장의 혼이 담긴 붓' },
   { id:'nazar',      name:'터키 나자르 부적',   icon:'🧿', price:50,  slot:'accessory', desc:'눈의 사악한 기운을 막는 터키의 나자르 부적' },
   { id:'beads',      name:'아프리카 구슬 목걸이',icon:'📿', price:60,  slot:'accessory', desc:'아프리카 전통 구슬 목걸이' },
@@ -2134,12 +2133,10 @@ function previewShopItem(id) {
   const item = ALL_ITEMS.find(i => i.id === id);
   if (!item) return;
   previewItem = (previewItem?.id === id) ? null : item; // toggle
-  updateCharacterOverlays();
   renderShopTab(curShopTab);
 }
 function clearPreview() {
   previewItem = null;
-  updateCharacterOverlays();
 }
 function renderShopBanner() {
   const rank = getCurrentRank();
@@ -2496,7 +2493,7 @@ function renderShopTab(tab) {
     const afford = state.coins >= item.price;
     return `<div class="shop-item${owned?' owned':''}${isEq?' equipped':''}${isPrev?' previewing':''}" onclick="previewShopItem('${item.id}')">
       ${isPrev ? '<div class="shop-preview-badge">👁 미리보기</div>' : ''}
-      <div class="shop-item-icon">${item.img ? `<img src="${item.img}" style="width:80px;height:80px;object-fit:contain;">` : item.icon}</div>
+      <div class="shop-item-icon">${item.icon}</div>
       <div class="shop-item-name">${item.name}</div>
       <div class="shop-item-desc">${item.desc}</div>
       <div class="shop-item-price">${owned ? '✅ 보유 중' : '🪙 '+item.price+' 코인'}</div>
@@ -2523,76 +2520,8 @@ function equipShopItem(id) {
   else shopEquipped.add(id);
   previewItem = null;
   saveEquipped();
-  updateCharacterOverlays(); renderShopBanner(); renderShopTab(curShopTab);
+  renderShopBanner(); renderShopTab(curShopTab);
 }
-function updateCharacterOverlays() {
-  if (!gameScene?.itemOverlays) return;
-  const rankIdx = RANKS.indexOf(getCurrentRank());
-  const RANK_AUTO = [
-    new Set(),
-    new Set(),
-    new Set(),
-    new Set(),
-    new Set(),
-  ];
-  const autoItems = RANK_AUTO[rankIdx] || new Set();
-
-  const isVis = id => shopEquipped.has(id) || autoItems.has(id) || previewItem?.id === id;
-  const visHats    = ALL_ITEMS.filter(i => i.slot === 'hat'       && isVis(i.id));
-  const visOutfits = ALL_ITEMS.filter(i => i.slot === 'outfit'    && isVis(i.id));
-  const visAccs    = ALL_ITEMS.filter(i => i.slot === 'accessory' && isVis(i.id));
-
-  const STEP = 22;
-  const HW   = 96;
-  const HH   = 112;
-
-  const newPos = {};
-
-  // 모자: 플레이어 위쪽 가로 나열
-  const hatY = -(HH - 14);
-  visHats.forEach((item, i) => {
-    const sx = -((visHats.length - 1) * STEP / 2);
-    newPos[item.id] = { dx: sx + i * STEP, dy: hatY };
-  });
-
-  // 의상: 캐릭터 왼쪽 바로 붙여서
-  const outXL = -(HW - 50);
-  visOutfits.forEach((item, i) => {
-    const sy = -((visOutfits.length - 1) * STEP / 2);
-    newPos[item.id] = { dx: outXL, dy: sy + i * STEP };
-  });
-
-  // 액세서리: 캐릭터 오른쪽 바로 붙여서
-  const accXR = HW - 50;
-  visAccs.forEach((item, i) => {
-    const sy = -((visAccs.length - 1) * STEP / 2);
-    newPos[item.id] = { dx: accXR, dy: sy + i * STEP };
-  });
-
-  // 오버레이 오브젝트에 위치·가시성 적용
-  ALL_ITEMS.forEach(item => {
-    const ov = gameScene.itemOverlays[item.id];
-    if (!ov) return;
-    if (newPos[item.id]) {
-      ov.dx = newPos[item.id].dx;
-      ov.dy = newPos[item.id].dy;
-      ov.obj.setVisible(true);
-    } else {
-      ov.obj.setVisible(false);
-    }
-  });
-
-  // 등급 글로우·파티클 동기화
-  gameScene._curRankIdx = rankIdx;
-  if (gameScene.sparkleEmitter) {
-    if (rankIdx >= 5 && !gameScene._maestroActive) {
-      gameScene._maestroActive = true; gameScene.sparkleEmitter.start();
-    } else if (rankIdx < 5 && gameScene._maestroActive) {
-      gameScene._maestroActive = false; gameScene.sparkleEmitter.stop();
-    }
-  }
-}
-
 // ─────────────────────────────────────────────
 //  코인 토스트
 // ─────────────────────────────────────────────
@@ -4746,9 +4675,6 @@ class GameScene extends Phaser.Scene {
   constructor() { super('GameScene'); }
   preload() {
     const BASE = 'https://raw.githubusercontent.com/art-quest-game/art-quest/main/images/';
-    ALL_ITEMS.filter(i => i.img).forEach(item => {
-      this.load.image(item.id + '_ov', item.img);
-    });
     // 코스튬 이미지 사전 로드 (boy/girl 모두)
     COSTUME_DATA.forEach(c => {
       const suffix = c.id.replace('c_', '');
@@ -4787,7 +4713,6 @@ class GameScene extends Phaser.Scene {
     this._setupZones();
     this._createCurator();
     this.nearBuilding = null;
-    updateCharacterOverlays();
   }
   _createTextures() {
     // tile_grass, tile_path는 GitHub 이미지 사용 (preload에서 로드됨)
@@ -4914,20 +4839,6 @@ class GameScene extends Phaser.Scene {
     const _initTex = 'char_' + (window._gender||'boy') + '_' + s;
     this.player = this.add.sprite(23*TILE+TILE/2, 13*TILE+TILE/2, _initTex).setDisplaySize(192,224).setOrigin(0.5,0).setDepth(1100);
     this.playerLabel = { setText:()=>{}, setPosition:()=>{}, setDepth:()=>{} };
-    // 아이템 오버레이: 작은 뱃지(16~20px)로 캐릭터 주변 배치
-    this.itemOverlays = {};
-    ALL_ITEMS.forEach(item => {
-      let obj;
-      if (item.img) {
-        obj = this.add.image(0, 0, item.id + '_ov')
-                .setDisplaySize(20, 20)
-                .setOrigin(.5,.5).setDepth(13).setVisible(false);
-      } else {
-        obj = this.add.text(0, 0, item.icon, { fontSize:'18px', padding:{x:1,y:1} })
-                .setOrigin(.5,.5).setDepth(13).setVisible(false);
-      }
-      this.itemOverlays[item.id] = { obj, dx:0, dy:0 };
-    });
     // 등급 후광 링
     this.rankGlow = this.add.graphics().setDepth(9);
     this._curRankIdx    = 0;
@@ -5063,13 +4974,7 @@ class GameScene extends Phaser.Scene {
   update(time, delta) {
     const hh=this.player.displayHeight/2;
     const hw=this.player.displayWidth/2;
-    // 레이블 + 아이템 오버레이 위치 갱신 (항상)
     this.playerLabel.setPosition(this.player.x, this.player.y - 60);
-    if (this.itemOverlays) {
-      Object.values(this.itemOverlays).forEach(ov => {
-        ov.obj.setPosition(this.player.x + ov.dx, this.player.y + ov.dy);
-      });
-    }
     // 등급 후광 링 (매 프레임 재드로우)
     // player.origin=(0.5,0) → player.y는 머리 꼭대기, 캐릭터 중심은 player.y+hh
     const _cx = this.player.x;
@@ -5139,7 +5044,6 @@ class GameScene extends Phaser.Scene {
     const pd = Math.floor(this.player.y/TILE)*10+5;
     this.player.setDepth(pd+1000);
     this.playerLabel.setDepth(pd+1001);
-    if(this.itemOverlays) Object.values(this.itemOverlays).forEach(o=>{ if(o.obj.visible) o.obj.setDepth(pd+1002); });
     const px=this.player.x, py=this.player.y;
     let found=null;
     for(const z of this.zones){ if(px>=z.x1&&px<=z.x2&&py>=z.y1&&py<=z.y2){ found=z.building; break; } }
