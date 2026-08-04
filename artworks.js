@@ -139,7 +139,7 @@ const ARTWORKS = {
       url:'images/impression-sunrise.jpg',
       desc:'인상주의 운동의 출발점이 된 모네의 걸작입니다. 프랑스 르아브르 항구의 이른 아침 안개 속 해돋이를 빠른 붓놀림으로 포착했습니다. 이 작품의 제목에서 "인상주의"라는 미술 사조의 이름이 유래했습니다.' },
     { id:'danceclass', title:'무용 교실', artist:'에드가 드가', year:'1874', country:'프랑스',
-      url:'images/dance-class.jpg',
+      url:'images/Dance_Class.jpg',
       desc:'인상주의 화가 에드가 드가의 대표작으로 파리 오페라 극장의 발레 연습 장면을 담았습니다. 어린 발레리나들이 선생님께 지도받는 모습을 독특한 시각으로 포착했습니다. 빛의 효과와 움직임의 순간을 탁월하게 표현한 작품입니다.' },
     { id:'olympia', title:'올랭피아', artist:'에두아르 마네', year:'1863', country:'프랑스',
       url:'images/olympia.jpg',
