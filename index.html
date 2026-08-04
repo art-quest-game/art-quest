@@ -2883,9 +2883,9 @@ const QUEST_DATA = {
   'mongyu':         { type:'review', instruction:'몽유도원도를 감상한 후 느낀 점을 자유롭게 써보세요. (10자 이상)' },
   'monalisa':       { type:'review', instruction:'모나리자를 보고 느낀 감상을 자유롭게 써보세요. (10자 이상)' },
   'pearlgirl':      { type:'review', instruction:'진주 귀걸이를 한 소녀를 감상한 후 느낀 점을 써보세요. (10자 이상)' },
-  'waterlilies':    { type:'review', instruction:'모네의 수련을 보고 느낀 감상을 자유롭게 써보세요. (10자 이상)' },
+  'stone-breakers': { type:'review', instruction:'돌 깨는 사람들을 감상한 후 느낀 점을 자유롭게 써보세요. (10자 이상)' },
   'scream': { type:'review', instruction:'절규를 보고 느낀 감상을 자유롭게 써보세요. (10자 이상)' },
-  'fuchun':         { type:'review', instruction:'부춘산거도를 감상한 후 느낀 점을 자유롭게 써보세요. (10자 이상)' },
+  'apple-basket':   { type:'review', instruction:'사과 바구니가 있는 정물을 감상한 후 느낀 점을 자유롭게 써보세요. (10자 이상)' },
   'sehando':        { type:'review', instruction:'세한도를 보고 느낀 점을 자유롭게 써보세요. (10자 이상)' },
   // ── 숨은 요소 찾기 (hidden) ──
   'goguryeo-hunt': { type:'hidden', instruction:'그림 속 숨겨진 요소 2가지를 모두 찾아보세요!', spots:[
@@ -2920,7 +2920,7 @@ const QUEST_DATA = {
   'venus':      { type:'coloring', instruction:'비너스의 탄생을 원하는 색으로 칠해보세요!',   regions:['🌊 바다','☁️ 하늘','🌹 꽃','👗 옷자락'] },
   'starrynight':{ type:'coloring', instruction:'별이 빛나는 밤을 원하는 색으로 칠해보세요!', regions:['🌙 달','⭐ 별','🏘️ 마을','🌲 사이프러스'] },
   'sunflowers': { type:'coloring', instruction:'해바라기를 원하는 색으로 칠해보세요!',       regions:['🌻 꽃잎','🟤 꽃심','💛 배경','🍃 잎'] },
-  'plum':       { type:'coloring', instruction:'홍백매화도를 원하는 색으로 칠해보세요!',     regions:['🌸 붉은 꽃','⬜ 흰 꽃','🌿 가지','🟤 줄기'] },
+  'piano-girls': { type:'coloring', instruction:'피아노 치는 소녀들을 원하는 색으로 칠해보세요!', regions:['👧 소녀', '🎹 피아노', '🌸 배경', '👗 옷'] },
   'miindo':     { type:'coloring', instruction:'미인도를 원하는 색으로 칠해보세요!',         regions:['👗 저고리','🎀 댕기','🌸 배경','💄 입술'] },
   // ── OX 퀴즈 (ox) ──
   'geumgang': { type:'ox', instruction:'금강전도에 대한 OX 퀴즈를 풀어보세요! (3문제 중 2개 이상 정답)', questions:[
@@ -2967,7 +2967,7 @@ const QUEST_DATA = {
   'tajak': { type:'review', instruction:'타작도를 감상한 후 느낀 점을 자유롭게 써보세요. (10자 이상)' },
   'yunduseo': { type:'review', instruction:'윤두서의 자화상을 보고 느낀 점을 자유롭게 써보세요. (10자 이상)' },
   'puppies': { type:'coloring', instruction:'강아지 그림을 원하는 색으로 칠해보세요!', regions:['🐶 강아지', '🌸 꽃', '🌿 풀잎', '🍃 배경'] },
-  'desertedmountain': { type:'review', instruction:'공산무인도를 감상한 후 느낀 점을 자유롭게 써보세요. (10자 이상)' },
+  'buliseonran':      { type:'review', instruction:'불이선란도를 감상한 후 느낀 점을 자유롭게 써보세요. (10자 이상)' },
   'plumblossom': { type:'coloring', instruction:'묵매도를 원하는 색으로 칠해보세요!', regions:['🌸 매화꽃', '🌿 가지', '⬛ 먹', '☁️ 배경'] },
   'hawk': { type:'hidden', instruction:'매 그림 속 숨겨진 요소 3가지를 모두 찾아보세요!', spots:[
     {x:55, y:15, label:'🦅 매'},
@@ -3036,10 +3036,10 @@ const QUEST_DATA = {
     {q:'담마얀티 속 공주는 공작새와 대화하고 있다.',           a:false, explain:'담마얀티는 백조(Royal Swan)와 대화하고 있습니다.'},
     {q:'담마얀티 이야기는 힌두 서사시 마하바라타에 등장한다.', a:true,  explain:'마하바라타 속 나라왕과 담마얀티의 사랑 이야기입니다.'},
   ]},
-  'sleeping-gypsy': { type:'ox', instruction:'잠자는 집시에 대한 OX 퀴즈를 풀어보세요!', questions:[
-    {q:'잠자는 집시는 앙리 루소가 1897년에 그렸다.',                   a:true,  explain:'루소가 1897년에 완성한 작품입니다.'},
-    {q:'잠자는 집시 속 사자는 집시를 공격하려 하고 있다.',             a:false, explain:'사자는 집시를 바라볼 뿐 공격적인 모습이 아닙니다.'},
-    {q:'잠자는 집시는 현재 뉴욕 현대미술관(MoMA)에 소장되어 있다.',   a:true,  explain:'뉴욕 현대미술관(MoMA)에 소장되어 있습니다.'},
+  'arnolfini': { type:'ox', instruction:'아르놀피니 부부의 결혼식에 대한 OX 퀴즈를 풀어보세요!', questions:[
+    {q:'아르놀피니 부부의 결혼식은 얀 반 에이크가 1434년에 그린 작품이다.',   a:true,  explain:'네덜란드 르네상스 화가 얀 반 에이크가 1434년에 완성한 작품입니다.'},
+    {q:'이 작품에서 얀 반 에이크는 유화 기법을 최초로 발전시켰다.',          a:true,  explain:'얀 반 에이크는 유화 기법을 발전시킨 선구자로, 이 작품에 섬세한 유화 기법을 적용했습니다.'},
+    {q:'그림 속 볼록 거울에는 두 주인공만 비쳐 있다.',                       a:false, explain:'볼록 거울에는 화가 얀 반 에이크 자신을 포함한 두 방문객이 반사되어 있습니다.'},
   ]},
   'yusuf-zulaikha': { type:'ox', instruction:'유수프와 줄레이하에 대한 OX 퀴즈를 풀어보세요!', questions:[
     {q:'유수프와 줄레이하는 페르시아 세밀화 작품이다.',             a:true,  explain:'이슬람 황금기 페르시아 헤라트 화파의 걸작입니다.'},
@@ -3061,7 +3061,7 @@ const QUEST_DATA = {
     {q:'피리 부는 소년은 발표 당시 파리 살롱전에서 입선하여 호평받았다.', a:false, explain:'오히려 살롱전에서 낙선했습니다. 배경을 생략한 평면적 구도가 당시 기준에 맞지 않았습니다.'},
     {q:'피리 부는 소년은 현재 파리 오르세 미술관에 소장되어 있다.',        a:true,  explain:'현재 파리 오르세 미술관의 대표 소장품으로 전시되어 있습니다.'},
   ]},
-  'vgoghself': { type:'coloring', instruction:'반 고흐의 자화상을 원하는 색으로 칠해보세요!', regions:['👤 얼굴', '🎨 배경', '👕 옷', '🌀 소용돌이'] },
+  'gogh-bedroom': { type:'coloring', instruction:'아를의 반 고흐의 침실을 원하는 색으로 칠해보세요!', regions:['🛏️ 침대', '🪟 창문', '🪑 의자', '🖼️ 벽'] },
 };
 let qState = {};
 
@@ -3447,7 +3447,7 @@ const MEANING_PAIRS = [
   { id:'greatwave',      meaning:'거대한 자연 앞에 선 작은 인간' },
   { id:'pearlgirl',      meaning:'빛나는 진주와 신비로운 눈빛' },
   { id:'sunflowers',     meaning:'생명력과 희망을 담은 해바라기' },
-  { id:'waterlilies',    meaning:'물 위에 비친 빛과 색의 아름다움' },
+  { id:'stone-breakers', meaning:'평범한 노동자의 삶을 사실적으로 담은 작품' },
 ];
 let _memMode = 'image';
 
