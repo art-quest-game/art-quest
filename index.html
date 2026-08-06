@@ -2959,7 +2959,7 @@ const QUEST_DATA = {
     {q:'서당에서 가르치는 선생님을 스승이라 부른다.',         a:false, explain:'서당에서 가르치는 분은 훈장이라고 합니다.'},
     {q:'단원 김홍도는 조선 후기를 대표하는 풍속화가이다.',    a:true,  explain:'김홍도는 18세기 조선 후기를 대표하는 풍속화가입니다.'},
   ]},
-  'tajak': { type:'review', instruction:'타작도를 감상한 후 느낀 점을 자유롭게 써보세요. (10자 이상)' },
+  'tajak': { type:'review', instruction:'벼타작을 감상한 후 느낀 점을 자유롭게 써보세요. (10자 이상)' },
   'yunduseo': { type:'review', instruction:'윤두서의 자화상을 보고 느낀 점을 자유롭게 써보세요. (10자 이상)' },
   'puppies': { type:'coloring', instruction:'강아지 그림을 원하는 색으로 칠해보세요!', regions:['🐶 강아지', '🌸 꽃', '🌿 풀잎', '🍃 배경'] },
   'buliseonran':      { type:'review', instruction:'불이선란도를 감상한 후 느낀 점을 자유롭게 써보세요. (10자 이상)' },
@@ -3003,7 +3003,7 @@ const QUEST_DATA = {
   // ── 세계명화 추가분 ──
   'grandejatte': { type:'review', instruction:'그랑자트 섬의 일요일 오후를 감상한 후 느낀 점을 자유롭게 써보세요. (10자 이상)' },
   'impression': { type:'coloring', instruction:'인상, 해돋이를 원하는 색으로 칠해보세요!', regions:['🌅 해돋이', '⛵ 배', '🌊 바다', '🌫️ 안개'] },
-  'danceclass': { type:'hidden', instruction:'무용 교실 속 숨겨진 요소 3가지를 찾아보세요!', spots:[
+  'danceclass': { type:'hidden', instruction:'무용 수업 속 숨겨진 요소 3가지를 찾아보세요!', spots:[
     {x:42, y:55, label:'🩰 발레리나'},
     {x:25, y:50, label:'📄 악보'},
     {x:70, y:48, label:'👨‍🏫 선생님'},
@@ -3012,13 +3012,13 @@ const QUEST_DATA = {
     {q:'올랭피아는 에두아르 마네가 1863년에 그렸다.',              a:true,  explain:'올랭피아는 근대 회화의 아버지 마네가 1863년에 그린 작품입니다.'},
     {q:'올랭피아는 발표 당시 아무런 논란 없이 호평을 받았다.',    a:false, explain:'올랭피아는 누드 여인을 직접적으로 표현했다는 이유로 엄청난 비판을 받았습니다.'},
   ]},
-  'napoleon': { type:'hidden', instruction:'나폴레옹 대관식 속 숨겨진 요소 2가지를 찾아보세요!', spots:[
+  'napoleon': { type:'hidden', instruction:'나폴레옹 1세의 대관식 속 숨겨진 요소 2가지를 찾아보세요!', spots:[
     {x:52, y:50, label:'👑 왕관'},
     {x:75, y:35, label:'🕯️ 촛대'},
   ]},
-  'gleaners': { type:'ox', instruction:'이삭 줍는 여인들에 대한 OX 퀴즈를 풀어보세요!', questions:[
+  'gleaners': { type:'ox', instruction:'이삭 줍기에 대한 OX 퀴즈를 풀어보세요!', questions:[
     {q:'여인들은 화려하고 값비싼 옷을 입고 있다.',     a:false,  explain:'여인들은 소박한 농민의 옷차림을 하고 있습니다.'},
-    {q:'이삭 줍는 여인들에는 네 명의 여인이 등장한다.',              a:false, explain:'그림에는 세 명의 여인이 등장합니다.'},
+    {q:'이삭 줍기에는 네 명의 여인이 등장한다.',                      a:false, explain:'그림에는 세 명의 여인이 등장합니다.'},
     {q:'여인들은 허리를 굽혀 땅에서 이삭을 줍고 있다.', a:true,  explain:'세 여인이 허리를 굽혀 떨어진 이삭을 하나하나 줍고 있는 모습입니다.'},
   ]},
   'arnolfini': { type:'ox', instruction:'아르놀피니 부부의 결혼식에 대한 OX 퀴즈를 풀어보세요!', questions:[
@@ -3287,7 +3287,7 @@ const ANALYSIS_QUIZ = [
   { id:'greatwave', q:'큰 파도에서 파도와 후지산의 크기 관계는?',
     choices:['후지산이 훨씬 크다','파도가 훨씬 크다','크기가 같다','후지산이 안 보인다'], correct:'파도가 훨씬 크다',
     exp:'거대한 파도를 앞에 배치하고 후지산을 작게 그려 대비를 만듭니다.' },
-  { id:'danceclass', q:'무용 교실에서 인물들을 배치한 방식의 특징은?',
+  { id:'danceclass', q:'무용 수업에서 인물들을 배치한 방식의 특징은?',
     choices:['화면 가운데 모아 놓음','한쪽으로 치우쳐 배치','좌우 대칭으로 놓음','일렬로 세움'], correct:'한쪽으로 치우쳐 배치',
     exp:'인물을 한쪽에 몰아 순간을 포착한 사진 같은 느낌을 줍니다.' },
   { id:'athens', q:'아테네 학당의 구도에서 두드러진 특징은?',
@@ -4176,7 +4176,7 @@ const TYPING_SENTENCES = [
   '드가는 발레리나를 즐겨 그렸다.',
   '올랭피아는 마네의 대표 누드화.',
   '잠자는 집시는 루소의 작품.',
-  '이삭 줍는 여인들은 밀레 작품.',
+  '이삭 줍기는 밀레 작품.',
   '진주 귀걸이를 한 소녀는 명화.',
   '홍백매화도는 고린의 작품이다.',
   '히로시게는 우키요에 명인이다.',
