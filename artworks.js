@@ -108,7 +108,7 @@ const ARTWORKS = {
     { id:'starrynight', title:'별이 빛나는 밤', artist:'빈센트 반 고흐', year:'1889', country:'네덜란드',
       url:'images/starry-night.jpg',
       desc:'반 고흐가 생레미 요양원에서 그린 걸작입니다. 소용돌이치는 밤하늘과 빛나는 별들, 고요한 마을의 대비가 인상적입니다. 밤하늘을 휘몰아치는 듯한 필치로 표현했습니다.' },
-    { id:'sunflowers', title:'해바라기', artist:'빈센트 반 고흐', year:'1888~1889', country:'네덜란드',
+    { id:'sunflowers', title:'해바라기', artist:'빈센트 반 고흐', year:'1889년', country:'네덜란드',
       url:'images/sunflowers.jpg',
       desc:'반 고흐가 대담하고 힘이 넘치는 붓질과 폭발할 듯한 색감으로 해바라기를 그렸습니다. 희망과 열정을 보여주는 작품입니다.' },
     { id:'stone-breakers', title:'돌 깨는 사람들', artist:'귀스타브 쿠르베', year:'1849', country:'프랑스',
