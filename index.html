@@ -4521,6 +4521,7 @@ class GameScene extends Phaser.Scene {
     this.load.image('deco_bush',         BASE+'deco_bush.png');
     this.load.image('deco_mushroom',     BASE+'deco_mushroom.png');
     this.load.image('curator',           BASE+'curator.png');
+    this.load.image('title_sign', BASE+'title_sign.png');
   }
   create() {
     gameScene = this;
@@ -4531,7 +4532,19 @@ class GameScene extends Phaser.Scene {
     this._setupInput();
     this._setupZones();
     this._createCurator();
+    this._createTitleSign();
     this.nearBuilding = null;
+  }
+  _createTitleSign() {
+    if (!this.textures.exists('title_sign')) return;
+    const signW = 340;
+    const signH = signW * 533 / 800;
+    const sign = this.add.image(14, 10, 'title_sign')
+      .setOrigin(0, 0)
+      .setDisplaySize(signW, signH)
+      .setScrollFactor(0)
+      .setDepth(9000);
+    this.tweens.add({ targets: sign, y: 18, duration: 2200, yoyo: true, repeat: -1, ease: 'Sine.inOut' });
   }
   _createTextures() {
     // tile_grass, tile_path는 GitHub 이미지 사용 (preload에서 로드됨)
