@@ -4544,7 +4544,6 @@ class GameScene extends Phaser.Scene {
       .setDisplaySize(signW, signH)
       .setScrollFactor(0)
       .setDepth(9000);
-    this.tweens.add({ targets: sign, y: 18, duration: 2200, yoyo: true, repeat: -1, ease: 'Sine.inOut' });
   }
   _createTextures() {
     // tile_grass, tile_path는 GitHub 이미지 사용 (preload에서 로드됨)
