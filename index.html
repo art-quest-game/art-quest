@@ -4330,9 +4330,9 @@ function updateTypingStats() {
 function showTypingResult() {
   document.getElementById('typing-game-area').style.display  = 'none';
   document.getElementById('typing-result-box').style.display = 'block';
-  const acc   = ts.totalKeys > 0 ? Math.round(ts.correctKeys / ts.totalKeys * 100) : 100;
+  const acc   = ts.totalKeys > 0 ? Math.round(ts.correctKeys / ts.totalKeys * 100) : 0;
   const wpm   = Math.round((ts.completedWords / 60) * 60);
-  const coins = Math.min(60, Math.round(acc / 100 * 60));
+  const coins = Math.min(60, Math.round(ts.completedSentences * 5 * (acc / 100)));
   document.getElementById('result-wpm').textContent      = wpm;
   document.getElementById('result-accuracy').textContent = acc + '%';
   document.getElementById('result-coins').textContent    = coins + ' 🪙';
