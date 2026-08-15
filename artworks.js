@@ -73,7 +73,7 @@ const ARTWORKS = {
     { id:'dalma', title:'달마도', artist:'김명국(연담)', year:'17세기', country:'조선',
       url:'images/dalma.jpg',
       desc:'조선 중기 화가 김명국의 대표작으로 불교의 선종을 창시한 달마대사를 그린 인물화입니다. 거칠고 힘찬 필치로 달마의 강인한 정신을 표현했습니다.' },
-    { id:'yuap', title:'유압도', artist:'홍세섭(석창)', year:'19세기', country:'조선',
+    { id:'yuap', title:'영모도(유압도)', artist:'홍세섭(석창)', year:'19세기', country:'조선',
       url:'images/yuapdo.jpg',
       desc:'전통적인 영모화(새와 짐승을 그린 그림) 소재를 부감법 구도(위에서 내려다보는 시점)와 먹의 농담과 여백으로 운동감이 느껴지는 물결과 물오리를 표현하였습니다.' },
     { id:'wolmae', title:'월매도', artist:'어몽룡', year:'16~17세기', country:'조선',
