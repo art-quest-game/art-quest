@@ -43,6 +43,11 @@ canvas { display:block; image-rendering:pixelated; margin:0 auto; }
   #popup-box p { font-size:.9rem; line-height:1.5; margin-bottom:16px; }
   .popup-icon { font-size:2.2rem !important; margin-bottom:6px !important; }
   .popup-btn { padding:12px 26px; font-size:1rem; }
+  #rank-up-box { padding:28px 28px; }
+  .rank-up-big-icon { font-size:3.2rem !important; margin-bottom:6px !important; }
+  #rank-up-name { font-size:1.6rem; }
+  #rank-up-desc { font-size:.86rem; margin-bottom:16px; }
+  #rank-up-btn { padding:11px 36px; font-size:1rem; }
 }
 /* 가로 모드(세로가 짧을 때) 추가 축소 */
 @media(max-height:480px){
@@ -51,6 +56,10 @@ canvas { display:block; image-rendering:pixelated; margin:0 auto; }
   #popup-box p { font-size:.82rem; line-height:1.4; margin-bottom:10px; }
   .popup-icon { font-size:1.7rem !important; margin-bottom:3px !important; }
   .popup-btn { padding:9px 22px; font-size:.9rem; }
+  #rank-up-box { padding:16px 20px; }
+  .rank-up-big-icon { font-size:2rem !important; margin-bottom:4px !important; }
+  #rank-up-name { font-size:1.3rem; }
+  #rank-up-desc { font-size:.78rem; margin-bottom:10px; }
 }
 
 /* Coin toast */
@@ -491,7 +500,7 @@ canvas { display:block; image-rendering:pixelated; margin:0 auto; }
 /* Rank-up popup */
 #rank-up-overlay { display:none; position:fixed; inset:0; background:rgba(0,0,0,.9); z-index:600; justify-content:center; align-items:center; }
 #rank-up-overlay.active { display:flex; }
-#rank-up-box { background:linear-gradient(135deg,#2d1b69,#1a0a2e 60%,#3d1060); border:3px solid #ffd700; border-radius:22px; padding:44px 54px; text-align:center; box-shadow:0 0 80px #ffd70060,0 0 160px #ffd70020; animation:rankPop .45s cubic-bezier(.17,.67,.4,1.2); max-width:440px; width:92%; }
+#rank-up-box { background:linear-gradient(135deg,#2d1b69,#1a0a2e 60%,#3d1060); border:3px solid #ffd700; border-radius:22px; padding:44px 54px; text-align:center; box-shadow:0 0 80px #ffd70060,0 0 160px #ffd70020; animation:rankPop .45s cubic-bezier(.17,.67,.4,1.2); max-width:440px; width:92%; max-height:90vh; overflow-y:auto; }
 @keyframes rankPop { from{transform:scale(.4);opacity:0} to{transform:scale(1);opacity:1} }
 .rank-up-big-icon { font-size:5.5rem; margin-bottom:8px; display:block; animation:rankBounce .6s ease; }
 @keyframes rankBounce { 0%{transform:scale(.3) rotate(-15deg)}70%{transform:scale(1.15) rotate(5deg)}100%{transform:scale(1) rotate(0)} }
@@ -1023,7 +1032,10 @@ window.doLogout = doLogout;
 }
 @media (max-width: 767px) {
   #login-overlay > div { width: min(380px, 80vw) !important; }
+  #login-overlay { align-items: flex-start !important; overflow-y: auto !important; padding: 10px 0 !important; }
+  .px-panel { max-height: none !important; }
   .px-title-bar { padding: 10px 14px 8px; }
+  .px-title-bar img { max-height: 80px; width: auto; max-width: 100%; }
   .px-title-bar > div:nth-child(2) { font-size: 1.4rem !important; }
   .px-form-area { padding: 13px 14px 11px; }
   .px-input { padding: 7px 10px; font-size: .82rem; margin-bottom: 7px; }
