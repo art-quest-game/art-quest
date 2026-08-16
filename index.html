@@ -543,6 +543,32 @@ body.is-mobile #joystick-zone { display:block; }
   .settings-btn { font-size:.62rem !important; padding:2px 5px !important; }
   #hint { display:none !important; }
 }
+/* 모바일 가로: HUD·user-info-bar 좌우 분리, 상단 34px 띠 확보 */
+@media (orientation:landscape) and (max-height:500px) {
+  #game-container { top:34px; }
+  .mini-screen { top:0; }
+  #hud {
+    top:0; left:0; right:auto; transform:none;
+    width:auto; max-width:60%;
+    height:34px; justify-content:flex-start; align-items:center;
+    gap:4px; padding:0 8px;
+    background:rgba(10,5,25,.95);
+    border-bottom:1px solid #ffd70028;
+  }
+  .hud-chip { font-size:.6rem !important; padding:2px 7px !important; }
+  #user-info-bar {
+    top:0 !important; right:0 !important;
+    height:34px !important; padding:0 7px !important;
+    border-radius:0 !important;
+    border-top:none !important; border-right:none !important;
+    border-bottom:none !important; border-left:1px solid #5aad2a50 !important;
+    background:rgba(10,5,25,.95) !important; gap:3px !important;
+  }
+  #user-email-label { display:none !important; }
+  #user-info-bar button { font-size:.62rem !important; padding:2px 5px !important; border-radius:8px !important; }
+  .settings-btn { font-size:.62rem !important; padding:2px 5px !important; }
+  #coin-toast { top:40px; }
+}
 @media (max-width:480px) {
   #quest-box { padding:16px 14px; border-radius:14px; }
   #quest-header { flex-direction:column; gap:6px; }
@@ -5399,7 +5425,7 @@ function positionMapButtons() {
     const rightGap = Math.max(0, Math.round(window.innerWidth - rect.right));
     const cb = document.getElementById('credits-btn');
     if (cb) cb.style.right = (rightGap + 12) + 'px';
-    if (window.innerWidth > 767) {
+    if (window.innerWidth > 767 && window.innerHeight > 500) {
       const bar = document.getElementById('user-info-bar');
       if (bar) bar.style.right = (rightGap + 8) + 'px';
     }
