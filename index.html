@@ -2179,6 +2179,7 @@ function selectSignupGender(g) {
 }
 
 function openShop() {
+  _miniHideInfoBar();
   document.getElementById('shop-screen').classList.add('active');
   disablePhaserInput();
   costumePreviewId = window._currentCostume || 'c_basic';
@@ -2829,11 +2830,27 @@ document.addEventListener('keydown', e => {
 // ─────────────────────────────────────────────
 //  미니게임 공통
 // ─────────────────────────────────────────────
+function _miniHideInfoBar() {
+  const bar = document.getElementById('user-info-bar');
+  if (bar && bar.style.display !== 'none') {
+    bar.dataset.miniHidden = '1';
+    bar.style.display = 'none';
+  }
+}
+function _miniRestoreInfoBar() {
+  const bar = document.getElementById('user-info-bar');
+  if (bar && bar.dataset.miniHidden) {
+    delete bar.dataset.miniHidden;
+    bar.style.display = 'flex';
+  }
+}
+
 function closeMiniGame(id) {
   if (id === 'typing') stopTyping();
   if (id === 'shop') clearPreview();
   document.getElementById(id + '-screen').classList.remove('active');
   document.getElementById('art-detail-overlay').classList.remove('active');
+  _miniRestoreInfoBar();
   // Phaser 입력 완전 복구 (키 상태 reset 포함)
   enablePhaserInput();
   // HTML 입력 포커스 해제 → Phaser 캔버스로 복귀 (setTimeout으로 DOM 정리 후 실행)
@@ -2875,6 +2892,7 @@ function artCardImgHtml(art) {
 }
 
 function openGallery() {
+  _miniHideInfoBar();
   document.getElementById('gallery-screen').classList.add('active');
   disablePhaserInput();
   renderGalleryTab(curGalleryTab);
@@ -3394,6 +3412,7 @@ function buildQuizByType(type) {
 }
 
 function openQuiz() {
+  _miniHideInfoBar();
   document.getElementById('quiz-screen').classList.add('active');
   disablePhaserInput();
   showQuizTypeSelect();
@@ -3502,6 +3521,7 @@ let _memMode = 'image';
 
 
 function openMemory() {
+  _miniHideInfoBar();
   document.getElementById('memory-screen').classList.add('active');
   disablePhaserInput();
   showMemModeSelect();
@@ -3683,6 +3703,7 @@ let cCheckTimer = 0;
 let cCurrentArtName = '별이 빛나는 밤';
 
 function openColoring() {
+  _miniHideInfoBar();
   cResetUndo();
   document.getElementById('coloring-screen').classList.add('active');
   disablePhaserInput();
@@ -4285,6 +4306,7 @@ const typingInput = document.getElementById('typing-input');
 
 // ── 타자 화면 열기 ──────────────────────────
 function openTyping() {
+  _miniHideInfoBar();
   document.getElementById('typing-screen').classList.add('active');
   disablePhaserInput();
   document.getElementById('typing-start-overlay').style.display = 'flex';
