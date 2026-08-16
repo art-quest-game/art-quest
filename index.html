@@ -61,6 +61,15 @@ canvas { display:block; image-rendering:pixelated; margin:0 auto; }
   #rank-up-name { font-size:1.3rem; }
   #rank-up-desc { font-size:.78rem; margin-bottom:10px; }
 }
+/* 모바일 가로 전용: 팝업을 한 화면에 표시 */
+@media (orientation:landscape) and (max-height:500px) {
+  #rank-up-box { padding:10px 20px 14px; }
+  .rank-up-big-icon { font-size:1.6rem !important; margin-bottom:2px !important; }
+  #rank-up-title { font-size:1rem; margin-bottom:3px; }
+  #rank-up-name { font-size:1.05rem; margin-bottom:4px; }
+  #rank-up-desc { font-size:.72rem; line-height:1.45; margin-bottom:0; }
+  #rank-up-btn { padding:7px 26px; font-size:.88rem; margin-top:8px; }
+}
 
 /* Coin toast */
 #coin-toast { position:fixed; top:68px; left:50%; transform:translateX(-50%); background:linear-gradient(90deg,#ffd700,#ff9900); color:#1a0a2e; font-weight:700; font-size:1.05rem; padding:9px 26px; border-radius:24px; z-index:500; opacity:0; transition:opacity .3s; pointer-events:none; box-shadow:0 4px 20px #ffd70066; }
@@ -500,14 +509,15 @@ canvas { display:block; image-rendering:pixelated; margin:0 auto; }
 /* Rank-up popup */
 #rank-up-overlay { display:none; position:fixed; inset:0; background:rgba(0,0,0,.9); z-index:600; justify-content:center; align-items:center; }
 #rank-up-overlay.active { display:flex; }
-#rank-up-box { background:linear-gradient(135deg,#2d1b69,#1a0a2e 60%,#3d1060); border:3px solid #ffd700; border-radius:22px; padding:44px 54px; text-align:center; box-shadow:0 0 80px #ffd70060,0 0 160px #ffd70020; animation:rankPop .45s cubic-bezier(.17,.67,.4,1.2); max-width:440px; width:92%; max-height:90vh; overflow-y:auto; }
+#rank-up-box { background:linear-gradient(135deg,#2d1b69,#1a0a2e 60%,#3d1060); border:3px solid #ffd700; border-radius:22px; padding:44px 54px; text-align:center; box-shadow:0 0 80px #ffd70060,0 0 160px #ffd70020; animation:rankPop .45s cubic-bezier(.17,.67,.4,1.2); max-width:440px; width:92%; max-height:90vh; max-height:90dvh; overflow:hidden; display:flex; flex-direction:column; }
+#rank-up-content { overflow-y:auto; flex:1 1 auto; min-height:0; }
 @keyframes rankPop { from{transform:scale(.4);opacity:0} to{transform:scale(1);opacity:1} }
 .rank-up-big-icon { font-size:5.5rem; margin-bottom:8px; display:block; animation:rankBounce .6s ease; }
 @keyframes rankBounce { 0%{transform:scale(.3) rotate(-15deg)}70%{transform:scale(1.15) rotate(5deg)}100%{transform:scale(1) rotate(0)} }
 #rank-up-title { color:#ffd700; font-size:1.55rem; font-weight:700; text-shadow:0 0 20px #ffd700aa; margin-bottom:6px; }
 #rank-up-name  { color:#fff;    font-size:2.4rem;  font-weight:700; margin-bottom:10px; text-shadow:0 0 10px #fff5; }
 #rank-up-desc  { color:#e2c4ff; font-size:.93rem;  line-height:1.7; margin-bottom:26px; }
-#rank-up-btn { background:linear-gradient(90deg,#ffd700,#ff9900); color:#1a0a2e; border:none; border-radius:12px; padding:13px 46px; font-size:1.1rem; font-weight:700; cursor:pointer; transition:transform .1s; box-shadow:0 4px 20px #ffd70066; }
+#rank-up-btn { background:linear-gradient(90deg,#ffd700,#ff9900); color:#1a0a2e; border:none; border-radius:12px; padding:13px 46px; font-size:1.1rem; font-weight:700; cursor:pointer; transition:transform .1s; box-shadow:0 4px 20px #ffd70066; flex-shrink:0; margin-top:20px; }
 #rank-up-btn:hover { transform:scale(1.06); }
 #mobile-enter-btn { position:fixed; bottom:28px; right:20px; background:linear-gradient(135deg,#ffd700,#ff9900); color:#1a0a2e; border:none; border-radius:50%; width:72px; height:72px; font-size:.88rem; font-weight:700; cursor:pointer; z-index:60; display:none; flex-direction:column; align-items:center; justify-content:center; line-height:1.4; text-align:center; box-shadow:0 4px 22px #ffd70077; transition:transform .15s,box-shadow .15s; }
 #mobile-enter-btn.visible { display:flex; }
@@ -1994,10 +2004,12 @@ async function openTeacherDashboard() {
 <!-- Rank-up popup -->
 <div id="rank-up-overlay">
   <div id="rank-up-box">
-    <span class="rank-up-big-icon" id="rank-up-icon">🌟</span>
-    <div id="rank-up-title">🎉 등급 업!</div>
-    <div id="rank-up-name"></div>
-    <div id="rank-up-desc"></div>
+    <div id="rank-up-content">
+      <span class="rank-up-big-icon" id="rank-up-icon">🌟</span>
+      <div id="rank-up-title">🎉 등급 업!</div>
+      <div id="rank-up-name"></div>
+      <div id="rank-up-desc"></div>
+    </div>
     <button id="rank-up-btn" onclick="closeRankUp()">🎊 확인!</button>
   </div>
 </div>
