@@ -679,6 +679,52 @@ body.is-mobile #joystick-zone { display:block; }
   #credits-box h3 { font-size:.92rem; }
   #credits-box p, #credits-box li { font-size:.78rem; }
 }
+
+/* ── 설명서 버튼 & 팝업 ── */
+#guide-btn {
+  position:fixed; bottom:58px; right:16px; z-index:55;
+  background:rgba(10,5,25,.82); border:1px solid #5aad2a; border-radius:16px;
+  color:#86efac; font-size:.72rem; padding:5px 12px; cursor:pointer;
+  transition:background .15s,border-color .15s;
+}
+#guide-btn:hover { background:#1a2e0a; border-color:#86efac; color:#bbf7d0; }
+#guide-overlay {
+  display:none; position:fixed; inset:0; background:rgba(0,0,0,.78);
+  z-index:120; justify-content:center; align-items:center; padding:16px;
+}
+#guide-overlay.active { display:flex; }
+#guide-box {
+  background:linear-gradient(135deg,#0a1f0a,#0d0520 60%,#0f1a40);
+  border:2px solid #5aad2a; border-radius:14px; padding:32px 28px 24px;
+  max-width:400px; width:92%; max-height:82vh; max-height:82dvh; overflow-y:auto;
+  position:relative; box-shadow:0 8px 40px rgba(0,0,0,.7);
+}
+#guide-close {
+  position:absolute; top:10px; right:12px; background:none; border:none;
+  color:#86efac; font-size:1.2rem; cursor:pointer; padding:4px 8px;
+  border-radius:6px; line-height:1; transition:color .15s,background .15s;
+}
+#guide-close:hover { color:#fff; background:rgba(255,255,255,.1); }
+#guide-box h3 { color:#86efac; font-size:1rem; margin:0 0 18px; text-align:center; }
+.guide-dl-btn {
+  display:block; width:100%; padding:13px; margin-bottom:12px;
+  border:none; border-radius:10px; font-size:.95rem; font-weight:700;
+  cursor:pointer; text-align:center; text-decoration:none;
+  transition:opacity .15s; color:#fff; box-sizing:border-box;
+}
+.guide-dl-btn:last-child { margin-bottom:0; }
+.guide-dl-student { background:linear-gradient(90deg,#16a34a,#22c55e); }
+.guide-dl-teacher { background:linear-gradient(90deg,#0369a1,#0ea5e9); }
+.guide-dl-btn:hover { opacity:.88; }
+@media(max-width:767px) {
+  #guide-box { padding:28px 18px 20px; }
+  .guide-dl-btn { font-size:.88rem; padding:11px; }
+}
+@media(orientation:landscape) and (max-height:500px) {
+  #guide-box { padding:20px 18px 16px; max-height:82dvh; }
+  #guide-box h3 { font-size:.9rem; margin-bottom:12px; }
+  .guide-dl-btn { font-size:.85rem; padding:9px; margin-bottom:8px; }
+}
 </style>
 <!-- Firebase SDK (compat 버전 - 전역 함수 지원) -->
 <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
@@ -5393,6 +5439,19 @@ checkOrientation();
 </script>
 
 <!-- 이미지 출처 버튼 -->
+<!-- 설명서 버튼 -->
+<button id="guide-btn" onclick="openGuidePopup()">📖 설명서</button>
+
+<!-- 설명서 팝업 -->
+<div id="guide-overlay" onclick="if(event.target===this)closeGuidePopup()">
+  <div id="guide-box">
+    <button id="guide-close" onclick="closeGuidePopup()">✕</button>
+    <h3>📖 설명서 다운로드</h3>
+    <a class="guide-dl-btn guide-dl-student" href="images/student-guide.pdf" target="_blank" rel="noopener">📘 학생용 설명서 (PDF)</a>
+    <a class="guide-dl-btn guide-dl-teacher" href="images/teacher-guide.pdf" target="_blank" rel="noopener">📗 교사용 설명서 (PDF)</a>
+  </div>
+</div>
+
 <button id="credits-btn" onclick="openCreditsPopup()">📜 이미지 출처</button>
 
 <!-- 이미지 출처 팝업 -->
@@ -5416,6 +5475,8 @@ checkOrientation();
 <script>
 function openCreditsPopup()  { document.getElementById('credits-overlay').classList.add('active'); }
 function closeCreditsPopup() { document.getElementById('credits-overlay').classList.remove('active'); }
+function openGuidePopup()    { document.getElementById('guide-overlay').classList.add('active'); }
+function closeGuidePopup()   { document.getElementById('guide-overlay').classList.remove('active'); }
 
 function positionMapButtons() {
   const canvas = document.querySelector('#game-container canvas');
@@ -5425,6 +5486,8 @@ function positionMapButtons() {
     const rightGap = Math.max(0, Math.round(window.innerWidth - rect.right));
     const cb = document.getElementById('credits-btn');
     if (cb) cb.style.right = (rightGap + 12) + 'px';
+    const gb = document.getElementById('guide-btn');
+    if (gb) gb.style.right = (rightGap + 12) + 'px';
     if (window.innerWidth > 767 && window.innerHeight > 500) {
       const bar = document.getElementById('user-info-bar');
       if (bar) bar.style.right = (rightGap + 8) + 'px';
