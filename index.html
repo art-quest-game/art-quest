@@ -5349,6 +5349,25 @@ checkOrientation();
 <script>
 function openCreditsPopup()  { document.getElementById('credits-overlay').classList.add('active'); }
 function closeCreditsPopup() { document.getElementById('credits-overlay').classList.remove('active'); }
+
+function positionMapButtons() {
+  const canvas = document.querySelector('#game-container canvas');
+  if (!canvas) { setTimeout(positionMapButtons, 300); return; }
+  function update() {
+    const rect = canvas.getBoundingClientRect();
+    const rightGap = Math.max(0, Math.round(window.innerWidth - rect.right));
+    const cb = document.getElementById('credits-btn');
+    if (cb) cb.style.right = (rightGap + 12) + 'px';
+    if (window.innerWidth > 767) {
+      const bar = document.getElementById('user-info-bar');
+      if (bar) bar.style.right = (rightGap + 8) + 'px';
+    }
+  }
+  update();
+  window.addEventListener('resize', update);
+  window.addEventListener('orientationchange', () => setTimeout(update, 300));
+}
+positionMapButtons();
 </script>
 </body>
 </html>
