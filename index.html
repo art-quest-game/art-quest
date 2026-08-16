@@ -600,6 +600,49 @@ body.is-mobile #joystick-zone { display:block; }
 .c-tool-btn.c-undo-redo { background:#1e3a5f; border-color:#38bdf8; color:#7dd3fc; font-weight:700; }
 .c-tool-btn.c-undo-redo:hover:not(:disabled) { background:linear-gradient(90deg,#38bdf8,#0ea5e9); color:#fff; border-color:#38bdf8; }
 .c-tool-btn.c-undo-redo:disabled { opacity:.35; cursor:default; background:#2d1b69; border-color:#6b21a8; color:#7c6a9c; }
+
+/* ── 이미지 출처 버튼 & 팝업 ── */
+#credits-btn {
+  position:fixed; bottom:20px; right:16px; z-index:55;
+  background:rgba(10,5,25,.82); border:1px solid #6b21a8; border-radius:16px;
+  color:#c4b5fd; font-size:.72rem; padding:5px 12px; cursor:pointer;
+  transition:background .15s,border-color .15s;
+}
+#credits-btn:hover { background:#2d1b69; border-color:#a78bfa; color:#e2c4ff; }
+#credits-overlay {
+  display:none; position:fixed; inset:0; background:rgba(0,0,0,.78);
+  z-index:120; justify-content:center; align-items:center; padding:16px;
+}
+#credits-overlay.active { display:flex; }
+#credits-box {
+  background:linear-gradient(135deg,#1a0a2e,#0d0520 60%,#1a1040);
+  border:2px solid #6b21a8; border-radius:14px; padding:36px 28px 28px;
+  max-width:500px; width:92%; max-height:82vh; overflow-y:auto;
+  position:relative; box-shadow:0 8px 40px rgba(0,0,0,.7);
+}
+#credits-close {
+  position:absolute; top:10px; right:12px; background:none; border:none;
+  color:#a78bfa; font-size:1.2rem; cursor:pointer; padding:4px 8px;
+  border-radius:6px; line-height:1; transition:color .15s,background .15s;
+}
+#credits-close:hover { color:#fff; background:rgba(255,255,255,.1); }
+#credits-box h3 { color:#ffd700; font-size:1rem; margin:0 0 14px; text-align:center; }
+#credits-box p  { color:#e2c4ff; font-size:.84rem; line-height:1.75; margin-bottom:12px; }
+#credits-box ul { color:#c4b5fd; font-size:.82rem; line-height:1.7; padding-left:18px; margin:0 0 14px; }
+#credits-box li { margin-bottom:4px; }
+#credits-pdf-btn {
+  display:block; width:100%; padding:11px; margin-top:8px;
+  background:linear-gradient(90deg,#6b21a8,#9333ea); color:#fff;
+  border:none; border-radius:9px; font-size:.9rem; font-weight:700;
+  cursor:pointer; text-align:center; text-decoration:none;
+  transition:opacity .15s;
+}
+#credits-pdf-btn:hover { opacity:.85; }
+@media(max-width:767px) {
+  #credits-box { padding:32px 18px 20px; max-height:78vh; }
+  #credits-box h3 { font-size:.92rem; }
+  #credits-box p, #credits-box li { font-size:.78rem; }
+}
 </style>
 <!-- Firebase SDK (compat 버전 - 전역 함수 지원) -->
 <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
@@ -5280,6 +5323,32 @@ function checkOrientation() {
 window.addEventListener('resize', checkOrientation);
 window.addEventListener('orientationchange', checkOrientation);
 checkOrientation();
+</script>
+
+<!-- 이미지 출처 버튼 -->
+<button id="credits-btn" onclick="openCreditsPopup()">📜 이미지 출처</button>
+
+<!-- 이미지 출처 팝업 -->
+<div id="credits-overlay" onclick="if(event.target===this)closeCreditsPopup()">
+  <div id="credits-box">
+    <button id="credits-close" onclick="closeCreditsPopup()">✕</button>
+    <h3>[ 이미지 및 자료 출처 ]</h3>
+    <p>본 소프트웨어에 사용된 명화 이미지는 저작권 보호기간이 만료된 작품으로,<br>
+    Wikimedia Commons, 공유마당, 국립중앙박물관·e뮤지엄 등에서<br>
+    각 자료의 이용 조건을 확인하여 사용하였습니다.</p>
+    <ul>
+      <li>공유마당 자료(몽유도원도·씨름): CC BY, 저작자 안견·김홍도, 출처 표시</li>
+      <li>국립중앙박물관·e뮤지엄 자료(세한도·모견도·달마도·묘작도·유압도): 공공누리 제1유형, 출처 표시</li>
+      <li>그 외 캐릭터·건물·맵 이미지: 생성형 AI 및 Canva for Education 제작</li>
+    </ul>
+    <p>전체 작품의 상세 출처와 이용 근거는 아래 PDF에서 확인할 수 있습니다.</p>
+    <a id="credits-pdf-btn" href="images/source-credits.pdf" target="_blank" rel="noopener">📄 PDF 다운로드</a>
+  </div>
+</div>
+
+<script>
+function openCreditsPopup()  { document.getElementById('credits-overlay').classList.add('active'); }
+function closeCreditsPopup() { document.getElementById('credits-overlay').classList.remove('active'); }
 </script>
 </body>
 </html>
