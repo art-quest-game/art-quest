@@ -3750,6 +3750,13 @@ function openColoring() {
     colorCv.addEventListener('mousedown', function(e) {
       if (e.button !== 0) return;
       e.preventDefault();
+      if (cTouchMode === 'pan') {
+        cPanning = true;
+        cPanStartX = e.clientX / cZoom - cPanX;
+        cPanStartY = e.clientY / cZoom - cPanY;
+        colorCv.style.cursor = 'grabbing';
+        return;
+      }
       const p = getPos(e);
       cPushUndo();
       cDrawing = true; cLastX = p.x; cLastY = p.y; doPaint(p.x, p.y);
@@ -4447,7 +4454,7 @@ function setTouchMode(mode) {
     if (e.button===1||spaceDown) { e.preventDefault(); cPanning=true; cPanStartX=e.clientX/cZoom-cPanX; cPanStartY=e.clientY/cZoom-cPanY; wrapper.style.cursor='grabbing'; }
   });
   window.addEventListener('mousemove', e => { if(!cPanning)return; cPanX=e.clientX/cZoom-cPanStartX; cPanY=e.clientY/cZoom-cPanStartY; applyColoringZoom(); });
-  window.addEventListener('mouseup', ()=>{ if(cPanning){cPanning=false;wrapper.style.cursor=spaceDown?'grab':'';} });
+  window.addEventListener('mouseup', ()=>{ if(cPanning){cPanning=false;wrapper.style.cursor=spaceDown?'grab':''; const _cv=document.getElementById('coloring-draw-canvas'); if(_cv&&cTouchMode==='pan')_cv.style.cursor='grab';} });
   let lastPinch=0;
   wrapper.addEventListener('touchstart',e=>{if(e.touches.length===2)lastPinch=Math.hypot(e.touches[0].clientX-e.touches[1].clientX,e.touches[0].clientY-e.touches[1].clientY);},{passive:true});
   wrapper.addEventListener('touchmove',e=>{if(e.touches.length===2){const d=Math.hypot(e.touches[0].clientX-e.touches[1].clientX,e.touches[0].clientY-e.touches[1].clientY);if(lastPinch>0)zoomColoring(d/lastPinch);lastPinch=d;e.preventDefault();}},{passive:false});
