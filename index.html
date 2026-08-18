@@ -353,10 +353,10 @@ canvas { display:block; image-rendering:pixelated; margin:0 auto; }
 #boy-unlock-popup { display:none; position:fixed; inset:0; background:rgba(0,0,0,.88); z-index:900; justify-content:center; align-items:center; }
 #boy-unlock-popup.active { display:flex; }
 #boy-unlock-box { background:linear-gradient(135deg,#0c2340,#1a0a2e 55%,#0c3060); border:3px solid #38bdf8; border-radius:20px; padding:36px 32px; text-align:center; max-width:340px; width:90%; box-shadow:0 0 50px #38bdf840; }
-#girl-unlock-box .gu-icon { font-size:3rem; margin-bottom:10px; animation:none; }
-#girl-unlock-box .gu-title { color:#ffd700; font-size:1.2rem; font-weight:700; margin-bottom:6px; }
-#girl-unlock-box .gu-desc { color:#a78bfa; font-size:.82rem; line-height:1.6; margin-bottom:22px; }
-#girl-unlock-box .gu-btn { background:linear-gradient(90deg,#a855f7,#7c3aed); color:#fff; border:none; border-radius:10px; padding:12px 28px; font-size:.95rem; font-weight:700; cursor:pointer; }
+#girl-unlock-box .gu-icon,  #boy-unlock-box .gu-icon  { font-size:3rem; margin-bottom:10px; animation:none; }
+#girl-unlock-box .gu-title, #boy-unlock-box .gu-title { color:#ffd700; font-size:1.2rem; font-weight:700; margin-bottom:6px; }
+#girl-unlock-box .gu-desc,  #boy-unlock-box .gu-desc  { color:#a78bfa; font-size:.82rem; line-height:1.6; margin-bottom:22px; }
+#girl-unlock-box .gu-btn,   #boy-unlock-box .gu-btn   { background:linear-gradient(90deg,#a855f7,#7c3aed); color:#fff; border:none; border-radius:10px; padding:12px 28px; font-size:.95rem; font-weight:700; cursor:pointer; }
 /* 가운데 미리보기 — flex:8 (전체의 ~44%) */
 #costume-preview-panel { flex:8; min-width:0; flex-shrink:0; display:flex; flex-direction:column; align-items:center; padding:16px 16px 20px; gap:10px; background:#08031a; border-radius:16px; border:2px solid #2d1b69; position:sticky; top:0; }
 #costume-preview-img-wrap { width:min(220px,85%); aspect-ratio:3/4; display:flex; align-items:center; justify-content:center; background:#060312; border:2px solid #ffd70030; border-radius:14px; overflow:hidden; }
@@ -2135,7 +2135,7 @@ async function openTeacherDashboard() {
   <div id="boy-unlock-box">
     <div class="gu-icon">👦✨</div>
     <div class="gu-title">남자 캐릭터 해금 완료!</div>
-    <div class="gu-desc">이제 남자 캐릭터의 의상을<br>모두 착용할 수 있어요! 🎉<br><span style="color:#7dd3fc;font-size:.78rem;">현재 등급까지 의상이 자동 해금됩니다.</span></div>
+    <div class="gu-desc">이제 남자 캐릭터의 의상을<br>모두 착용할 수 있어요! 🎉<br><span style="font-size:.78rem;">현재 등급까지 의상이 자동 해금됩니다.</span></div>
     <button class="gu-btn" onclick="closeBoyUnlockPopup()">🎊 확인!</button>
   </div>
 </div>
