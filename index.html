@@ -767,6 +767,15 @@ auth.onAuthStateChanged(async (user) => {
       purchasedCostumes = new Set(data.ownedCostumes || []);
       window._hasGirlCharacter = data.hasGirlCharacter || false;
       window._hasBoyCharacter  = data.hasBoyCharacter  || false;
+      // 기존 계정 보정: 자기 성별 플래그 누락 시 자동 복구
+      if (window._gender === 'girl' && !window._hasGirlCharacter) {
+        window._hasGirlCharacter = true;
+        db.collection('users').doc(user.uid).update({ hasGirlCharacter: true }).catch(() => {});
+      }
+      if (window._gender === 'boy' && !window._hasBoyCharacter) {
+        window._hasBoyCharacter = true;
+        db.collection('users').doc(user.uid).update({ hasBoyCharacter: true }).catch(() => {});
+      }
       shopPreviewGender = window._gender;
       costumePreviewId = window._currentCostume;
       updateHUD();
@@ -842,6 +851,8 @@ async function doLogin(isSignup) {
       await db.collection('users').doc(cred.user.uid).set({
         email, userId: rawId, name, school, role, grade, class: cls, number,
         gender: window._selectedSignupGender,
+        hasGirlCharacter: window._selectedSignupGender === 'girl',
+        hasBoyCharacter:  window._selectedSignupGender === 'boy',
         coins:0, totalCoins:0, artworks:0, equipped:[], owned:[],
         currentCostume:'c_basic', ownedCostumes:[],
         createdAt: new Date().toISOString()
