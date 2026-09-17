@@ -1583,7 +1583,7 @@ async function openTeacherDashboard() {
       const picksHtml = picksEntries.length
         ? picksEntries.map(([artId, reason]) =>
           `<div style="margin-bottom:10px;background:#0f0720;border-radius:8px;padding:10px 14px;">
-            <div style="color:#ffd700;font-size:.8rem;margin-bottom:4px;">🖼️ ${esc(artId)}</div>
+            <div style="color:#ffd700;font-size:.8rem;margin-bottom:4px;">🖼️ ${esc(findArtById(artId)?.title || artId)}</div>
             <div style="color:#e2c4ff;font-size:.86rem;line-height:1.6;white-space:pre-wrap;">${esc(reason)}</div>
           </div>`).join('')
         : emptyMsg;
@@ -1591,7 +1591,7 @@ async function openTeacherDashboard() {
       const moodsHtml = moodsEntries.length
         ? moodsEntries.map(([artId, val]) =>
           `<div style="margin-bottom:10px;background:#0f0720;border-radius:8px;padding:10px 14px;">
-            <div style="color:#ffd700;font-size:.8rem;margin-bottom:4px;">🖼️ ${esc(artId)}</div>
+            <div style="color:#ffd700;font-size:.8rem;margin-bottom:4px;">🖼️ ${esc(findArtById(artId)?.title || artId)}</div>
             <div style="color:#c084fc;font-size:.84rem;margin-bottom:3px;">분위기: ${esc(val.mood||'')}</div>
             <div style="color:#e2c4ff;font-size:.86rem;line-height:1.6;white-space:pre-wrap;">${esc(val.reason||'')}</div>
           </div>`).join('')
@@ -1600,7 +1600,7 @@ async function openTeacherDashboard() {
       const reviewsHtml = reviewEntries.length
         ? reviewEntries.map(([artId, text]) =>
           `<div style="margin-bottom:10px;background:#0f0720;border-radius:8px;padding:10px 14px;">
-            <div style="color:#ffd700;font-size:.8rem;margin-bottom:4px;">🖼️ ${esc(artId)}</div>
+            <div style="color:#ffd700;font-size:.8rem;margin-bottom:4px;">🖼️ ${esc(findArtById(artId)?.title || artId)}</div>
             <div style="color:#e2c4ff;font-size:.86rem;line-height:1.6;white-space:pre-wrap;">${esc(text)}</div>
           </div>`).join('')
         : emptyMsg;
