@@ -2887,6 +2887,7 @@ function disablePhaserInput() {
   miniGameActive = true;
   _keysDown.clear(); // 미니게임 진입 시 눌린 키 상태 즉시 초기화 → stuck 방지
   const _cb = document.getElementById('curator-bubble'); if (_cb) _cb.style.display = 'none';
+  if (game?.loop) game.loop.sleep();
   if (!gameScene) return;
   gameScene.input.keyboard.enabled = false;
   gameScene._dragging = false;
@@ -2897,6 +2898,7 @@ function disablePhaserInput() {
 function enablePhaserInput() {
   miniGameActive = false;
   _keysDown.clear();
+  if (game?.loop) game.loop.wake();
   if (!gameScene) return;
   gameScene.input.keyboard.enabled = true;
   const resetKey = k => { if (k && typeof k.reset === 'function') k.reset(); };
