@@ -683,6 +683,10 @@ body.is-mobile #joystick-zone { display:block; }
   #credits-box p, #credits-box li { font-size:.78rem; }
 }
 
+/* ── 감상의 숲 포트폴리오 화면 ── */
+#gamsang-portfolio-screen { display:none; position:fixed; inset:0; background:rgba(10,5,25,.97); z-index:200; flex-direction:column; align-items:center; overflow-y:auto; }
+#gamsang-portfolio-screen.active { display:flex; }
+
 /* ── 설명서 버튼 & 팝업 ── */
 #guide-btn {
   position:fixed; bottom:58px; right:16px; z-index:55;
@@ -893,8 +897,16 @@ function closeSettings() {
 }
 document.addEventListener('click', () => closeSettings());
 
-function openGamsangForestTeacher() { console.log('openGamsangForestTeacher'); }
-function openGamsangForestStudent() { console.log('openGamsangForestStudent'); }
+function openGamsangForestTeacher() { openGamsangPortfolio(); }
+function openGamsangForestStudent() { openGamsangPortfolio(); }
+function openGamsangPortfolio() {
+  document.getElementById('game-container').style.display = 'none';
+  document.getElementById('gamsang-portfolio-screen').classList.add('active');
+}
+function closeGamsangPortfolio() {
+  document.getElementById('gamsang-portfolio-screen').classList.remove('active');
+  document.getElementById('game-container').style.display = '';
+}
 function openGamsangForestGuest() {
   alert('로그인하면 나만의 감상 포트폴리오를 정리하고 볼 수 있어요!\n로그인해서 감상 일지를 남겨보세요 🌳');
 }
@@ -1739,6 +1751,13 @@ async function openTeacherDashboard() {
   <p style="color: #ffffff; font-size: 16px;">명화퀘스트는 가로 모드에서 즐길 수 있어요 🎨</p>
 </div>
 <div id="game-container"></div>
+
+<div id="gamsang-portfolio-screen">
+  <div class="mini-header">
+    <h2>🌳 감상의 숲</h2>
+    <button class="close-mini" onclick="closeGamsangPortfolio()">← 돌아가기</button>
+  </div>
+</div>
 
 <div id="hud">
   <div class="hud-chip">🎨 <span id="hud-rank">견습생</span></div>
