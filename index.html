@@ -902,10 +902,34 @@ function openGamsangForestStudent() { openGamsangPortfolio(); }
 function openGamsangPortfolio() {
   document.getElementById('game-container').style.display = 'none';
   document.getElementById('gamsang-portfolio-screen').classList.add('active');
+  renderGamsangPortfolio();
 }
 function closeGamsangPortfolio() {
   document.getElementById('gamsang-portfolio-screen').classList.remove('active');
   document.getElementById('game-container').style.display = '';
+}
+async function renderGamsangPortfolio() {
+  const content = document.getElementById('gamsang-portfolio-content');
+  content.innerHTML = '<p style="color:#a78bfa;text-align:center;padding:40px 0;">불러오는 중...</p>';
+  try {
+    const snap = await db.collection('users').doc(window._currentUser.uid).get();
+    const reviews = (snap.data() || {}).reviews || {};
+    const entries = Object.entries(reviews);
+    const esc = s => String(s).replace(/</g, '&lt;');
+    if (!entries.length) {
+      content.innerHTML = '<p style="color:#a78bfa;text-align:center;padding:40px 10px;line-height:1.8;">🌱 아직 작성한 감상이 없어요.<br>작품을 감상하고 나만의 감상글을 남겨보세요!</p>';
+      return;
+    }
+    content.innerHTML = `
+      <div style="margin-bottom:16px;color:#ffd700;font-size:.95rem;font-weight:700;border-bottom:1px solid #a78bfa40;padding-bottom:8px;">✍️ 내 감상글 <span style="color:#a78bfa;font-size:.8rem;font-weight:400;">(${entries.length}건)</span></div>
+      ${entries.map(([artId, text]) => `
+        <div style="margin-bottom:12px;background:#0f0720;border:1px solid #6b21a8;border-radius:10px;padding:12px 16px;">
+          <div style="color:#ffd700;font-size:.82rem;margin-bottom:6px;">🖼️ ${esc(findArtById(artId)?.art.title || artId)}</div>
+          <div style="color:#e2c4ff;font-size:.88rem;line-height:1.7;white-space:pre-wrap;">${esc(text)}</div>
+        </div>`).join('')}`;
+  } catch(e) {
+    content.innerHTML = '<p style="color:#ef4444;text-align:center;padding:40px 0;">데이터를 불러오지 못했어요.</p>';
+  }
 }
 function openGamsangForestGuest() {
   alert('로그인하면 나만의 감상 포트폴리오를 정리하고 볼 수 있어요!\n로그인해서 감상 일지를 남겨보세요 🌳');
@@ -1757,6 +1781,7 @@ async function openTeacherDashboard() {
     <h2>🌳 감상의 숲</h2>
     <button class="close-mini" onclick="closeGamsangPortfolio()">← 돌아가기</button>
   </div>
+  <div id="gamsang-portfolio-content" style="width:100%;max-width:700px;padding:14px 18px 36px;"></div>
 </div>
 
 <div id="hud">
