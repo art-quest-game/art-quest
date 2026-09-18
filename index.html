@@ -791,6 +791,7 @@ auth.onAuthStateChanged(async (user) => {
     window._class  = snap.exists ? (snap.data()?.class  || '') : '';
     hideLoginOverlay();
     document.getElementById('user-info-bar').style.display = 'flex';
+    document.getElementById('gamsang-forest-bar').style.display = 'block';
     const nameLabel = snap.exists ? (snap.data().name || user.email) : user.email;
     document.getElementById('user-email-label').textContent = nameLabel;
     if (window._isTeacher) document.getElementById('teacher-btn').style.display = 'inline-block';
@@ -823,6 +824,7 @@ auth.onAuthStateChanged(async (user) => {
     const pwBtn = document.getElementById('pw-change-menu-btn'); if(pwBtn) pwBtn.style.display='none';
     const ieBtn = document.getElementById('info-edit-menu-btn'); if(ieBtn) ieBtn.style.display='none';
     if (typeof showLoginOverlay === 'function') showLoginOverlay();
+    document.getElementById('gamsang-forest-bar').style.display = 'none';
     document.getElementById('user-info-bar').style.display = 'none';
   }
 });
@@ -888,6 +890,12 @@ function closeSettings() {
   document.getElementById('settings-dropdown')?.classList.remove('open');
 }
 document.addEventListener('click', () => closeSettings());
+
+function openGamsangForestTeacher() { console.log('openGamsangForestTeacher'); }
+function openGamsangForestStudent() { console.log('openGamsangForestStudent'); }
+function openGamsangForestGuest() {
+  alert('로그인하면 나만의 감상 포트폴리오를 정리하고 볼 수 있어요!\n로그인해서 감상 일지를 남겨보세요 🌳');
+}
 
 // ── 비밀번호 변경 ──────────────────────────────
 function openPwChange(forced) {
@@ -1337,6 +1345,16 @@ window.doLogout = doLogout;
       <button onclick="doLogout()" style="color:#f87171;">🚪 로그아웃</button>
     </div>
   </div>
+</div>
+
+<!-- 감상의 숲 버튼 -->
+<div id="gamsang-forest-bar" style="display:none;position:fixed;top:54px;right:12px;z-index:7999;">
+  <button
+    onclick="window._isTeacher ? openGamsangForestTeacher() : (window._currentUser ? openGamsangForestStudent() : openGamsangForestGuest())"
+    style="padding:0;border:none;background:transparent;cursor:pointer;display:block;">
+    <img src="images/gamsang_btn.png" alt="감상의 숲"
+         style="height:40px;width:auto;object-fit:contain;display:block;">
+  </button>
 </div>
 
 <!-- 비밀번호 변경 팝업 -->
@@ -2856,6 +2874,7 @@ function hideLoginOverlay() {
 
 function _showGuestBar() {
   document.getElementById('user-info-bar').style.display = 'flex';
+  document.getElementById('gamsang-forest-bar').style.display = 'block';
   document.getElementById('user-email-label').textContent = '비회원';
   document.getElementById('guest-exit-btn').style.display = 'inline-block';
   document.getElementById('settings-menu').style.display = 'none';
@@ -2886,6 +2905,7 @@ function selectGuestGender(gender) {
 function doGuestExit() {
   localStorage.removeItem('guestGender');
   document.getElementById('user-info-bar').style.display = 'none';
+  document.getElementById('gamsang-forest-bar').style.display = 'none';
   document.getElementById('guest-exit-btn').style.display = 'none';
   document.getElementById('settings-menu').style.display = '';
   disablePhaserInput();
