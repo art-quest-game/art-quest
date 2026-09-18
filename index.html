@@ -3017,12 +3017,16 @@ function _miniHideInfoBar() {
     bar.dataset.miniHidden = '1';
     bar.style.display = 'none';
   }
+  const gf = document.getElementById('gamsang-forest-bar');
+  if (gf) gf.style.display = 'none';
 }
 function _miniRestoreInfoBar() {
   const bar = document.getElementById('user-info-bar');
   if (bar && bar.dataset.miniHidden) {
     delete bar.dataset.miniHidden;
     bar.style.display = 'flex';
+    const gf = document.getElementById('gamsang-forest-bar');
+    if (gf) gf.style.display = 'block';
   }
 }
 
