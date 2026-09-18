@@ -2262,7 +2262,7 @@ function closeRankUp() {
 function updateRank() {
   const rank = getCurrentRank();
   const idx  = RANKS.indexOf(rank);
-  if (gameScene) {
+  if (gameScene && gameScene.playerLabel) {
     gameScene.playerLabel.setText(rank.name);
   }
   if (idx > _prevRankIdx) {
@@ -3771,10 +3771,11 @@ function flipCard(i) {
       document.getElementById('mc-' + a).classList.add('matched');
       document.getElementById('mc-' + b).classList.add('matched');
       const gain = (_memMode === 'meaning') ? 8 : 5;
-      memState.coinsEarned += gain; state.coins += gain; state.totalCoins += gain; updateHUD(); showMemCoinFloat(gain);
+      memState.coinsEarned += gain; state.coins += gain; state.totalCoins += gain;
+      memState.flipped = []; memState.lock = false;
+      updateHUD(); showMemCoinFloat(gain);
       document.getElementById('mem-coins-earned').textContent = memState.coinsEarned;
       document.getElementById('mem-pairs-left').textContent = MEM_PAIR_COUNT - memState.matched.size / 2;
-      memState.flipped = []; memState.lock = false;
       if (memState.matched.size === memState.cards.length) {
         setTimeout(() => {
           state.coins += 20; state.totalCoins += 20; updateHUD(); showCoinToast(20);
@@ -3783,9 +3784,11 @@ function flipCard(i) {
       }
     } else {
       setTimeout(() => {
-        document.getElementById('mc-' + a).classList.remove('flipped');
-        document.getElementById('mc-' + b).classList.remove('flipped');
         memState.flipped = []; memState.lock = false;
+        const cardA = document.getElementById('mc-' + a);
+        const cardB = document.getElementById('mc-' + b);
+        if (cardA) cardA.classList.remove('flipped');
+        if (cardB) cardB.classList.remove('flipped');
       }, 1000);
     }
   }
