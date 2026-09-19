@@ -271,6 +271,15 @@ canvas { display:block; image-rendering:pixelated; margin:0 auto; }
 .tr-value { color:#ffd700; font-size:1.8rem; font-weight:700; }
 #typing-retry-btn { background:linear-gradient(90deg,#ffd700,#ff9900); color:#1a0a2e; border:none; border-radius:8px; padding:11px 26px; font-size:.95rem; font-weight:700; cursor:pointer; margin-right:8px; }
 #typing-exit-btn { background:linear-gradient(90deg,#6b21a8,#9333ea); color:#fff; border:none; border-radius:8px; padding:11px 22px; font-size:.95rem; cursor:pointer; }
+/* Feldman stage badges */
+#typing-artwork-label { color:#a78bfa; font-size:.82rem; font-weight:700; margin:12px 0 5px; letter-spacing:.02em; }
+#typing-artwork-label span { color:#ffd700; }
+#typing-stage-flow { display:flex; align-items:center; gap:4px; margin-bottom:10px; flex-wrap:wrap; }
+.stage-badge { background:#1a0a2e; border:1.5px solid #3d1b80; border-radius:16px; padding:4px 12px; color:#6b7280; font-size:.78rem; font-weight:600; transition:all .25s; }
+.stage-badge.active { background:linear-gradient(90deg,#ffd700,#ff9900); border-color:#ffd700; color:#1a0a2e; font-weight:800; box-shadow:0 0 10px #ffd70050; }
+.stage-badge.done { border-color:#22c55e50; color:#4ade8088; }
+.stage-arrow { color:#3d1b80; font-size:.8rem; flex-shrink:0; }
+#typing-notice { color:#6b7280; font-size:.78rem; text-align:center; margin-top:10px; padding:0 8px; line-height:1.5; }
 
 /* Shop */
 #shop-inner { width:100%; max-width:780px; padding:0 18px 40px; }
@@ -2317,23 +2326,33 @@ async function openTeacherDashboard() {
   <div style="width:100%;max-width:920px;display:flex;align-items:stretch;border-bottom:1px solid #ffffff10;">
     <div style="width:3px;flex-shrink:0;background:#a78bfa;"></div>
     <div style="background:rgba(26,10,46,.92);padding:7px 19px;display:flex;align-items:center;gap:10px;flex-wrap:wrap;flex:1;">
-      <span style="color:#a78bfa;font-size:.8rem;font-weight:700;">⌨️ 서술 단계(보조)</span>
-      <span style="color:#a78bfa;font-size:.76rem;">작품 정보를 반복하며 익혀요</span>
+      <span style="color:#a78bfa;font-size:.8rem;font-weight:700;">⌨️ 펠드먼 4단계 감상 연습</span>
+      <span style="color:#a78bfa;font-size:.76rem;">서술 → 분석 → 해석 → 평가 순서로 문장을 타이핑해요</span>
     </div>
   </div>
   <div id="typing-inner">
     <div id="typing-start-overlay">
-      <h3>🖼️ 명화 타자 연습</h3>
-      <p>명화에 관한 문장을 빠르고 정확하게 타이핑하세요!<br>60초 동안 최대한 많은 문장을 완성해 코인을 획득하세요.<br>최대 <strong style="color:#ffd700">60 코인</strong></p>
+      <h3>🖼️ 펠드먼 4단계 감상 타자 연습</h3>
+      <p>명화 한 작품씩, 서술 → 분석 → 해석 → 평가(예시) 순서로 문장을 타이핑하세요!<br>60초 동안 최대한 많은 문장을 완성해 코인을 획득하세요.<br>최대 <strong style="color:#ffd700">60 코인</strong></p>
       <button id="typing-start-btn" onclick="startTyping()">시작하기!</button>
     </div>
     <div id="typing-game-area" style="display:none">
       <div id="typing-top-row">
-        <div id="typing-timer">30</div>
+        <div id="typing-timer">60</div>
         <div class="typing-stat-row">
           <div class="t-stat"><div class="t-stat-label">정확도</div><div class="t-stat-value" id="live-accuracy">100%</div></div>
           <div class="t-stat"><div class="t-stat-label">완성 문장</div><div class="t-stat-value" id="live-sentences">0</div></div>
         </div>
+      </div>
+      <div id="typing-artwork-label">작품: <span id="typing-artwork-name">-</span></div>
+      <div id="typing-stage-flow">
+        <span class="stage-badge" data-stage="서술">서술</span>
+        <span class="stage-arrow">→</span>
+        <span class="stage-badge" data-stage="분석">분석</span>
+        <span class="stage-arrow">→</span>
+        <span class="stage-badge" data-stage="해석">해석</span>
+        <span class="stage-arrow">→</span>
+        <span class="stage-badge" data-stage="평가(예시)">평가(예시)</span>
       </div>
       <div id="typing-sentence-box"></div>
       <input id="typing-input" type="text" placeholder="여기에 타이핑하세요..."
@@ -2346,6 +2365,7 @@ async function openTeacherDashboard() {
         </div>
       </div>
       <div id="typing-progress"></div>
+      <div id="typing-notice">문장은 모바일 가로 화면에서도 편하게 칠 수 있도록 짧게 구성했습니다.</div>
     </div>
     <div id="typing-result-box" style="display:none">
       <h3>🎉 게임 종료!</h3>
@@ -4795,49 +4815,89 @@ function checkPuzzleSolved() {
 //  타자연습 — 순수 HTML input 기반 (스페이스바 완전 지원)
 // ─────────────────────────────────────────────
 // ARTWORKS desc에서 문장 단위로 타자연습 문장 자동 추출
-const TYPING_SENTENCES = [
-  '수렵도 속 사냥꾼이 활을 당긴다.',
-  '씨름도에 씨름꾼과 구경꾼이 있다.',
-  '몽유도원도는 꿈속 무릉도원이다.',
-  '초충도에 풀과 벌레가 그려졌다.',
-  '금강전도는 금강산을 내려본 그림.',
-  '씨름 구경꾼들이 둥글게 모여있다.',
-  '단오풍정에 그네 타는 여인이 있다.',
-  '월하정인은 달빛 아래 두 연인이다.',
-  '미인도에 한복 입은 여인이 서있다.',
-  '세한도에 소나무와 잣나무가 있다.',
-  '무동에서 아이가 춤을 추고 있다.',
-  '서당에서 아이가 울음을 터뜨린다.',
-  '벼타작에 볏단을 터는 농부가 있다.',
-  '불이선란도는 곧게 뻗은 난초이다.',
-  '묵매도는 먹으로 그린 매화이다.',
-  '호취도에 날카로운 매가 앉아있다.',
-  '인왕제색도는 비 갠 인왕산이다.',
-  '풍죽도는 바람에 흔들리는 대나무.',
-  '영통동구도에 커다란 바위가 있다.',
-  '고사관수도에 물을 보는 선비가 있다.',
-  '달마도는 달마대사를 그린 인물화.',
-  '영모도(유압도)에 헤엄치는 물오리가 있다.',
-  '월매도는 달빛 아래 핀 매화이다.',
-  '강산무진도는 긴 두루마리 그림이다.',
-  '모나리자의 신비로운 미소가 보인다.',
-  '최후의 만찬에 예수와 제자가 있다.',
-  '비너스의 탄생은 조개 위 여신이다.',
-  '아테네 학당에 철학자들이 모였다.',
-  '진주 귀걸이를 한 소녀가 돌아본다.',
-  '야경에 순찰 나선 민병대가 있다.',
-  '별이 빛나는 밤하늘이 소용돌이친다.',
-  '해바라기가 노랗게 피어있다.',
-  '돌 깨는 사람들이 일하고 있다.',
-  '절규 속 인물이 귀를 막고 있다.',
-  '가나가와의 큰 파도가 배를 덮친다.',
-  '올랭피아에 누운 여인이 그려졌다.',
-  '아담의 창조는 맞닿는 두 손가락이다.',
-  '피리 부는 소년이 피리를 분다.',
-  '이삭 줍기에 허리 숙인 농부가 있다.',
-  '키스는 서로 끌어안은 두 사람이다.',
-  '시녀들 속 어린 공주가 서있다.',
+const FELDMAN_ARTWORKS = [
+  { title:'씨름', stages:[
+    { stage:'서술',     text:'씨름에는 씨름꾼과 구경꾼이 있다.' },
+    { stage:'분석',     text:'씨름은 구경꾼이 원을 이룬 구도다.' },
+    { stage:'해석',     text:'씨름은 서민의 생활을 보여준다.' },
+    { stage:'평가(예시)', text:'씨름은 표정이 생생해서 재미있다.' },
+  ]},
+  { title:'별이 빛나는 밤', stages:[
+    { stage:'서술',     text:'별이 빛나는 밤에는 밤하늘과 별이 있다.' },
+    { stage:'분석',     text:'별이 빛나는 밤은 곡선이 하늘에 흐른다.' },
+    { stage:'해석',     text:'별이 빛나는 밤은 외로운 마음이 느껴진다.' },
+    { stage:'평가(예시)', text:'별이 빛나는 밤은 하늘 표현이 인상 깊다.' },
+  ]},
+  { title:'세한도', stages:[
+    { stage:'서술',     text:'세한도에는 소나무와 집이 있다.' },
+    { stage:'분석',     text:'세한도는 여백이 여유를 만든다.' },
+    { stage:'해석',     text:'세한도는 선비의 절개를 담았다.' },
+    { stage:'평가(예시)', text:'세한도는 단순하지만 뜻이 깊다.' },
+  ]},
+  { title:'절규', stages:[
+    { stage:'서술',     text:'절규에는 소리치는 사람이 있다.' },
+    { stage:'분석',     text:'절규는 붉은 하늘과 굽은 선이 있다.' },
+    { stage:'해석',     text:'절규는 인간의 불안을 표현했다.' },
+    { stage:'평가(예시)', text:'절규는 불안한 감정이 잘 전해진다.' },
+  ]},
+  { title:'초충도', stages:[
+    { stage:'서술',     text:'초충도에는 꽃과 곤충이 있다.' },
+    { stage:'분석',     text:'초충도는 곤충을 실제 비례로 그렸다.' },
+    { stage:'해석',     text:'초충도는 자연 사랑을 담았다.' },
+    { stage:'평가(예시)', text:'초충도는 세밀하게 그려서 감탄스럽다.' },
+  ]},
+  { title:'모나리자', stages:[
+    { stage:'서술',     text:'모나리자에는 미소 짓는 여인이 있다.' },
+    { stage:'분석',     text:'모나리자는 부드러운 명암으로 그렸다.' },
+    { stage:'해석',     text:'모나리자의 미소는 다르게 느껴진다.' },
+    { stage:'평가(예시)', text:'모나리자는 미소가 궁금해 자꾸 본다.' },
+  ]},
+  { title:'인왕제색도', stages:[
+    { stage:'서술',     text:'인왕제색도에는 비 온 뒤 인왕산이 있다.' },
+    { stage:'분석',     text:'인왕제색도는 짙은 먹으로 그렸다.' },
+    { stage:'해석',     text:'인왕제색도는 실제 산을 담아냈다.' },
+    { stage:'평가(예시)', text:'인왕제색도는 산을 실제처럼 그렸다.' },
+  ]},
+  { title:'이삭 줍기', stages:[
+    { stage:'서술',     text:'이삭 줍기에는 세 여인이 있다.' },
+    { stage:'분석',     text:'이삭 줍기는 넓은 들판으로 그렸다.' },
+    { stage:'해석',     text:'이삭 줍기는 농민의 삶을 존중했다.' },
+    { stage:'평가(예시)', text:'이삭 줍기는 농민을 그린 점이 특별하다.' },
+  ]},
+  { title:'진주 귀걸이를 한 소녀', stages:[
+    { stage:'서술',     text:'진주 귀걸이를 한 소녀에는 소녀가 있다.' },
+    { stage:'분석',     text:'이 그림은 어두운 배경으로 인물을 강조했다.' },
+    { stage:'해석',     text:'이 그림은 신비로운 분위기를 자아낸다.' },
+    { stage:'평가(예시)', text:'소녀의 눈빛이 아름답게 느껴진다.' },
+  ]},
+  { title:'금강전도', stages:[
+    { stage:'서술',     text:'금강전도에는 금강산 봉우리가 있다.' },
+    { stage:'분석',     text:'금강전도는 위에서 본 구도로 그렸다.' },
+    { stage:'해석',     text:'금강전도는 금강산 웅장함을 담았다.' },
+    { stage:'평가(예시)', text:'금강전도는 봉우리가 많아 웅장하다.' },
+  ]},
 ];
+
+function buildFeldmanSentences() {
+  const order = [...Array(FELDMAN_ARTWORKS.length).keys()].sort(() => Math.random() - .5);
+  const result = [];
+  for (const i of order) {
+    const art = FELDMAN_ARTWORKS[i];
+    for (const s of art.stages) {
+      result.push({ text: s.text, stage: s.stage, artworkTitle: art.title });
+    }
+  }
+  return result;
+}
+
+function findArtworkByTitle(title) {
+  for (const cat of Object.values(ARTWORKS)) {
+    for (const art of cat) {
+      if (art.title === title) return art;
+    }
+  }
+  return null;
+}
 
 const ts = { active:false, sentences:[], idx:0, timeLeft:60, interval:null,
              completedSentences:0, completedWords:0, totalKeys:0, correctKeys:0 };
@@ -4860,7 +4920,7 @@ function openTyping() {
 
 // ── 게임 시작 ────────────────────────────────
 function startTyping() {
-  ts.sentences = [...TYPING_SENTENCES].sort(() => Math.random() - .5);
+  ts.sentences = buildFeldmanSentences();
   ts.idx = 0; ts.timeLeft = 60; ts.active = true;
   ts.completedSentences = 0; ts.completedWords = 0;
   ts.totalKeys = 0; ts.correctKeys = 0;
@@ -4899,7 +4959,8 @@ function stopTyping() {
 
 // ── 다음 문장으로 이동 ────────────────────────
 function advanceSentence() {
-  const sentence = ts.sentences[ts.idx] || '';
+  const entry = ts.sentences[ts.idx];
+  const sentence = entry ? entry.text : '';
   ts.completedSentences++;
   ts.completedWords += sentence.trim().split(/\s+/).length;
   ts.idx = (ts.idx + 1) % ts.sentences.length;
@@ -4912,25 +4973,13 @@ function advanceSentence() {
 }
 
 // ── 디스플레이 렌더링 ─────────────────────────
-function findArtworkForSentence(sentence) {
-  const s = sentence.replace(/[.!?。]$/, '');
-  let best = null, bestLen = 0;
-  for (const cat of Object.values(ARTWORKS)) {
-    for (const art of cat) {
-      if (art.title && art.title.length >= 2 && s.includes(art.title) && art.title.length > bestLen) {
-        best = art; bestLen = art.title.length;
-      }
-    }
-  }
-  return best;
-}
-
 let _lastTypingIdx = -1;
 function updateTypingArtworkPreview() {
   if (ts.idx === _lastTypingIdx) return;
   _lastTypingIdx = ts.idx;
-  const sentence = ts.sentences[ts.idx] || '';
-  const art = findArtworkForSentence(sentence);
+  const entry = ts.sentences[ts.idx];
+  if (!entry) return;
+  const art = findArtworkByTitle(entry.artworkTitle);
   const preview = document.getElementById('typing-artwork-preview');
   if (art) {
     document.getElementById('typing-artwork-img').src = art.url || '';
@@ -4942,8 +4991,21 @@ function updateTypingArtworkPreview() {
   }
 }
 
+function updateStageBadges(currentStage) {
+  const stageOrder = ['서술', '분석', '해석', '평가(예시)'];
+  const currentIdx = stageOrder.indexOf(currentStage);
+  document.querySelectorAll('.stage-badge').forEach(badge => {
+    const s = badge.dataset.stage;
+    const si = stageOrder.indexOf(s);
+    badge.classList.remove('active', 'done');
+    if (si === currentIdx) badge.classList.add('active');
+    else if (si < currentIdx) badge.classList.add('done');
+  });
+}
+
 function renderTypingDisplay(val, composingNow) {
-  const sentence = ts.sentences[ts.idx] || '';
+  const entry = ts.sentences[ts.idx];
+  const sentence = entry ? entry.text : '';
   const compareUpTo = (composingNow && val.length > 0) ? val.length - 1 : val.length;
   let html = '';
   for (let i = 0; i < sentence.length; i++) {
@@ -4959,7 +5021,14 @@ function renderTypingDisplay(val, composingNow) {
     }
   }
   document.getElementById('typing-sentence-box').innerHTML = html || `<span class="c-dim">문장을 로딩 중...</span>`;
-  document.getElementById('typing-progress').textContent = `문장 ${ts.idx + 1} / ${ts.sentences.length}`;
+  const artworkNum = Math.floor(ts.idx / 4) + 1;
+  const totalArtworks = Math.floor(ts.sentences.length / 4);
+  const stageNum = (ts.idx % 4) + 1;
+  document.getElementById('typing-progress').textContent = `작품 ${artworkNum}/${totalArtworks} · 4단계 중 ${stageNum}단계`;
+  if (entry) {
+    document.getElementById('typing-artwork-name').textContent = entry.artworkTitle;
+    updateStageBadges(entry.stage);
+  }
   updateTypingArtworkPreview();
 }
 
@@ -5039,7 +5108,8 @@ typingInput.addEventListener('input', function() {
 });
 
 function processTypingValue(val) {
-  const sentence = ts.sentences[ts.idx] || '';
+  const entry = ts.sentences[ts.idx];
+  const sentence = entry ? entry.text : '';
 
   if (val.length > _prevLen) {
     for (let i = _prevLen; i < Math.min(val.length, sentence.length); i++) {
@@ -5070,7 +5140,6 @@ typingInput.addEventListener('keydown', function(e) {
     }
     // 게임 중 Enter → 다음 문장 (현재 문장 포기 후 이동)
     else if (ts.active) {
-      const sentence = ts.sentences[ts.idx] || '';
       advanceSentence();
     }
   }
