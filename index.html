@@ -2491,7 +2491,7 @@ function renderCostumeShop() {
                     isGirlLocked   ? '<div class="ct-girl-lock">🔒</div>' :
                     isBoyLocked    ? '<div class="ct-boy-lock">🔒</div>' : '';
     const onclick = rankLocked     ? '' : `selectCostume('${c.id}','${gender}')`;
-    return `<div class="${cls}" ${onclick ? `onclick="${onclick}"` : ''}>
+    return `<div class="${cls}" data-id="${c.id}" data-gender="${gender}" ${onclick ? `onclick="${onclick}"` : ''}>
       ${badge}
       <img class="ct-img" src="${img}" alt="${c.name}" onerror="this.src='images/char_boy_basic.png'">
       <div class="ct-name">${c.name}</div>
@@ -2552,9 +2552,24 @@ function renderCostumeShop() {
 }
 
 function selectCostume(id, gender) {
+  const prevId     = costumePreviewId;
+  const prevGender = shopPreviewGender;
   costumePreviewId  = id;
   shopPreviewGender = gender || 'boy';
-  renderCostumeShop();
+
+  // 이전 선택 타일에서 ct-selected 제거
+  const prevTile = document.querySelector(`.costume-tile[data-id="${prevId}"][data-gender="${prevGender}"]`);
+  if (prevTile) prevTile.classList.remove('ct-selected');
+
+  // 새 타일에 ct-selected 추가 (착용 중 타일은 ct-equipped로 표시되므로 제외)
+  const newTile = document.querySelector(`.costume-tile[data-id="${id}"][data-gender="${shopPreviewGender}"]`);
+  if (newTile) {
+    const isEq = window._currentCostume === id && window._gender === shopPreviewGender;
+    if (!isEq) newTile.classList.add('ct-selected');
+  }
+
+  const previewC = COSTUME_DATA.find(c => c.id === id) || COSTUME_DATA[0];
+  updateCostumePreview(previewC, shopPreviewGender);
 }
 
 function updateCostumePreview(c, gender) {
