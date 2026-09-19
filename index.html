@@ -908,6 +908,18 @@ function closeGamsangPortfolio() {
   document.getElementById('gamsang-portfolio-screen').classList.remove('active');
   document.getElementById('game-container').style.display = '';
 }
+function _countLocalQuest(type) {
+  if (!window._currentUser) return 0;
+  const prefix = `aq_${window._currentUser.uid}_coin_`;
+  const suffix = `_${type}`;
+  let n = 0;
+  for (let i = 0; i < localStorage.length; i++) {
+    const k = localStorage.key(i);
+    if (k && k.startsWith(prefix) && k.endsWith(suffix) && localStorage.getItem(k) === '1') n++;
+  }
+  return n;
+}
+
 async function renderGamsangPortfolio() {
   const content = document.getElementById('gamsang-portfolio-content');
   if (!window._currentUser) {
@@ -941,44 +953,69 @@ async function renderGamsangPortfolio() {
       .map(d => ({ id: d.id, ...d.data() }))
       .sort((a, b) => (b.savedAt?.toMillis?.() || 0) - (a.savedAt?.toMillis?.() || 0));
 
+    const artworksCount = typeof data.artworks === 'number' ? data.artworks : 0;
+    const hiddenDone    = _countLocalQuest('hidden');
+    const oxDone        = _countLocalQuest('ox');
+
     const picksE   = Object.entries(picks);
     const moodsE   = Object.entries(moods);
     const reviewsE = Object.entries(reviews);
-    const totalAny = picksE.length + moodsE.length + reviewsE.length + colorings.length;
-
-    if (!totalAny) {
-      content.innerHTML = '<p style="color:#a78bfa;text-align:center;padding:60px 10px;line-height:1.8;">🌱 아직 기록된 감상이 없어요.<br>명화를 감상하고 나만의 포트폴리오를 채워보세요!</p>';
-      return;
-    }
 
     const esc = s => String(s).replace(/[&<>"']/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
     const artTitle = id => esc(findArtById(id)?.art.title || id);
+    const card = inner => `<div style="margin-bottom:10px;background:#0f0720;border:1px solid #6b21a8;border-radius:10px;padding:11px 15px;">${inner}</div>`;
+    const titleRow = id => `<div style="color:#ffd700;font-size:.82rem;margin-bottom:5px;">🖼️ ${artTitle(id)}</div>`;
+    const emptyNote = msg => `<p style="color:#a78bfa;font-size:.83rem;padding:6px 2px 14px;line-height:1.8;">${msg}</p>`;
+    const badge = txt => `<span style="display:inline-block;background:#1e0a3c;border:1px solid #7c3aed;border-radius:20px;padding:4px 13px;color:#e2c4ff;font-size:.82rem;font-weight:700;margin:3px 4px 3px 0;">${txt}</span>`;
 
-    const secHead = (icon, label, count) =>
-      `<div style="margin:24px 0 10px;padding-bottom:8px;border-bottom:1px solid #a78bfa40;color:#ffd700;font-size:.95rem;font-weight:700;">${icon} ${label} <span style="color:#a78bfa;font-size:.8rem;font-weight:400;">(${count}건)</span></div>`;
-
-    const emptyNote = msg =>
-      `<p style="color:#a78bfa;font-size:.83rem;padding:6px 2px 14px;line-height:1.8;">${msg}</p>`;
-
-    const card = inner =>
-      `<div style="margin-bottom:10px;background:#0f0720;border:1px solid #6b21a8;border-radius:10px;padding:11px 15px;">${inner}</div>`;
-
-    const titleRow = id =>
-      `<div style="color:#ffd700;font-size:.82rem;margin-bottom:5px;">🖼️ ${artTitle(id)}</div>`;
+    const stageHead = (num, icon, title, activities) =>
+      `<div style="margin:20px 0 0;padding:12px 16px 10px;background:linear-gradient(135deg,#1a0a2e,#0f0720);border:1px solid #6b21a8;border-radius:12px 12px 0 0;">
+        <div style="color:#ffd700;font-size:1rem;font-weight:700;margin-bottom:4px;">${num} ${icon} ${title}</div>
+        <div style="color:#a78bfa;font-size:.76rem;">🎯 ${activities}</div>
+      </div>
+      <div style="padding:12px 16px 14px;background:#0f0720;border:1px solid #6b21a8;border-top:none;border-radius:0 0 12px 12px;margin-bottom:4px;">`;
 
     let html = '';
 
-    // ── (1) 인생 작품 3선 ──────────────────────
-    html += secHead('⭐', '내 인생 작품 3선', picksE.length);
-    html += picksE.length
-      ? picksE.map(([id, reason]) => card(
-          titleRow(id) +
-          `<div style="color:#e2c4ff;font-size:.86rem;line-height:1.7;white-space:pre-wrap;">${esc(reason)}</div>`
-        )).join('')
-      : emptyNote('아직 고른 인생 작품이 없어요. 갤러리에서 ⭐ 인생 작품을 선택해 보세요!');
+    // ── 배너 ──────────────────────────────────────────
+    html += `
+      <div style="background:linear-gradient(135deg,#2d1b69,#1a0a2e);border:2px solid #a855f7;border-radius:14px;padding:18px 20px 16px;margin-bottom:8px;text-align:center;">
+        <div style="color:#ffd700;font-size:1.1rem;font-weight:700;margin-bottom:6px;">🌳 나의 감상 여정</div>
+        <div style="color:#c4b5fd;font-size:.82rem;line-height:1.7;margin-bottom:14px;">명화의 숲에서 여러 작품을 감상하며 4단계로 작품을 깊이 감상했어요</div>
+        <div style="display:flex;justify-content:center;align-items:flex-start;gap:2px;flex-wrap:wrap;">
+          ${[['①','서술','무엇이 보이나'],['②','분석','어떻게 이루어졌나'],['③','해석','무엇을 의미하나'],['④','평가','어떻게 평가하나']].map((s,i,a) => `
+            <div style="text-align:center;min-width:68px;">
+              <div style="background:#3b1d6e;border:1px solid #a855f7;border-radius:8px;padding:5px 8px;display:inline-block;">
+                <div style="color:#ffd700;font-size:.8rem;font-weight:700;">${s[0]} ${s[1]}</div>
+                <div style="color:#c4b5fd;font-size:.68rem;line-height:1.4;">${s[2]}</div>
+              </div>
+            </div>${i < a.length-1 ? '<div style="color:#a855f7;font-size:1rem;padding-top:8px;">→</div>' : ''}`).join('')}
+        </div>
+      </div>`;
 
-    // ── (2) 무드/감정 기록 ─────────────────────
-    html += secHead('💭', '무드/감정 기록', moodsE.length);
+    // ── ① 서술 ───────────────────────────────────────
+    html += stageHead('①', '🔍', '서술', '작품 감상 · 숨은 요소 찾기');
+    html += `<div>${badge(`🖼️ 명화 ${artworksCount}점 감상`)}`;
+    if (hiddenDone > 0) html += badge(`🔍 숨은 요소 퀘스트 ${hiddenDone}개 완료`);
+    html += `</div>`;
+    if (artworksCount === 0 && hiddenDone === 0) {
+      html += emptyNote('아직 감상 기록이 없어요. 갤러리에서 작품을 감상하고 퀘스트에 도전해 보세요!');
+    }
+    html += `</div>`;
+
+    // ── ② 분석 ───────────────────────────────────────
+    html += stageHead('②', '🔬', '분석', 'OX 퀴즈 · 명화 퍼즐 · 퀴즈 타워');
+    if (oxDone > 0) html += `<div style="margin-bottom:8px;">${badge(`✅ OX 퀴즈 ${oxDone}개 완료`)}</div>`;
+    html += `<div style="color:#a78bfa;font-size:.82rem;line-height:1.7;">OX 퀴즈·명화 퍼즐·퀴즈 타워로<br>작품의 구도·색채·기법을 분석했어요</div>`;
+    html += `</div>`;
+
+    // ── ③ 해석 ───────────────────────────────────────
+    html += stageHead('③', '💭', '해석', '감상문 · 분위기 해석');
+    html += `<div style="color:#ffd700;font-size:.82rem;font-weight:700;margin-bottom:6px;">✍️ 감상글 <span style="color:#a78bfa;font-weight:400;">(${reviewsE.length}건)</span></div>`;
+    html += reviewsE.length
+      ? reviewsE.map(([id, text]) => card(titleRow(id) + `<div style="color:#e2c4ff;font-size:.86rem;line-height:1.7;white-space:pre-wrap;">${esc(text)}</div>`)).join('')
+      : emptyNote('아직 작성한 감상글이 없어요. 갤러리에서 작품을 감상하고 글을 남겨 보세요!');
+    html += `<div style="color:#ffd700;font-size:.82rem;font-weight:700;margin:14px 0 6px;">💭 무드/감정 기록 <span style="color:#a78bfa;font-weight:400;">(${moodsE.length}건)</span></div>`;
     html += moodsE.length
       ? moodsE.map(([id, val]) => card(
           titleRow(id) +
@@ -986,34 +1023,31 @@ async function renderGamsangPortfolio() {
           (val.reason ? `<div style="color:#e2c4ff;font-size:.86rem;line-height:1.7;white-space:pre-wrap;">${esc(val.reason)}</div>` : '')
         )).join('')
       : emptyNote('아직 분위기를 기록한 작품이 없어요. 갤러리에서 💭 분위기 해석을 남겨 보세요!');
+    html += `</div>`;
 
-    // ── (3) 작품별 감상글 ──────────────────────
-    html += secHead('✍️', '작품별 감상글', reviewsE.length);
-    html += reviewsE.length
-      ? reviewsE.map(([id, text]) => card(
-          titleRow(id) +
-          `<div style="color:#e2c4ff;font-size:.86rem;line-height:1.7;white-space:pre-wrap;">${esc(text)}</div>`
-        )).join('')
-      : emptyNote('아직 작성한 감상글이 없어요. 갤러리에서 작품을 감상하고 글을 남겨 보세요!');
-
-    // ── (4) 색칠 그림 갤러리 ───────────────────
-    html += secHead('🎨', '색칠 그림 갤러리', colorings.length);
+    // ── ④ 평가 ───────────────────────────────────────
+    html += stageHead('④', '⭐', '평가', '내 인생 작품 3선 · 색칠 재해석');
+    html += `<div style="color:#ffd700;font-size:.82rem;font-weight:700;margin-bottom:6px;">⭐ 인생 작품 3선 <span style="color:#a78bfa;font-weight:400;">(${picksE.length}건)</span></div>`;
+    html += picksE.length
+      ? picksE.map(([id, reason]) => card(titleRow(id) + `<div style="color:#e2c4ff;font-size:.86rem;line-height:1.7;white-space:pre-wrap;">${esc(reason)}</div>`)).join('')
+      : emptyNote('아직 고른 인생 작품이 없어요. 갤러리에서 ⭐ 인생 작품을 선택해 보세요!');
+    html += `<div style="color:#ffd700;font-size:.82rem;font-weight:700;margin:14px 0 6px;">🎨 색칠 그림 갤러리 <span style="color:#a78bfa;font-weight:400;">(${colorings.length}건)</span></div>`;
     if (!colorings.length) {
       html += emptyNote('아직 색칠한 그림이 없어요. 색칠 스튜디오에서 명화를 색칠해 보세요!');
     } else {
-      html += '<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(155px,1fr));gap:12px;margin-bottom:8px;">';
+      html += '<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:12px;margin-bottom:8px;">';
       colorings.forEach(c => {
-        html +=
-          `<div style="background:#0f0720;border:1px solid #6b21a8;border-radius:10px;overflow:hidden;">
-            <img src="${c.image}" alt="${esc(c.artName || '')}" style="width:100%;aspect-ratio:4/3;object-fit:cover;display:block;">
-            <div style="padding:8px 10px;">
-              <div style="color:#ffd700;font-size:.75rem;font-weight:700;margin-bottom:3px;">🖼️ ${esc(c.artName || '')}</div>
-              ${c.note ? `<div style="color:#a78bfa;font-size:.72rem;line-height:1.5;white-space:pre-wrap;">${esc(c.note)}</div>` : ''}
-            </div>
-          </div>`;
+        html += `<div style="background:#1a0a2e;border:1px solid #6b21a8;border-radius:10px;overflow:hidden;">
+          <img src="${c.image}" alt="${esc(c.artName||'')}" style="width:100%;aspect-ratio:4/3;object-fit:cover;display:block;">
+          <div style="padding:8px 10px;">
+            <div style="color:#ffd700;font-size:.75rem;font-weight:700;margin-bottom:3px;">🖼️ ${esc(c.artName||'')}</div>
+            ${c.note ? `<div style="color:#a78bfa;font-size:.72rem;line-height:1.5;white-space:pre-wrap;">${esc(c.note)}</div>` : ''}
+          </div>
+        </div>`;
       });
       html += '</div>';
     }
+    html += `</div>`;
 
     content.innerHTML = html;
   } catch(e) {
