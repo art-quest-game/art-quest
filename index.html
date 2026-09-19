@@ -279,6 +279,7 @@ canvas { display:block; image-rendering:pixelated; margin:0 auto; }
 .stage-badge.active { background:linear-gradient(90deg,#ffd700,#ff9900); border-color:#ffd700; color:#1a0a2e; font-weight:800; box-shadow:0 0 10px #ffd70050; }
 .stage-badge.done { border-color:#22c55e50; color:#4ade8088; }
 .stage-arrow { color:#3d1b80; font-size:.8rem; flex-shrink:0; }
+#typing-stage-hint { color:#a78bfa; font-size:.8rem; font-style:italic; margin-bottom:8px; min-height:1.2em; transition:opacity .2s; }
 #typing-notice { color:#6b7280; font-size:.78rem; text-align:center; margin-top:10px; padding:0 8px; line-height:1.5; }
 
 /* Shop */
@@ -2354,6 +2355,7 @@ async function openTeacherDashboard() {
         <span class="stage-arrow">→</span>
         <span class="stage-badge" data-stage="평가(예시)">평가(예시)</span>
       </div>
+      <div id="typing-stage-hint"></div>
       <div id="typing-sentence-box"></div>
       <input id="typing-input" type="text" placeholder="여기에 타이핑하세요..."
              autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false">
@@ -5001,6 +5003,8 @@ function updateStageBadges(currentStage) {
     if (si === currentIdx) badge.classList.add('active');
     else if (si < currentIdx) badge.classList.add('done');
   });
+  const hints = { '서술':'무엇이 보이나요?', '분석':'어떻게 그려졌나요?', '해석':'무엇을 뜻하나요?', '평가(예시)':'어떻게 평가할까요?' };
+  document.getElementById('typing-stage-hint').textContent = hints[currentStage] || '';
 }
 
 function renderTypingDisplay(val, composingNow) {
