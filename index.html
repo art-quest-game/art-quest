@@ -910,6 +910,21 @@ function closeGamsangPortfolio() {
 }
 async function renderGamsangPortfolio() {
   const content = document.getElementById('gamsang-portfolio-content');
+  if (!window._currentUser) {
+    content.innerHTML = `
+      <div style="text-align:center;padding:60px 16px;">
+        <div style="font-size:3rem;margin-bottom:16px;">🌳</div>
+        <div style="color:#ffd700;font-size:1.05rem;font-weight:700;margin-bottom:12px;">나만의 감상 포트폴리오</div>
+        <div style="color:#a78bfa;font-size:.88rem;line-height:1.9;margin-bottom:28px;">
+          로그인하면 내가 감상한 작품들이<br>나만의 감상글로 쌓여 기록돼요 🌱
+        </div>
+        <button onclick="closeGamsangPortfolio();showLoginOverlay();"
+          style="padding:12px 32px;background:linear-gradient(90deg,#7c3aed,#a855f7);border:none;border-radius:12px;color:#fff;font-size:.95rem;font-weight:700;cursor:pointer;">
+          로그인하기
+        </button>
+      </div>`;
+    return;
+  }
   content.innerHTML = '<p style="color:#a78bfa;text-align:center;padding:40px 0;">불러오는 중...</p>';
   try {
     const snap = await db.collection('users').doc(window._currentUser.uid).get();
@@ -932,7 +947,7 @@ async function renderGamsangPortfolio() {
   }
 }
 function openGamsangForestGuest() {
-  alert('로그인하면 나만의 감상 포트폴리오를 정리하고 볼 수 있어요!\n로그인해서 감상 일지를 남겨보세요 🌳');
+  openGamsangPortfolio();
 }
 
 // ── 비밀번호 변경 ──────────────────────────────
@@ -1235,7 +1250,7 @@ window.doLogout = doLogout;
 }
 </style>
 
-<div id="login-overlay" style="display:none;position:fixed;top:0;left:0;width:100%;height:100%;z-index:9999;justify-content:center;align-items:center;background:rgba(0,0,0,.65);">
+<div id="login-overlay" style="display:flex;position:fixed;top:0;left:0;width:100%;height:100%;z-index:9999;justify-content:center;align-items:center;background:rgba(0,0,0,.65);">
   <div style="width:min(420px,92vw);">
 
     <div class="px-panel">
