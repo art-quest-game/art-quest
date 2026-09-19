@@ -636,6 +636,22 @@ body.is-mobile #joystick-zone { display:block; }
 #amf-cancel { padding:8px 16px; border:1px solid #6b21a8; border-radius:9px; background:#241041; color:#a78bfa; cursor:pointer; }
 .art-mood-saved { margin:8px 16px 0; padding:8px 11px; background:#0f2a3a; border-left:3px solid #38bdf8; border-radius:7px; color:#7dd3fc; font-size:.83rem; line-height:1.5; text-align:left; }
 
+#art-analysis-btn { background:linear-gradient(90deg,#f59e0b,#d97706); color:#fff; border:none; border-radius:20px; padding:9px 16px; font-weight:700; cursor:pointer; }
+#art-analysis-btn.done { background:linear-gradient(90deg,#22c55e,#16a34a); }
+#art-analysis-form { margin:10px 16px 16px; padding:12px; background:#1a0a2e; border:2px solid #f59e0b; border-radius:12px; }
+.aaf-title { color:#fcd34d; font-size:.88rem; font-weight:700; margin-bottom:9px; }
+.aaf-title span { color:#a78bfa; font-weight:400; font-size:.78rem; }
+.aaf-group-label { color:#fcd34d; font-size:.8rem; font-weight:700; margin-bottom:6px; }
+#analysis-elements-chips, #analysis-principles-chips { display:flex; flex-wrap:wrap; gap:6px; margin-bottom:9px; }
+.analysis-chip { padding:7px 14px; border-radius:18px; border:2px solid #6b21a8; background:#241041; color:#c4b5fd; font-size:.85rem; font-weight:700; cursor:pointer; transition:all .15s; }
+.analysis-chip:hover { border-color:#f59e0b; color:#fcd34d; }
+.analysis-chip.sel { background:linear-gradient(90deg,#f59e0b,#d97706); border-color:#f59e0b; color:#fff; }
+#art-analysis-desc { width:100%; padding:8px 10px; border-radius:9px; border:1px solid #6b21a8; background:#0f0720; color:#e2c4ff; font-size:.85rem; resize:vertical; min-height:52px; font-family:inherit; box-sizing:border-box; }
+#art-analysis-desc::placeholder { color:#6b5a8c; }
+.aaf-btns { display:flex; gap:7px; margin-top:8px; }
+#aaf-save { flex:1; padding:8px; border:none; border-radius:9px; background:linear-gradient(90deg,#f59e0b,#d97706); color:#fff; font-weight:700; cursor:pointer; }
+#aaf-cancel { padding:8px 16px; border:1px solid #6b21a8; border-radius:9px; background:#241041; color:#a78bfa; cursor:pointer; }
+
 .c-tool-btn.c-undo-redo { background:#1e3a5f; border-color:#38bdf8; color:#7dd3fc; font-weight:700; }
 .c-tool-btn.c-undo-redo:hover:not(:disabled) { background:linear-gradient(90deg,#38bdf8,#0ea5e9); color:#fff; border-color:#38bdf8; }
 .c-tool-btn.c-undo-redo:disabled { opacity:.35; cursor:default; background:#2d1b69; border-color:#6b21a8; color:#7c6a9c; }
@@ -755,14 +771,15 @@ auth.onAuthStateChanged(async (user) => {
     // 상태 초기화
     state.coins = 0; state.totalCoins = 0; state.artworks = 0;
     shopOwned.clear(); shopEquipped.clear();
-    myPicks = {}; myMoods = {}; viewedArtworks.clear();
+    myPicks = {}; myMoods = {}; myAnalysis = {}; viewedArtworks.clear();
     const snap = await db.collection('users').doc(user.uid).get();
     const data = snap.exists ? snap.data() : null;
     if (data) {
       if (typeof data.coins === 'number') state.coins = data.coins;
       if (typeof data.totalCoins === 'number') state.totalCoins = data.totalCoins;
       if (data.myPicks && typeof data.myPicks === 'object') myPicks = data.myPicks;
-      if (data.myMoods && typeof data.myMoods === 'object') myMoods = data.myMoods;
+      if (data.myMoods     && typeof data.myMoods     === 'object') myMoods     = data.myMoods;
+      if (data.myAnalysis && typeof data.myAnalysis === 'object') myAnalysis = data.myAnalysis;
       viewedArtworks.clear();
       if (Array.isArray(data.viewed)) data.viewed.forEach(id => viewedArtworks.add(id));
       if (typeof data.artworks === 'number') state.artworks = data.artworks;
@@ -813,7 +830,7 @@ auth.onAuthStateChanged(async (user) => {
     // 로그아웃 시 상태 초기화
     state.coins = 0; state.totalCoins = 0; state.artworks = 0;
     shopOwned.clear(); shopEquipped.clear();
-    myPicks = {}; myMoods = {}; viewedArtworks.clear();
+    myPicks = {}; myMoods = {}; myAnalysis = {}; viewedArtworks.clear();
     window._gender = 'boy';
     window._currentCostume = 'c_basic';
     purchasedCostumes = new Set();
@@ -946,9 +963,10 @@ async function renderGamsangPortfolio() {
     ]);
 
     const data      = userSnap.data() || {};
-    const picks     = data.myPicks  || {};
-    const moods     = data.myMoods  || {};
-    const reviews   = data.reviews  || {};
+    const picks     = data.myPicks    || {};
+    const moods     = data.myMoods    || {};
+    const reviews   = data.reviews    || {};
+    const analysis  = data.myAnalysis || {};
     const colorings = coloringSnap.docs
       .map(d => ({ id: d.id, ...d.data() }))
       .sort((a, b) => (b.savedAt?.toMillis?.() || 0) - (a.savedAt?.toMillis?.() || 0));
@@ -957,9 +975,10 @@ async function renderGamsangPortfolio() {
     const hiddenDone    = _countLocalQuest('hidden');
     const oxDone        = _countLocalQuest('ox');
 
-    const picksE   = Object.entries(picks);
-    const moodsE   = Object.entries(moods);
-    const reviewsE = Object.entries(reviews);
+    const picksE    = Object.entries(picks);
+    const moodsE    = Object.entries(moods);
+    const reviewsE  = Object.entries(reviews);
+    const analysisE = Object.entries(analysis);
 
     const esc = s => String(s).replace(/[&<>"']/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
     const artTitle = id => esc(findArtById(id)?.art.title || id);
@@ -1004,9 +1023,17 @@ async function renderGamsangPortfolio() {
     html += `</div>`;
 
     // ── ② 분석 ───────────────────────────────────────
-    html += stageHead('②', '🔬', '분석', 'OX 퀴즈 · 명화 퍼즐 · 퀴즈 타워');
+    html += stageHead('②', '🔬', '분석', '조형 분석 · OX 퀴즈 · 명화 퍼즐 · 퀴즈 타워');
     if (oxDone > 0) html += `<div style="margin-bottom:8px;">${badge(`✅ OX 퀴즈 ${oxDone}개 완료`)}</div>`;
-    html += `<div style="color:#a78bfa;font-size:.82rem;line-height:1.7;">OX 퀴즈·명화 퍼즐·퀴즈 타워로<br>작품의 구도·색채·기법을 분석했어요</div>`;
+    html += `<div style="color:#fcd34d;font-size:.82rem;font-weight:700;margin-bottom:6px;">🔷 조형 분석 <span style="color:#a78bfa;font-weight:400;">(${analysisE.length}건)</span></div>`;
+    html += analysisE.length
+      ? analysisE.map(([id, val]) => card(
+          titleRow(id) +
+          `<div style="color:#fcd34d;font-size:.82rem;margin-bottom:3px;">조형 요소: <strong>${esc((val.elements||[]).join(', '))}</strong> · 조형 원리: <strong>${esc((val.principles||[]).join(', '))}</strong></div>` +
+          `<div style="color:#e2c4ff;font-size:.86rem;line-height:1.7;white-space:pre-wrap;">${esc(val.desc||'')}</div>`
+        )).join('')
+      : emptyNote('아직 조형 분석 기록이 없어요. 갤러리에서 🔷 조형요소·원리 분석을 해보세요!');
+    html += `<div style="color:#a78bfa;font-size:.82rem;line-height:1.7;margin-top:10px;">OX 퀴즈·명화 퍼즐·퀴즈 타워로<br>작품의 구도·색채·기법도 분석할 수 있어요</div>`;
     html += `</div>`;
 
     // ── ③ 해석 ───────────────────────────────────────
@@ -1236,6 +1263,7 @@ async function saveUserData() {
       viewed: [...viewedArtworks],
       myPicks: myPicks,
       myMoods: myMoods,
+      myAnalysis: myAnalysis,
       equipped: [...shopEquipped],
       currentCostume: window._currentCostume || 'c_basic',
       ownedCostumes: [...purchasedCostumes],
@@ -1743,14 +1771,16 @@ async function openTeacherDashboard() {
     try {
       const snap = await db.collection('users').doc(uid).get();
       const data = snap.exists ? snap.data() : {};
-      const picks = data.myPicks || {};
-      const moods = data.myMoods || {};
-      const reviews = data.reviews || {};
+      const picks    = data.myPicks    || {};
+      const moods    = data.myMoods    || {};
+      const reviews  = data.reviews    || {};
+      const analysis = data.myAnalysis || {};
 
-      const picksEntries = Object.entries(picks);
-      const moodsEntries = Object.entries(moods);
-      const reviewEntries = Object.entries(reviews);
-      const totalCount = picksEntries.length + moodsEntries.length + reviewEntries.length;
+      const picksEntries    = Object.entries(picks);
+      const moodsEntries    = Object.entries(moods);
+      const reviewEntries   = Object.entries(reviews);
+      const analysisEntries = Object.entries(analysis);
+      const totalCount = picksEntries.length + moodsEntries.length + reviewEntries.length + analysisEntries.length;
 
       const esc = s => String(s).replace(/</g,'&lt;');
 
@@ -1776,6 +1806,15 @@ async function openTeacherDashboard() {
           </div>`).join('')
         : emptyMsg;
 
+      const analysisHtml = analysisEntries.length
+        ? analysisEntries.map(([artId, val]) =>
+          `<div style="margin-bottom:10px;background:#0f0720;border-radius:8px;padding:10px 14px;">
+            <div style="color:#ffd700;font-size:.8rem;margin-bottom:4px;">🖼️ ${esc(findArtById(artId)?.art.title || artId)}</div>
+            <div style="color:#fcd34d;font-size:.84rem;margin-bottom:3px;">조형 요소: ${esc((val.elements||[]).join(', '))} · 조형 원리: ${esc((val.principles||[]).join(', '))}</div>
+            <div style="color:#e2c4ff;font-size:.86rem;line-height:1.6;white-space:pre-wrap;">${esc(val.desc||'')}</div>
+          </div>`).join('')
+        : emptyMsg;
+
       const reviewsHtml = reviewEntries.length
         ? reviewEntries.map(([artId, text]) =>
           `<div style="margin-bottom:10px;background:#0f0720;border-radius:8px;padding:10px 14px;">
@@ -1793,6 +1832,8 @@ async function openTeacherDashboard() {
           <button onclick="this.closest('[style*=fixed]').remove()" style="position:absolute;top:14px;right:14px;background:#6b21a8;color:#fff;border:none;border-radius:8px;padding:5px 12px;cursor:pointer;font-size:.82rem;">✕ 닫기</button>
           ${sectionTitle('⭐','내 인생 작품 3선', picksEntries.length)}
           ${picksHtml}
+          ${sectionTitle('🔷','조형 분석', analysisEntries.length)}
+          ${analysisHtml}
           ${sectionTitle('💭','분위기 해석', moodsEntries.length)}
           ${moodsHtml}
           ${sectionTitle('✍️','감상문', reviewEntries.length)}
@@ -1966,9 +2007,22 @@ async function openTeacherDashboard() {
       <div class="art-detail-btns">
         <button id="art-appreciate-btn">✅ 감상 완료 (+5 코인)</button>
         <button id="art-quest-btn" style="display:none">🎯 퀘스트 도전하기</button>
+        <button id="art-analysis-btn" onclick="openAnalysisForm()">🔷 조형요소·원리 분석 (+10 코인)</button>
         <button id="art-mood-btn" onclick="openMoodForm()">💭 분위기 해석 (+10 코인)</button>
         <button id="art-pick-btn" onclick="openPickForm()">⭐ 내 인생 작품으로 고르기 (+15 코인)</button>
         <button id="art-close-btn">닫기</button>
+      </div>
+      <div id="art-analysis-form" style="display:none">
+        <div class="aaf-title">🔷 조형 요소와 원리를 골라보세요 <span>(각 1개 이상, 서술 10자 이상)</span></div>
+        <div class="aaf-group-label">조형 요소 (여러 개 선택 가능)</div>
+        <div id="analysis-elements-chips"></div>
+        <div class="aaf-group-label">조형 원리 (여러 개 선택 가능)</div>
+        <div id="analysis-principles-chips"></div>
+        <textarea id="art-analysis-desc" maxlength="200" onkeydown="event.stopPropagation()" placeholder="예) 굵고 힘찬 선과 강렬한 색의 대비가 역동적인 느낌을 만들어낸다."></textarea>
+        <div class="aaf-btns">
+          <button id="aaf-save" onclick="saveAnalysis()">저장하기</button>
+          <button id="aaf-cancel" onclick="closeAnalysisForm()">취소</button>
+        </div>
       </div>
       <div id="art-mood-form" style="display:none">
         <div class="amf-title">💭 이 작품에서 느껴지는 분위기는? <span>(하나를 고르고 이유를 10자 이상 적어주세요)</span></div>
@@ -3241,6 +3295,13 @@ const viewedArtworks = new Set();
 // ── 내 인생 작품 3선 (평가 단계) ──
 const MY_PICK_MAX = 3;
 let myPicks = {};
+// ── 작품 조형 분석 (분석 단계) ──
+const ANALYSIS_ELEMENTS   = ['점','선','면','형','색','명암','양감','질감'];
+const ANALYSIS_PRINCIPLES = ['비례','동세','율동','변화','통일','균형','조화','대비','강조','원근감'];
+let myAnalysis = {};   // { artId: { elements: [], principles: [], desc: '' } }
+let _selElements   = new Set();
+let _selPrinciples = new Set();
+
 // ── 작품 분위기 해석 (해석 단계) ──
 const MOOD_OPTIONS = ['고요함','역동적','쓸쓸함','즐거움','신비로움','웅장함','따뜻함','긴장감'];
 let myMoods = {};   // { artId: { mood: '쓸쓸함', reason: '이유' } }
@@ -3610,6 +3671,72 @@ async function saveMood() {
   showToast(isNew ? '💭 분위기 해석이 저장되었어요!' : '💭 수정되었어요!');
 }
 
+// ── 작품 조형 분석 (분석 단계) ──
+function refreshAnalysisBtn() {
+  const btn = document.getElementById('art-analysis-btn');
+  if (!btn || !currentArtwork) return;
+  const saved = myAnalysis[currentArtwork.id];
+  if (saved) {
+    btn.textContent = '🔷 조형 분석 완료 (수정하기)';
+    btn.classList.add('done');
+  } else {
+    btn.textContent = '🔷 조형요소·원리 분석 (+10 코인)';
+    btn.classList.remove('done');
+  }
+}
+function renderAnalysisChips() {
+  const eBox = document.getElementById('analysis-elements-chips');
+  const pBox = document.getElementById('analysis-principles-chips');
+  if (!eBox || !pBox) return;
+  eBox.innerHTML = ANALYSIS_ELEMENTS.map(e =>
+    `<button class="analysis-chip${_selElements.has(e)?' sel':''}" onclick="toggleElement('${e}')">${e}</button>`
+  ).join('');
+  pBox.innerHTML = ANALYSIS_PRINCIPLES.map(p =>
+    `<button class="analysis-chip${_selPrinciples.has(p)?' sel':''}" onclick="togglePrinciple('${p}')">${p}</button>`
+  ).join('');
+}
+function toggleElement(e) {
+  if (_selElements.has(e)) _selElements.delete(e); else _selElements.add(e);
+  renderAnalysisChips();
+}
+function togglePrinciple(p) {
+  if (_selPrinciples.has(p)) _selPrinciples.delete(p); else _selPrinciples.add(p);
+  renderAnalysisChips();
+}
+function openAnalysisForm() {
+  const saved = myAnalysis[currentArtwork.id];
+  _selElements   = new Set(saved ? saved.elements   : []);
+  _selPrinciples = new Set(saved ? saved.principles : []);
+  document.getElementById('art-analysis-desc').value = saved ? saved.desc : '';
+  renderAnalysisChips();
+  document.getElementById('art-analysis-form').style.display = 'block';
+  closeMoodForm();
+  closePickForm();
+}
+function closeAnalysisForm() {
+  const f = document.getElementById('art-analysis-form');
+  if (f) f.style.display = 'none';
+  _selElements.clear();
+  _selPrinciples.clear();
+}
+async function saveAnalysis() {
+  if (!currentArtwork) return;
+  if (_selElements.size === 0) { showToast('조형 요소를 1개 이상 골라주세요 🔷', 'linear-gradient(90deg,#ef4444,#dc2626)', '#fff'); return; }
+  if (_selPrinciples.size === 0) { showToast('조형 원리를 1개 이상 골라주세요 🔷', 'linear-gradient(90deg,#ef4444,#dc2626)', '#fff'); return; }
+  const el = document.getElementById('art-analysis-desc');
+  const desc = (el.value || '').trim();
+  if (desc.length < 10) { showToast('서술을 10자 이상 적어주세요 🔷', 'linear-gradient(90deg,#ef4444,#dc2626)', '#fff'); el.focus(); return; }
+  const vr = validateReview(desc);
+  if (!vr.ok) { showToast(vr.reason, 'linear-gradient(90deg,#ef4444,#dc2626)', '#fff'); el.focus(); return; }
+  const isNew = !myAnalysis[currentArtwork.id];
+  myAnalysis[currentArtwork.id] = { elements: [..._selElements], principles: [..._selPrinciples], desc };
+  if (isNew) { state.coins += 10; state.totalCoins += 10; updateHUD(); showCoinToast(10); }
+  await saveUserData();
+  closeAnalysisForm();
+  refreshAnalysisBtn();
+  showToast(isNew ? '🔷 조형 분석이 저장되었어요!' : '🔷 수정되었어요!');
+}
+
 function openArtDetail(artId, tab) {
   const art = (ARTWORKS[tab] || []).find(a => a.id === artId);
   if (!art) return;
@@ -3625,6 +3752,7 @@ function openArtDetail(artId, tab) {
   btn.textContent = viewedArtworks.has(art.id) ? '✅ 이미 감상한 작품' : '✅ 감상 완료 (+5 코인)';
   closePickForm(); refreshPickBtn();
   closeMoodForm(); refreshMoodBtn();
+  closeAnalysisForm(); refreshAnalysisBtn();
   const qBtn = document.getElementById('art-quest-btn');
   const qDef = QUEST_DATA[art.id];
   if (qDef) {
