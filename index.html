@@ -1023,17 +1023,16 @@ async function renderGamsangPortfolio() {
     html += `</div>`;
 
     // ── ② 분석 ───────────────────────────────────────
-    html += stageHead('②', '🔬', '분석', '조형 분석 · OX 퀴즈 · 명화 퍼즐 · 퀴즈 타워');
+    html += stageHead('②', '🔬', '분석', '조형요소·원리 분석 · OX 퀴즈 · 명화 퍼즐 · 퀴즈 타워');
     if (oxDone > 0) html += `<div style="margin-bottom:8px;">${badge(`✅ OX 퀴즈 ${oxDone}개 완료`)}</div>`;
-    html += `<div style="color:#fcd34d;font-size:.82rem;font-weight:700;margin-bottom:6px;">🔷 조형 분석 <span style="color:#a78bfa;font-weight:400;">(${analysisE.length}건)</span></div>`;
+    html += `<div style="color:#fcd34d;font-size:.82rem;font-weight:700;margin-bottom:6px;">🔷 조형요소·원리 분석 <span style="color:#a78bfa;font-weight:400;">(${analysisE.length}건)</span></div>`;
     html += analysisE.length
       ? analysisE.map(([id, val]) => card(
           titleRow(id) +
           `<div style="color:#fcd34d;font-size:.82rem;margin-bottom:3px;">조형 요소: <strong>${esc((val.elements||[]).join(', '))}</strong> · 조형 원리: <strong>${esc((val.principles||[]).join(', '))}</strong></div>` +
           `<div style="color:#e2c4ff;font-size:.86rem;line-height:1.7;white-space:pre-wrap;">${esc(val.desc||'')}</div>`
         )).join('')
-      : emptyNote('아직 조형 분석 기록이 없어요. 갤러리에서 🔷 조형요소·원리 분석을 해보세요!');
-    html += `<div style="color:#a78bfa;font-size:.82rem;line-height:1.7;margin-top:10px;">OX 퀴즈·명화 퍼즐·퀴즈 타워로<br>작품의 구도·색채·기법도 분석할 수 있어요</div>`;
+      : emptyNote('아직 조형요소·원리 분석 기록이 없어요. 갤러리에서 🔷 조형요소·원리 분석을 해보세요!');
     html += `</div>`;
 
     // ── ③ 해석 ───────────────────────────────────────
@@ -1832,7 +1831,7 @@ async function openTeacherDashboard() {
           <button onclick="this.closest('[style*=fixed]').remove()" style="position:absolute;top:14px;right:14px;background:#6b21a8;color:#fff;border:none;border-radius:8px;padding:5px 12px;cursor:pointer;font-size:.82rem;">✕ 닫기</button>
           ${sectionTitle('⭐','내 인생 작품 3선', picksEntries.length)}
           ${picksHtml}
-          ${sectionTitle('🔷','조형 분석', analysisEntries.length)}
+          ${sectionTitle('🔷','조형요소·원리 분석', analysisEntries.length)}
           ${analysisHtml}
           ${sectionTitle('💭','분위기 해석', moodsEntries.length)}
           ${moodsHtml}
@@ -3677,7 +3676,7 @@ function refreshAnalysisBtn() {
   if (!btn || !currentArtwork) return;
   const saved = myAnalysis[currentArtwork.id];
   if (saved) {
-    btn.textContent = '🔷 조형 분석 완료 (수정하기)';
+    btn.textContent = '🔷 조형요소·원리 분석 완료 (수정하기)';
     btn.classList.add('done');
   } else {
     btn.textContent = '🔷 조형요소·원리 분석 (+10 코인)';
@@ -3734,7 +3733,7 @@ async function saveAnalysis() {
   await saveUserData();
   closeAnalysisForm();
   refreshAnalysisBtn();
-  showToast(isNew ? '🔷 조형 분석이 저장되었어요!' : '🔷 수정되었어요!');
+  showToast(isNew ? '🔷 조형요소·원리 분석이 저장되었어요!' : '🔷 수정되었어요!');
 }
 
 function openArtDetail(artId, tab) {
