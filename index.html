@@ -927,21 +927,95 @@ async function renderGamsangPortfolio() {
   }
   content.innerHTML = '<p style="color:#a78bfa;text-align:center;padding:40px 0;">불러오는 중...</p>';
   try {
-    const snap = await db.collection('users').doc(window._currentUser.uid).get();
-    const reviews = (snap.data() || {}).reviews || {};
-    const entries = Object.entries(reviews);
-    const esc = s => String(s).replace(/</g, '&lt;');
-    if (!entries.length) {
-      content.innerHTML = '<p style="color:#a78bfa;text-align:center;padding:40px 10px;line-height:1.8;">🌱 아직 작성한 감상이 없어요.<br>작품을 감상하고 나만의 감상글을 남겨보세요!</p>';
+    const uid = window._currentUser.uid;
+    const [userSnap, coloringSnap] = await Promise.all([
+      db.collection('users').doc(uid).get(),
+      db.collection('colorings').where('uid', '==', uid).get()
+    ]);
+
+    const data      = userSnap.data() || {};
+    const picks     = data.myPicks  || {};
+    const moods     = data.myMoods  || {};
+    const reviews   = data.reviews  || {};
+    const colorings = coloringSnap.docs
+      .map(d => ({ id: d.id, ...d.data() }))
+      .sort((a, b) => (b.savedAt?.toMillis?.() || 0) - (a.savedAt?.toMillis?.() || 0));
+
+    const picksE   = Object.entries(picks);
+    const moodsE   = Object.entries(moods);
+    const reviewsE = Object.entries(reviews);
+    const totalAny = picksE.length + moodsE.length + reviewsE.length + colorings.length;
+
+    if (!totalAny) {
+      content.innerHTML = '<p style="color:#a78bfa;text-align:center;padding:60px 10px;line-height:1.8;">🌱 아직 기록된 감상이 없어요.<br>명화를 감상하고 나만의 포트폴리오를 채워보세요!</p>';
       return;
     }
-    content.innerHTML = `
-      <div style="margin-bottom:16px;color:#ffd700;font-size:.95rem;font-weight:700;border-bottom:1px solid #a78bfa40;padding-bottom:8px;">✍️ 내 감상글 <span style="color:#a78bfa;font-size:.8rem;font-weight:400;">(${entries.length}건)</span></div>
-      ${entries.map(([artId, text]) => `
-        <div style="margin-bottom:12px;background:#0f0720;border:1px solid #6b21a8;border-radius:10px;padding:12px 16px;">
-          <div style="color:#ffd700;font-size:.82rem;margin-bottom:6px;">🖼️ ${esc(findArtById(artId)?.art.title || artId)}</div>
-          <div style="color:#e2c4ff;font-size:.88rem;line-height:1.7;white-space:pre-wrap;">${esc(text)}</div>
-        </div>`).join('')}`;
+
+    const esc = s => String(s).replace(/[&<>"']/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
+    const artTitle = id => esc(findArtById(id)?.art.title || id);
+
+    const secHead = (icon, label, count) =>
+      `<div style="margin:24px 0 10px;padding-bottom:8px;border-bottom:1px solid #a78bfa40;color:#ffd700;font-size:.95rem;font-weight:700;">${icon} ${label} <span style="color:#a78bfa;font-size:.8rem;font-weight:400;">(${count}건)</span></div>`;
+
+    const emptyNote = msg =>
+      `<p style="color:#a78bfa;font-size:.83rem;padding:6px 2px 14px;line-height:1.8;">${msg}</p>`;
+
+    const card = inner =>
+      `<div style="margin-bottom:10px;background:#0f0720;border:1px solid #6b21a8;border-radius:10px;padding:11px 15px;">${inner}</div>`;
+
+    const titleRow = id =>
+      `<div style="color:#ffd700;font-size:.82rem;margin-bottom:5px;">🖼️ ${artTitle(id)}</div>`;
+
+    let html = '';
+
+    // ── (1) 인생 작품 3선 ──────────────────────
+    html += secHead('⭐', '내 인생 작품 3선', picksE.length);
+    html += picksE.length
+      ? picksE.map(([id, reason]) => card(
+          titleRow(id) +
+          `<div style="color:#e2c4ff;font-size:.86rem;line-height:1.7;white-space:pre-wrap;">${esc(reason)}</div>`
+        )).join('')
+      : emptyNote('아직 고른 인생 작품이 없어요. 갤러리에서 ⭐ 인생 작품을 선택해 보세요!');
+
+    // ── (2) 무드/감정 기록 ─────────────────────
+    html += secHead('💭', '무드/감정 기록', moodsE.length);
+    html += moodsE.length
+      ? moodsE.map(([id, val]) => card(
+          titleRow(id) +
+          `<div style="color:#c084fc;font-size:.82rem;margin-bottom:3px;">분위기: <strong>${esc(val.mood || '')}</strong></div>` +
+          (val.reason ? `<div style="color:#e2c4ff;font-size:.86rem;line-height:1.7;white-space:pre-wrap;">${esc(val.reason)}</div>` : '')
+        )).join('')
+      : emptyNote('아직 분위기를 기록한 작품이 없어요. 갤러리에서 💭 분위기 해석을 남겨 보세요!');
+
+    // ── (3) 작품별 감상글 ──────────────────────
+    html += secHead('✍️', '작품별 감상글', reviewsE.length);
+    html += reviewsE.length
+      ? reviewsE.map(([id, text]) => card(
+          titleRow(id) +
+          `<div style="color:#e2c4ff;font-size:.86rem;line-height:1.7;white-space:pre-wrap;">${esc(text)}</div>`
+        )).join('')
+      : emptyNote('아직 작성한 감상글이 없어요. 갤러리에서 작품을 감상하고 글을 남겨 보세요!');
+
+    // ── (4) 색칠 그림 갤러리 ───────────────────
+    html += secHead('🎨', '색칠 그림 갤러리', colorings.length);
+    if (!colorings.length) {
+      html += emptyNote('아직 색칠한 그림이 없어요. 색칠 스튜디오에서 명화를 색칠해 보세요!');
+    } else {
+      html += '<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(155px,1fr));gap:12px;margin-bottom:8px;">';
+      colorings.forEach(c => {
+        html +=
+          `<div style="background:#0f0720;border:1px solid #6b21a8;border-radius:10px;overflow:hidden;">
+            <img src="${c.image}" alt="${esc(c.artName || '')}" style="width:100%;aspect-ratio:4/3;object-fit:cover;display:block;">
+            <div style="padding:8px 10px;">
+              <div style="color:#ffd700;font-size:.75rem;font-weight:700;margin-bottom:3px;">🖼️ ${esc(c.artName || '')}</div>
+              ${c.note ? `<div style="color:#a78bfa;font-size:.72rem;line-height:1.5;white-space:pre-wrap;">${esc(c.note)}</div>` : ''}
+            </div>
+          </div>`;
+      });
+      html += '</div>';
+    }
+
+    content.innerHTML = html;
   } catch(e) {
     content.innerHTML = '<p style="color:#ef4444;text-align:center;padding:40px 0;">데이터를 불러오지 못했어요.</p>';
   }
