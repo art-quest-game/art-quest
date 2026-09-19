@@ -1054,10 +1054,10 @@ async function renderGamsangPortfolio() {
 
     // ── ④ 평가 ───────────────────────────────────────
     html += stageHead('④', '⭐', '평가', '내 인생 작품 3선 · 색칠 재해석');
-    html += `<div style="color:#ffd700;font-size:.82rem;font-weight:700;margin-bottom:6px;">⭐ 인생 작품 3선 <span style="color:#a78bfa;font-weight:400;">(${picksE.length}건)</span></div>`;
+    html += `<div style="color:#ffd700;font-size:.82rem;font-weight:700;margin-bottom:6px;">⭐ 내 인생 작품 3선 <span style="color:#a78bfa;font-weight:400;">(${picksE.length}건)</span></div>`;
     html += picksE.length
       ? picksE.map(([id, reason]) => card(titleRow(id) + `<div style="color:#e2c4ff;font-size:.86rem;line-height:1.7;white-space:pre-wrap;">${esc(reason)}</div>`)).join('')
-      : emptyNote('아직 고른 인생 작품이 없어요. 갤러리에서 ⭐ 인생 작품을 선택해 보세요!');
+      : emptyNote('아직 고른 작품이 없어요. 갤러리에서 마음에 드는 작품을 내 인생 작품 3선으로 골라보세요!');
     html += `<div style="color:#ffd700;font-size:.82rem;font-weight:700;margin:14px 0 6px;">🎨 색칠 그림 갤러리 <span style="color:#a78bfa;font-weight:400;">(${colorings.length}건)</span></div>`;
     if (!colorings.length) {
       html += emptyNote('아직 색칠한 그림이 없어요. 색칠 스튜디오에서 명화를 색칠해 보세요!');
@@ -1986,7 +1986,7 @@ async function openTeacherDashboard() {
   <div id="gallery-tabs">
     <button class="tab-btn active" data-tab="korea">🇰🇷 한국명화</button>
     <button class="tab-btn" data-tab="world">🌍 세계명화</button>
-    <button class="tab-btn" data-tab="mypick">⭐ 내가 고른 작품</button>
+    <button class="tab-btn" data-tab="mypick">⭐ 내 인생 작품 3선</button>
   </div>
   <div style="text-align:center;margin:6px 0 2px;">
     <a href="images/art_guide.pdf" target="_blank" rel="noopener" style="display:inline-block;margin:0 4px;padding:5px 14px;border-radius:14px;border:1px solid #fbbf24;background:#1a0a2e;color:#fbbf24;font-size:.82rem;text-decoration:none;font-weight:700;">📖 감상 자료집 (PDF)</a>
@@ -2009,7 +2009,7 @@ async function openTeacherDashboard() {
         <button id="art-quest-btn" style="display:none">🎯 퀘스트 도전하기</button>
         <button id="art-analysis-btn" onclick="openAnalysisForm()">🔷 조형요소·원리 분석 (+10 코인)</button>
         <button id="art-mood-btn" onclick="openMoodForm()">💭 분위기 해석 (+10 코인)</button>
-        <button id="art-pick-btn" onclick="openPickForm()">⭐ 내 인생 작품으로 고르기 (+15 코인)</button>
+        <button id="art-pick-btn" onclick="openPickForm()">⭐ 내 인생 작품 3선 (+15 코인)</button>
         <button id="art-close-btn">닫기</button>
       </div>
       <div id="art-analysis-form" style="display:none">
@@ -3343,7 +3343,7 @@ function renderGalleryTab(tab) {
   if (tab === 'mypick') {
     const ids = Object.keys(myPicks);
     if (!ids.length) {
-      grid.innerHTML = '<p style="grid-column:1/-1;color:#a78bfa;text-align:center;padding:40px 10px;line-height:1.7;">아직 고른 작품이 없어요.<br>마음에 드는 작품을 열고 <b style="color:#ffd700;">⭐ 내 인생 작품으로 고르기</b>를 눌러보세요! (최대 3점)</p>';
+      grid.innerHTML = '<p style="grid-column:1/-1;color:#a78bfa;text-align:center;padding:40px 10px;line-height:1.7;">아직 고른 작품이 없어요.<br>마음에 드는 작품을 열고 <b style="color:#ffd700;">⭐ 내 인생 작품 3선</b> 버튼을 눌러보세요! (최대 3점)</p>';
       return;
     }
     grid.innerHTML = ids.map(id => {
@@ -3574,11 +3574,11 @@ function refreshPickBtn() {
     btn.disabled = false;
     btn.onclick = () => removePick();
   } else if (full) {
-    btn.textContent = `⭐ 인생 작품은 ${MY_PICK_MAX}개까지 (가득 참)`;
+    btn.textContent = `⭐ 내 인생 작품 3선 (가득 참)`;
     btn.disabled = true;
     btn.onclick = null;
   } else {
-    btn.textContent = '⭐ 내 인생 작품으로 고르기 (+15 코인)';
+    btn.textContent = '⭐ 내 인생 작품 3선 (+15 코인)';
     btn.disabled = false;
     btn.onclick = () => openPickForm();
   }
@@ -3599,18 +3599,18 @@ async function savePick() {
   if (reason.length < 10) { showToast('이 작품을 고른 이유를 10자 이상 적어주세요 ⭐', 'linear-gradient(90deg,#ef4444,#dc2626)', '#fff'); el.focus(); return; }
   const vr = validateReview(reason);
   if (!vr.ok) { showToast(vr.reason, 'linear-gradient(90deg,#ef4444,#dc2626)', '#fff'); el.focus(); return; }
-  if (Object.keys(myPicks).length >= MY_PICK_MAX) { showToast(`인생 작품은 ${MY_PICK_MAX}개까지 고를 수 있어요.`, 'linear-gradient(90deg,#ef4444,#dc2626)', '#fff'); return; }
+  if (Object.keys(myPicks).length >= MY_PICK_MAX) { showToast(`내 인생 작품 3선은 ${MY_PICK_MAX}개까지 고를 수 있어요.`, 'linear-gradient(90deg,#ef4444,#dc2626)', '#fff'); return; }
   myPicks[currentArtwork.id] = reason;
   state.coins += 15; state.totalCoins += 15; updateHUD(); showCoinToast(15);
   await saveUserData();
   closePickForm();
   refreshPickBtn();
   renderGalleryTab(curGalleryTab);
-  showToast('⭐ 인생 작품으로 등록되었어요!');
+  showToast('⭐ 내 인생 작품 3선에 등록되었어요!');
 }
 async function removePick() {
   if (!currentArtwork) return;
-  if (!await showConfirm('이 작품을 인생 작품에서 뺄까요? (코인은 회수되지 않아요)', '빼기')) return;
+  if (!await showConfirm('이 작품을 내 인생 작품 3선에서 뺄까요? (코인은 회수되지 않아요)', '빼기')) return;
   delete myPicks[currentArtwork.id];
   await saveUserData();
   refreshPickBtn();
