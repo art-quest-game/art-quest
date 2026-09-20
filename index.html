@@ -911,6 +911,7 @@ async function doLogin(isSignup) {
 }
 
 async function doLogout() {
+  _flushEquipSave();
   closeSettings();
   showToast('로그아웃 되었습니다', 'linear-gradient(90deg,#4b5563,#6b7280)', '#fff');
   await auth.signOut();
@@ -2691,6 +2692,7 @@ window._gender          = 'boy';      // 성별
 window._hasGirlCharacter = false;     // 여자 캐릭터 해금 여부
 window._hasBoyCharacter  = false;     // 남자 캐릭터 해금 여부
 window._selectedSignupGender = '';    // 회원가입 중 선택한 성별
+let _equipSaveTmr = null;
 
 const shopOwned    = new Set();
 const shopEquipped = new Set(); // 장착 중인 아이템 ID 집합 (다중 장착 허용)
@@ -2880,6 +2882,7 @@ function renderCostumeShop() {
 }
 
 function selectCostume(id, gender) {
+  if (id === window._currentCostume && (gender || 'boy') === window._gender) return;
   const prevId     = costumePreviewId;
   const prevGender = shopPreviewGender;
   costumePreviewId  = id;
@@ -2907,9 +2910,12 @@ function updateCostumePreview(c, gender) {
   const isBoyLocked  = g === 'boy'  && window._gender !== 'boy'  && !window._hasBoyCharacter;
   const isOtherLocked = isGirlLocked || isBoyLocked;
   const imgEl = document.getElementById('costume-preview-img');
-  imgEl.src = img;
-  imgEl.style.transition = 'filter .5s ease';
-  imgEl.style.filter = isOtherLocked ? 'grayscale(100%) brightness(25%)' : '';
+  if (imgEl.getAttribute('src') !== img) imgEl.src = img;
+  const _nf = isOtherLocked ? 'grayscale(100%) brightness(25%)' : '';
+  if (imgEl.style.filter !== _nf) {
+    imgEl.style.transition = 'filter .15s ease';
+    imgEl.style.filter = _nf;
+  }
   document.getElementById('costume-preview-name').textContent =
     isOtherLocked ? `🔒 ${c.name}` : c.name + (c.country ? ` (${c.country})` : '');
   document.getElementById('costume-preview-desc').textContent =
@@ -2966,15 +2972,61 @@ function costumeActionClick() {
   }
 }
 
+function _flushEquipSave() {
+  if (!_equipSaveTmr || !window._currentUser) return;
+  clearTimeout(_equipSaveTmr);
+  _equipSaveTmr = null;
+  db.collection('users').doc(window._currentUser.uid)
+    .update({ currentCostume: window._currentCostume, gender: window._gender })
+    .catch(() => {});
+}
+window.addEventListener('pagehide', _flushEquipSave);
+
 async function equipCostume(id, gender) {
   const g = gender || shopPreviewGender || window._gender || 'boy';
+  const prevCostume = window._currentCostume;
+  const prevGender  = window._gender;
   window._currentCostume = id;
   window._gender = g;
   if (window._currentUser) {
-    db.collection('users').doc(window._currentUser.uid).update({ currentCostume: id, gender: g }).catch(() => {});
+    clearTimeout(_equipSaveTmr);
+    _equipSaveTmr = setTimeout(() => {
+      _equipSaveTmr = null;
+      if (window._currentUser) {
+        db.collection('users').doc(window._currentUser.uid)
+          .update({ currentCostume: window._currentCostume, gender: window._gender })
+          .catch(() => {});
+      }
+    }, 800);
   }
   if (typeof window.updatePlayerSprite === 'function') window.updatePlayerSprite();
-  renderCostumeShop();
+  if (g === prevGender) {
+    _patchEquippedTile(prevCostume, prevGender, id);
+  } else {
+    renderCostumeShop();
+  }
+}
+
+function _patchEquippedTile(prevId, gender, newId) {
+  const prevTile = document.querySelector(`.costume-tile[data-id="${prevId}"][data-gender="${gender}"]`);
+  if (prevTile) {
+    prevTile.classList.remove('ct-equipped');
+    const b = prevTile.querySelector('.ct-badge');
+    if (b) b.remove();
+  }
+  const newTile = document.querySelector(`.costume-tile[data-id="${newId}"][data-gender="${gender}"]`);
+  if (newTile) {
+    newTile.classList.remove('ct-selected');
+    newTile.classList.add('ct-equipped');
+    if (!newTile.querySelector('.ct-badge')) {
+      const b = document.createElement('span');
+      b.className = 'ct-badge';
+      b.textContent = '✅';
+      newTile.prepend(b);
+    }
+  }
+  const previewC = COSTUME_DATA.find(c => c.id === costumePreviewId) || COSTUME_DATA[0];
+  updateCostumePreview(previewC, shopPreviewGender);
 }
 
 async function buyCostume(id, gender) {
@@ -2992,6 +3044,7 @@ async function buyCostume(id, gender) {
     }).catch(() => {});
   }
   equipCostume(id, gender);
+  renderCostumeShop();
 }
 
 function setShopTab(tab) {
@@ -3004,7 +3057,7 @@ function setShopTab(tab) {
   const boyPanel  = document.getElementById('shop-boy-panel');
   const girlPanel = document.getElementById('shop-girl-panel');
   if (tabsEl && boyPanel && girlPanel) {
-    const isMobileLayout = getComputedStyle(tabsEl).display !== 'none';
+    const isMobileLayout = window.innerWidth <= 767;
     boyPanel.style.display  = isMobileLayout && tab !== 'boy'  ? 'none' : '';
     girlPanel.style.display = isMobileLayout && tab !== 'girl' ? 'none' : '';
   }
@@ -3421,7 +3474,7 @@ function _miniRestoreInfoBar() {
 
 function closeMiniGame(id) {
   if (id === 'typing') stopTyping();
-  if (id === 'shop') clearPreview();
+  if (id === 'shop') { clearPreview(); _flushEquipSave(); }
   document.getElementById(id + '-screen').classList.remove('active');
   document.getElementById('art-detail-overlay').classList.remove('active');
   _miniRestoreInfoBar();
