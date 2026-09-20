@@ -924,7 +924,12 @@ function closeSettings() {
 }
 document.addEventListener('click', () => closeSettings());
 
-function openGamsangForestTeacher() { openGamsangPortfolio(); }
+function openGamsangForestTeacher() {
+  document.getElementById('game-container').style.display = 'none';
+  document.getElementById('gamsang-portfolio-screen').classList.add('active');
+  _miniHideInfoBar();
+  renderTeacherStudentSelector();
+}
 function openGamsangForestStudent() { openGamsangPortfolio(); }
 function openGamsangPortfolio() {
   document.getElementById('game-container').style.display = 'none';
@@ -949,7 +954,7 @@ function _countLocalQuest(type) {
   return n;
 }
 
-async function renderGamsangPortfolio() {
+async function renderGamsangPortfolio(uid, name) {
   const content = document.getElementById('gamsang-portfolio-content');
   if (!window._currentUser) {
     content.innerHTML = `
@@ -968,10 +973,11 @@ async function renderGamsangPortfolio() {
   }
   content.innerHTML = '<p style="color:#a78bfa;text-align:center;padding:40px 0;">불러오는 중...</p>';
   try {
-    const uid = window._currentUser.uid;
+    const targetUid = uid || window._currentUser.uid;
+    const isOther   = !!(uid && uid !== window._currentUser.uid);
     const [userSnap, coloringSnap] = await Promise.all([
-      db.collection('users').doc(uid).get(),
-      db.collection('colorings').where('uid', '==', uid).get()
+      db.collection('users').doc(targetUid).get(),
+      db.collection('colorings').where('uid', '==', targetUid).get()
     ]);
 
     const data      = userSnap.data() || {};
@@ -984,8 +990,8 @@ async function renderGamsangPortfolio() {
       .sort((a, b) => (b.savedAt?.toMillis?.() || 0) - (a.savedAt?.toMillis?.() || 0));
 
     const artworksCount = typeof data.artworks === 'number' ? data.artworks : 0;
-    const hiddenDone    = _countLocalQuest('hidden');
-    const oxDone        = _countLocalQuest('ox');
+    const hiddenDone    = isOther ? 0 : _countLocalQuest('hidden');
+    const oxDone        = isOther ? 0 : _countLocalQuest('ox');
 
     const picksE    = Object.entries(picks);
     const moodsE    = Object.entries(moods);
@@ -1007,11 +1013,12 @@ async function renderGamsangPortfolio() {
       <div style="padding:12px 16px 14px;background:#0f0720;border:1px solid #6b21a8;border-top:none;border-radius:0 0 12px 12px;margin-bottom:4px;">`;
 
     let html = '';
+    if (name) html += `<div style="margin-bottom:10px;"><button onclick="_gfRenderSelector()" style="background:none;border:1px solid #6b21a8;border-radius:8px;padding:5px 14px;color:#a78bfa;cursor:pointer;font-size:.82rem;">← 학생 목록</button></div>`;
 
     // ── 배너 ──────────────────────────────────────────
     html += `
       <div style="background:linear-gradient(135deg,#2d1b69,#1a0a2e);border:2px solid #a855f7;border-radius:14px;padding:18px 20px 16px;margin-bottom:8px;text-align:center;">
-        <div style="color:#ffd700;font-size:1.1rem;font-weight:700;margin-bottom:6px;">🌳 나의 감상 여정</div>
+        <div style="color:#ffd700;font-size:1.1rem;font-weight:700;margin-bottom:6px;">🌳 ${name ? name + '의 감상 여정' : '나의 감상 여정'}</div>
         <div style="color:#c4b5fd;font-size:.82rem;line-height:1.7;margin-bottom:14px;">명화의 숲에서 여러 작품을 감상하며 4단계로 작품을 깊이 감상했어요</div>
         <div style="display:flex;justify-content:center;align-items:flex-start;gap:2px;flex-wrap:wrap;">
           ${[['①','서술','무엇이 보이나'],['②','분석','어떻게 이루어졌나'],['③','해석','무엇을 의미하나'],['④','평가','어떻게 평가하나']].map((s,i,a) => `
@@ -1092,6 +1099,86 @@ async function renderGamsangPortfolio() {
     content.innerHTML = '<p style="color:#ef4444;text-align:center;padding:40px 0;">데이터를 불러오지 못했어요.</p>';
   }
 }
+async function renderTeacherStudentSelector() {
+  if (!window._currentUser || !window._isTeacher) { closeGamsangPortfolio(); return; }
+  const content = document.getElementById('gamsang-portfolio-content');
+  const school = window._school || '';
+  if (!school) {
+    content.innerHTML = '<p style="color:#ef4444;text-align:center;padding:40px 0;">학교 정보가 없습니다.</p>';
+    return;
+  }
+  content.innerHTML = '<p style="color:#a78bfa;text-align:center;padding:40px 0;">학생 목록 불러오는 중...</p>';
+  try {
+    const snap = await db.collection('users').where('school','==',school).where('role','==','student').get();
+    if (snap.empty) {
+      content.innerHTML = '<p style="color:#a78bfa;text-align:center;padding:40px 0;">등록된 학생이 없습니다.</p>';
+      return;
+    }
+    window._gfStudents = [];
+    snap.forEach(doc => window._gfStudents.push({ ...doc.data(), _uid: doc.id }));
+    const gradeSet = [...new Set(window._gfStudents.map(d=>d.grade||'').filter(Boolean))].sort();
+    window._gfGrade = gradeSet[0] || '';
+    const classes = [...new Set(window._gfStudents
+      .filter(d=>!window._gfGrade||d.grade===window._gfGrade)
+      .map(d=>d.class||'').filter(Boolean))].sort((a,b)=>Number(a)-Number(b));
+    window._gfClass = classes[0] || '';
+    _gfRenderSelector();
+  } catch(e) {
+    content.innerHTML = `<p style="color:#ef4444;text-align:center;padding:40px 0;">오류: ${e.message}</p>`;
+  }
+}
+function _gfRenderSelector() {
+  const content = document.getElementById('gamsang-portfolio-content');
+  const students = window._gfStudents || [];
+  const gradeSet = [...new Set(students.map(d=>d.grade||'').filter(Boolean))].sort();
+  const classes = [...new Set(students
+    .filter(d=>!window._gfGrade||d.grade===window._gfGrade)
+    .map(d=>d.class||'').filter(Boolean))].sort((a,b)=>Number(a)-Number(b));
+  window._gfFiltered = students.filter(d=>
+    (!window._gfGrade||d.grade===window._gfGrade) && (!window._gfClass||d.class===window._gfClass)
+  ).sort((a,b)=>Number(a.number||99)-Number(b.number||99));
+
+  const esc = s => String(s).replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
+  let html = `<div style="margin-bottom:14px;padding:14px 16px;background:linear-gradient(135deg,#1a0a2e,#0f0720);border:1px solid #6b21a8;border-radius:12px;">
+    <div style="color:#ffd700;font-size:1rem;font-weight:700;margin-bottom:10px;">🌳 학생 감상 포트폴리오</div>`;
+  if (gradeSet.length > 1) {
+    html += `<div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:8px;align-items:center;"><span style="color:#ffd700;font-size:.78rem;">학년:</span>`;
+    gradeSet.forEach(g => {
+      html += `<button onclick="window._gfGrade='${g}';window._gfClass='';_gfRenderSelector()" style="padding:3px 10px;border-radius:8px;border:1px solid #ffd700;background:${g===window._gfGrade?'#854d0e':'#1a0a2e'};color:#fde68a;cursor:pointer;font-size:.78rem;">${g}학년</button>`;
+    });
+    html += `</div>`;
+  }
+  if (classes.length) {
+    html += `<div style="display:flex;gap:6px;flex-wrap:wrap;align-items:center;"><span style="color:#a78bfa;font-size:.78rem;">반:</span>`;
+    classes.forEach(c => {
+      html += `<button onclick="window._gfClass='${c}';_gfRenderSelector()" style="padding:3px 10px;border-radius:8px;border:1px solid #a78bfa;background:${c===window._gfClass?'#6b21a8':'#1a0a2e'};color:#e2c4ff;cursor:pointer;font-size:.78rem;">${c}반</button>`;
+    });
+    html += `</div>`;
+  }
+  html += `</div>`;
+  if (!window._gfFiltered.length) {
+    html += `<p style="color:#a78bfa;text-align:center;padding:20px 0;">해당 반 학생이 없습니다.</p>`;
+  } else {
+    html += `<div style="display:flex;flex-direction:column;gap:8px;">`;
+    window._gfFiltered.forEach((d, i) => {
+      const total = [d.reviews,d.myMoods,d.myAnalysis,d.myPicks]
+        .reduce((s,o)=>s+(o?Object.keys(o).length:0), 0);
+      html += `<button onclick="_gfOpenPortfolio(${i})" style="display:flex;align-items:center;gap:12px;padding:12px 16px;background:#0f0720;border:1px solid ${total>0?'#a855f7':'#3b1d6e'};border-radius:10px;cursor:pointer;text-align:left;width:100%;">
+        <span style="color:#ffd700;font-weight:700;min-width:28px;font-size:.85rem;">${esc(String(d.number||'-'))}</span>
+        <span style="color:#e2c4ff;font-size:.9rem;font-weight:700;flex:1;">${esc(d.name||'-')}</span>
+        <span style="color:#a78bfa;font-size:.75rem;">감상 기록 ${total}건</span>
+        <span style="color:#6b7280;font-size:.8rem;">▶</span>
+      </button>`;
+    });
+    html += `</div>`;
+  }
+  content.innerHTML = html;
+}
+function _gfOpenPortfolio(i) {
+  const d = (window._gfFiltered || [])[i];
+  if (d) renderGamsangPortfolio(d._uid, d.name || '-');
+}
+
 function openGamsangForestGuest() {
   openGamsangPortfolio();
 }
