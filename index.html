@@ -929,11 +929,13 @@ function openGamsangForestStudent() { openGamsangPortfolio(); }
 function openGamsangPortfolio() {
   document.getElementById('game-container').style.display = 'none';
   document.getElementById('gamsang-portfolio-screen').classList.add('active');
+  _miniHideInfoBar();
   renderGamsangPortfolio();
 }
 function closeGamsangPortfolio() {
   document.getElementById('gamsang-portfolio-screen').classList.remove('active');
   document.getElementById('game-container').style.display = '';
+  _miniRestoreInfoBar();
 }
 function _countLocalQuest(type) {
   if (!window._currentUser) return 0;
@@ -2531,9 +2533,13 @@ function showRankUpPopup(rank) {
   document.getElementById('rank-up-desc').textContent = rank.desc.replace(/\n/g, ' ');
   document.getElementById('rank-up-overlay').classList.add('active');
   window._curatorRankUp = rank.name; // 큐레이터 등급업 축하 대사 트리거
+  const gf = document.getElementById('gamsang-forest-bar');
+  if (gf) gf.style.display = 'none';
 }
 function closeRankUp() {
   document.getElementById('rank-up-overlay').classList.remove('active');
+  const gf = document.getElementById('gamsang-forest-bar');
+  if (gf && document.getElementById('user-info-bar')?.style.display !== 'none') gf.style.display = 'block';
 }
 
 function updateRank() {
