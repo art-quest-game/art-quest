@@ -549,7 +549,7 @@ body.is-mobile #joystick-zone { display:block; }
   .hud-chip { font-size:.66rem; padding:2px 9px; border-width:1px; border-radius:12px; }
   #coin-toast { top:40px; }
   #user-info-bar { top:0 !important; right:0 !important; height:34px !important; padding:0 7px !important; border-radius:0 !important; border-top:none !important; border-right:none !important; border-bottom:none !important; border-left:1px solid #5aad2a50 !important; background:rgba(10,5,25,.95) !important; gap:3px !important; }
-  #gamsang-forest-bar { right:16px !important; height:48px !important; }
+  #gamsang-forest-bar { height:48px !important; }
   #gamsang-forest-bar img { height:40px !important; }
   #user-email-label { display:none !important; }
   #user-info-bar button { font-size:.62rem !important; padding:2px 5px !important; border-radius:8px !important; }
@@ -577,7 +577,7 @@ body.is-mobile #joystick-zone { display:block; }
     border-bottom:none !important; border-left:1px solid #5aad2a50 !important;
     background:rgba(10,5,25,.95) !important; gap:3px !important;
   }
-  #gamsang-forest-bar { right:16px !important; height:44px !important; }
+  #gamsang-forest-bar { height:44px !important; }
   #gamsang-forest-bar img { height:38px !important; }
   #user-email-label { display:none !important; }
   #user-info-bar button { font-size:.62rem !important; padding:2px 5px !important; border-radius:8px !important; }
@@ -712,7 +712,6 @@ body.is-mobile #joystick-zone { display:block; }
 }
 
 /* ── 감상의 숲 포트폴리오 화면 ── */
-#gamsang-forest-bar { right:30px; }
 #gamsang-portfolio-screen { display:none; position:fixed; inset:0; background:rgba(10,5,25,.97); z-index:200; flex-direction:column; align-items:center; overflow-y:auto; }
 #gamsang-portfolio-screen.active { display:flex; }
 
@@ -6143,11 +6142,11 @@ function positionMapButtons() {
     if (cb) cb.style.right = (rightGap + 12) + 'px';
     const gb = document.getElementById('guide-btn');
     if (gb) gb.style.right = (rightGap + 12) + 'px';
+    const gf = document.getElementById('gamsang-forest-bar');
+    if (gf) gf.style.right = (rightGap + 12) + 'px';
     if (window.innerWidth > 767 && window.innerHeight > 500) {
       const bar = document.getElementById('user-info-bar');
       if (bar) bar.style.right = (rightGap + 8) + 'px';
-      const gf = document.getElementById('gamsang-forest-bar');
-      if (gf) gf.style.right = (rightGap + 20) + 'px';
     }
   }
   update();
