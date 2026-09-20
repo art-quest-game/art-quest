@@ -712,6 +712,7 @@ body.is-mobile #joystick-zone { display:block; }
 }
 
 /* ── 감상의 숲 포트폴리오 화면 ── */
+#gamsang-forest-bar { right:30px; }
 #gamsang-portfolio-screen { display:none; position:fixed; inset:0; background:rgba(10,5,25,.97); z-index:200; flex-direction:column; align-items:center; overflow-y:auto; }
 #gamsang-portfolio-screen.active { display:flex; }
 
@@ -1637,7 +1638,7 @@ window.doLogout = doLogout;
 </div>
 
 <!-- 감상의 숲 버튼 -->
-<div id="gamsang-forest-bar" style="display:none;position:fixed;top:54px;right:30px;z-index:7999;">
+<div id="gamsang-forest-bar" style="display:none;position:fixed;top:54px;z-index:7999;">
   <button
     onclick="window._isTeacher ? openGamsangForestTeacher() : (window._currentUser ? openGamsangForestStudent() : openGamsangForestGuest())"
     style="padding:0;border:none;background:transparent;cursor:pointer;display:block;">
